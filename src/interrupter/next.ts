@@ -1,19 +1,19 @@
-import { NextRequest } from 'next/server'
-import { timeoutHandler } from './timeout'
-import type { Workflow } from '../core'
+import { NextRequest } from "next/server";
+import { timeoutHandler } from "./timeout";
+import type { Workflow } from "../core";
 
 type WorkflowAPI = {
   GET: (request: NextRequest) => Promise<Response>;
-}
+};
 
-export const createNextHandler = <Start, Stop> (
-  workflow: Workflow<Start, Stop>
+export const createNextHandler = <Start, Stop>(
+  workflow: Workflow<Start, Stop>,
 ): WorkflowAPI => {
   return {
     GET: async (request) => {
-      const body = await request.json()
-      const result = await timeoutHandler(workflow, body)
-      return Response.json(result.data)
-    }
-  }
-}
+      const body = await request.json();
+      const result = await timeoutHandler(workflow, body);
+      return Response.json(result.data);
+    },
+  };
+};

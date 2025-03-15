@@ -1,10 +1,10 @@
-import { defineConfig } from 'tsup'
+import { defineConfig } from "tsup";
 
 export default defineConfig([
   // Core APIs - Node.js like
   {
-    entry: ['src/core/index.ts'],
-    format: ['cjs', 'esm'],
+    entry: ["src/core/index.ts"],
+    format: ["cjs", "esm"],
     dts: true,
     sourcemap: true,
     banner: {
@@ -13,20 +13,20 @@ export default defineConfig([
   },
   // Core APIs - Serverless
   {
-    entry: ['src/core/index.ts'],
+    entry: ["src/core/index.ts"],
     outExtension: () => ({
-      js: '.serverless.js',
+      js: ".serverless.js",
     }),
-    format: ['esm'],
+    format: ["esm"],
     sourcemap: true,
   },
   // Interrupter APIs
   {
-    entry: ['src/interrupter/*.ts'],
-    outDir: './dist/interrupter',
-    format: ['esm'],
-    external: ['react', 'next', 'hono', 'ai/rsc'],
+    entry: ["src/interrupter/*.ts"],
+    outDir: "./dist/interrupter",
+    format: ["esm"],
+    external: ["react", "next", "hono", "ai/rsc"],
     dts: true,
     sourcemap: true,
-  }
-])
+  },
+]);

@@ -21,7 +21,10 @@ export const workflowEvent = <Data>(config?: {
     m.set(l2, data);
     return {
       [Symbol.toStringTag]: config?.debugLabel ?? `WorkflowEvent(${l1}.${l2})`,
-      toString: () => config?.debugLabel ? `${config.debugLabel}(${l2})` : `WorkflowEvent(${l1}.${l2})`,
+      toString: () =>
+        config?.debugLabel
+          ? `${config.debugLabel}(${l2})`
+          : `WorkflowEvent(${l1}.${l2})`,
       get event() {
         return fn;
       },

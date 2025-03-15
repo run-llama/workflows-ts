@@ -1,4 +1,4 @@
-import type { Workflow, WorkflowEventInstance } from '../core'
+import type { Workflow, WorkflowEventInstance } from "../core";
 
 /**
  * Interrupter that wraps a workflow in a promise.
@@ -11,11 +11,10 @@ export function promiseHandler<Start, Stop>(
   start: WorkflowEventInstance<Start>,
   timeout: number | null = null,
 ): Promise<WorkflowEventInstance<Stop>> {
-  const executor = workflow.run(start)
+  const executor = workflow.run(start);
   const getIteratorSingleton = () => {
-    return executor[Symbol.asyncIterator]()
-  }
-
+    return executor[Symbol.asyncIterator]();
+  };
 
   let resolved: WorkflowEventInstance<Stop> | null = null;
   let rejected: Error | null = null;
@@ -23,8 +22,8 @@ export function promiseHandler<Start, Stop>(
   async function then<TResult1, TResult2 = never>(
     onfulfilled?:
       | ((
-      value: WorkflowEventInstance<Stop>,
-    ) => TResult1 | PromiseLike<TResult1>)
+          value: WorkflowEventInstance<Stop>,
+        ) => TResult1 | PromiseLike<TResult1>)
       | null
       | undefined,
     onrejected?:
@@ -38,8 +37,7 @@ export function promiseHandler<Start, Stop>(
     };
     if (resolved)
       return Promise.resolve(resolved).then(onfulfilled, onrejected);
-    if (rejected)
-      return Promise.reject(rejected).then(onfulfilled, onrejected);
+    if (rejected) return Promise.reject(rejected).then(onfulfilled, onrejected);
 
     const signal =
       timeout !== null ? AbortSignal.timeout(timeout * 1000) : null;
@@ -53,7 +51,9 @@ export function promiseHandler<Start, Stop>(
         if (rejected) return onrejected(rejected) as TResult2;
         if (workflow.stopEvent === eventInstance.event) {
           resolved = eventInstance as WorkflowEventInstance<Stop>;
-          return onfulfilled(eventInstance as WorkflowEventInstance<Stop>) as TResult1;
+          return onfulfilled(
+            eventInstance as WorkflowEventInstance<Stop>,
+          ) as TResult1;
         }
       }
     } catch (err) {
@@ -77,7 +77,9 @@ export function promiseHandler<Start, Stop>(
     return then((v) => v, onrejected);
   }
 
-  function finallyContext(onfinally?: ((value?: WorkflowEventInstance<Stop>) => void) | null): Promise<any> {
+  function finallyContext(
+    onfinally?: ((value?: WorkflowEventInstance<Stop>) => void) | null,
+  ): Promise<any> {
     return then(
       (value) => {
         onfinally?.(value);
@@ -89,9 +91,9 @@ export function promiseHandler<Start, Stop>(
   }
 
   return {
-    [Symbol.toStringTag]: 'Promise',
+    [Symbol.toStringTag]: "Promise",
     then,
     catch: catchContext,
-    finally: finallyContext
-  }
+    finally: finallyContext,
+  };
 }

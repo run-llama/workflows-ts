@@ -1,8 +1,8 @@
 // DO NOT IMPORT ASYNC-LOCAL-STORAGE DIRECTLY
-import type { AsyncLocalStorage as NodeAsyncLocalStorage } from 'async_hooks'
+import type { AsyncLocalStorage as NodeAsyncLocalStorage } from "async_hooks";
 
 declare global {
-  var AsyncLocalStorage: typeof NodeAsyncLocalStorage
+  var AsyncLocalStorage: typeof NodeAsyncLocalStorage;
 }
 
 import type { WorkflowEvent, WorkflowEventInstance } from "./event";
@@ -43,7 +43,7 @@ type ExecutorContext = {
 type EventProtocol = {
   type: "event";
   instance: WorkflowEventInstance<any>;
-}
+};
 
 export type QueueProtocol =
   | EventProtocol
@@ -81,8 +81,12 @@ export function getExecutorContext(): ExecutorContext {
 }
 
 export type Executor<Start, Stop> = {
-  [Symbol.asyncIterator]: () => AsyncIterableIterator<WorkflowEventInstance<any> | WorkflowEventInstance<Start> | WorkflowEventInstance<Stop>>;
-}
+  [Symbol.asyncIterator]: () => AsyncIterableIterator<
+    | WorkflowEventInstance<any>
+    | WorkflowEventInstance<Start>
+    | WorkflowEventInstance<Stop>
+  >;
+};
 
 export function createExecutor<Start, Stop>(
   params: ExecutorParams<Start, Stop>,
@@ -237,13 +241,18 @@ export function createExecutor<Start, Stop>(
                     const acceptableInputs = pendingInputQueue.filter((e) =>
                       inputs.some((input) => e.event === input),
                     );
-                    const acceptableInputsFromQueue = queue.filter((q): q is EventProtocol  => q.type === 'event' && inputs.some((input) => q.instance.event === input))
-                    .map(q => q.instance)
+                    const acceptableInputsFromQueue = queue
+                      .filter(
+                        (q): q is EventProtocol =>
+                          q.type === "event" &&
+                          inputs.some((input) => q.instance.event === input),
+                      )
+                      .map((q) => q.instance);
 
                     const events = flattenEvents(inputs, [
                       instance,
                       ...acceptableInputs,
-                      ...acceptableInputsFromQueue
+                      ...acceptableInputsFromQueue,
                     ]);
                     events.forEach((e) => {
                       const idx = queue.findIndex(
@@ -277,8 +286,8 @@ export function createExecutor<Start, Stop>(
                     if (verbose)
                       console.log(
                         `Running step ${step.name} with inputs ${events
-                        .map((ev) => ev.event)
-                        .join(",")}`,
+                          .map((ev) => ev.event)
+                          .join(",")}`,
                       );
                     const result = step(
                       ...events.sort((a, b) => {
@@ -314,7 +323,7 @@ export function createExecutor<Start, Stop>(
                       return result;
                     }
                     return;
-                  })
+                  });
                   nextEventPromises.forEach((p) => {
                     if (p && "then" in p) {
                       pendingTasks.add(p);

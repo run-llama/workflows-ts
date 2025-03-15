@@ -1,5 +1,5 @@
 import { type WorkflowEvent, type WorkflowEventInstance } from "./event";
-import { createExecutor, type Executor, type Handler } from './executor'
+import { createExecutor, type Executor, type Handler } from "./executor";
 
 type Cleanup = () => void;
 
@@ -15,11 +15,11 @@ export type Workflow<Start, Stop> = {
     initialEvent: WorkflowEventInstance<any>,
     options?: {
       beforeDone?: () => Promise<void>;
-    }
+    },
   ) => Executor<Start, Stop>;
   get startEvent(): WorkflowEvent<Start>;
   get stopEvent(): WorkflowEvent<Stop>;
-}
+};
 
 export function createWorkflow<Start, Stop>(params: {
   startEvent: WorkflowEvent<Start>;
@@ -71,7 +71,7 @@ export function createWorkflow<Start, Stop>(params: {
       initialEvent: WorkflowEventInstance<Start>,
       options?: {
         beforeDone?: () => Promise<void>;
-      }
+      },
     ): ReturnType<typeof createExecutor<Start, Stop>> => {
       return createExecutor<Start, Stop>({
         start: params.startEvent,
