@@ -4,7 +4,7 @@ export default defineConfig([
   // Core APIs - Node.js like
   {
     entry: ["src/core/index.ts"],
-    outDir: "dist/core",
+    outDir: "dist",
     format: ["cjs", "esm"],
     dts: true,
     external: ["fluere/shared"],
@@ -16,7 +16,7 @@ export default defineConfig([
   // Core APIs - Serverless
   {
     entry: ["src/core/index.ts"],
-    outDir: "dist/core",
+    outDir: "dist",
     outExtension: () => ({
       js: ".serverless.js",
     }),
@@ -27,7 +27,7 @@ export default defineConfig([
   // Shared APIs - Node.js like
   {
     entry: ["src/shared/index.ts"],
-    outDir: "dist/shared",
+    outDir: "shared",
     format: ["cjs", "esm"],
     dts: true,
     sourcemap: true,
@@ -38,7 +38,7 @@ export default defineConfig([
   },
   {
     entry: ["src/shared/index.ts"],
-    outDir: "dist/shared",
+    outDir: "shared",
     format: ["esm"],
     splitting: false,
     outExtension: () => ({
@@ -49,7 +49,7 @@ export default defineConfig([
   // Interrupter APIs
   {
     entry: ["src/interrupter/*.ts"],
-    outDir: "./dist/interrupter",
+    outDir: "interrupter",
     format: ["esm"],
     splitting: false,
     external: ["react", "next", "hono", "ai/rsc", "fluere/shared"],
