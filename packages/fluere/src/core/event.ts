@@ -25,6 +25,12 @@ export const workflowEvent = <Data>(config?: {
         config?.debugLabel
           ? `${config.debugLabel}(${l2})`
           : `WorkflowEvent(${l1}.${l2})`,
+      toJSON: () => {
+        return {
+          event: l1,
+          data: map.get(l1)!.get(l2)!,
+        };
+      },
       get event() {
         return fn;
       },

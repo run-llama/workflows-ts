@@ -3,6 +3,7 @@ import {
   workflowEvent,
   getContext,
   type Workflow,
+  type WorkflowEventInstance,
 } from "../src/core";
 import { describe, expect, test, beforeEach } from "vitest";
 import { timeoutHandler } from "../src/interrupter/timeout";
@@ -194,6 +195,44 @@ describe("multiple inputs", () => {
       );
       expect(result.data).toBe(1);
     }
+  });
+});
+
+describe("message queue", async () => {
+  test("basic", async () => {
+    const messageEvent = workflowEvent<string>({
+      debugLabel: "messageEvent",
+    });
+    workflow.handle([startEvent], () => {
+      const context = getContext();
+      context.sendEvent(messageEvent("message"));
+      return stopEvent(1);
+    });
+
+    const executor = workflow.run(startEvent("100"));
+    const queue: WorkflowEventInstance<any>[] = [];
+    for await (const i of executor) {
+      queue.push(i);
+      if (i.event === stopEvent) {
+        break;
+      }
+    }
+    expect(queue).toMatchInlineSnapshot(`
+      [
+        {
+          "data": "100",
+          "event": "0",
+        },
+        {
+          "data": "message",
+          "event": "3",
+        },
+        {
+          "data": 1,
+          "event": "2",
+        },
+      ]
+    `);
   });
 });
 

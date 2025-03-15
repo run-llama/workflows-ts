@@ -153,9 +153,9 @@ export function createExecutor<Start, Stop>(
     return res;
   }
 
-  sendEvent(initialEvent);
+  _sendEvent(initialEvent);
 
-  function sendEvent(instance: WorkflowEventInstance<any>): void {
+  function _sendEvent(instance: WorkflowEventInstance<any>): void {
     queue.push(instance);
   }
 
@@ -178,7 +178,12 @@ export function createExecutor<Start, Stop>(
 
   const executorContext: ExecutorContext = {
     requireEvent,
-    sendEvent,
+    sendEvent: function sendEvent(instance) {
+      const controller = controllerAsyncLocalStorage.getStore()!;
+      controller.enqueue(instance);
+      enqueuedEvents.add(instance);
+      _sendEvent(instance);
+    },
   };
   const isPendingEvents = new WeakSet<WorkflowEventInstance<any>>();
   const pendingTasks = new Set<Promise<WorkflowEventInstance<any> | void>>();
@@ -203,7 +208,7 @@ export function createExecutor<Start, Stop>(
       }
     }
     if (isPendingEvents.has(instance)) {
-      sendEvent(instance);
+      _sendEvent(instance);
     } else {
       if (!enqueuedEvents.has(instance)) {
         controller.enqueue(instance);
@@ -233,7 +238,7 @@ export function createExecutor<Start, Stop>(
         });
         if (events.length !== inputs.length) {
           _getHookContext()?.__dev__onMismatchEvents(step, ...events);
-          sendEvent(instance);
+          _sendEvent(instance);
           isPendingEvents.add(instance);
           return null;
         } else {
@@ -262,7 +267,7 @@ export function createExecutor<Start, Stop>(
             _getHookContext()?.afterEvents(step, ...args);
             if (nextEvent.event !== stop) {
               pendingInputQueue.unshift(nextEvent);
-              sendEvent(nextEvent);
+              _sendEvent(nextEvent);
             }
             return nextEvent;
           });
@@ -270,7 +275,7 @@ export function createExecutor<Start, Stop>(
           _getHookContext()?.afterEvents(step, ...args);
           if (result.event !== stop) {
             pendingInputQueue.unshift(result);
-            sendEvent(result);
+            _sendEvent(result);
           }
           return result;
         }
@@ -312,7 +317,7 @@ export function createExecutor<Start, Stop>(
           }
         })
         .catch((err) => {
-          sendEvent(instance);
+          _sendEvent(instance);
           isPendingEvents.add(instance);
           controller.error(err);
         });
