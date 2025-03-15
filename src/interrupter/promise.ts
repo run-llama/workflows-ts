@@ -9,7 +9,7 @@ import { _setHookContext } from "fluere/shared";
  */
 export function promiseHandler<Start, Stop>(
   getExecutor: () => ReturnType<Workflow<Start, Stop>["run"]>,
-  timeout: number | null = 1000,
+  timeout: number | null = 1000 * 10,
 ): Promise<WorkflowEventInstance<Stop>> {
   let executor: ReturnType<Workflow<Start, Stop>["run"]>;
   const getIteratorSingleton = () => {
@@ -43,14 +43,13 @@ export function promiseHandler<Start, Stop>(
     if (rejected) return Promise.reject(rejected).then(onfulfilled, onrejected);
 
     const signal = timeout !== null ? AbortSignal.timeout(timeout) : null;
-    signal?.addEventListener("abort", () => {
-      rejected = new Error(`Operation timed out after ${timeout} ms`);
-      onrejected?.(rejected);
-    });
-
+    let lastResult: WorkflowEventInstance<any> | null = null;
     return _setHookContext(
       {
         afterQueue: async (retry) => {
+          if (lastResult?.event === executor.stop) {
+            return;
+          }
           if (signal?.aborted === false) {
             retry();
             await new Promise((resolve) => setTimeout(resolve, 0));
@@ -60,6 +59,8 @@ export function promiseHandler<Start, Stop>(
       async () => {
         try {
           for await (const eventInstance of getIteratorSingleton()) {
+            signal?.throwIfAborted();
+            lastResult = eventInstance;
             if (rejected) return onrejected(rejected) as TResult2;
             if (executor.stop === eventInstance.event) {
               resolved = eventInstance as WorkflowEventInstance<Stop>;

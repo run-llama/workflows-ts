@@ -12,7 +12,7 @@ export const createNextHandler = <Start, Stop>(
   return {
     GET: async (request) => {
       const body = await request.json();
-      const result = await timeoutHandler(workflow, body);
+      const result = await timeoutHandler(() => workflow.run(body));
       return Response.json(result.data);
     },
   };

@@ -1,9 +1,9 @@
 import { OpenAI } from "openai";
-import { createWorkflow, getExecutorContext, workflowEvent } from "fluere";
+import { createWorkflow, getContext, workflowEvent } from "fluere";
 import { promiseHandler } from "fluere/interrupter/promise";
-import {
-  type ChatCompletionMessageToolCall,
-  type ChatCompletionTool,
+import type {
+  ChatCompletionMessageToolCall,
+  ChatCompletionTool,
 } from "openai/resources/chat/completions/completions";
 
 const llm = new OpenAI();
@@ -38,7 +38,7 @@ const workflow = createWorkflow({
 });
 workflow.handle([startEvent], async ({ data }) => {
   console.log("start event");
-  const context = getExecutorContext();
+  const context = getContext();
   context.sendEvent(chatEvent(data));
 });
 workflow.handle([toolCallEvent], async () => {
@@ -61,7 +61,7 @@ workflow.handle([chatEvent], async ({ data }) => {
       },
     ],
   });
-  const context = getExecutorContext();
+  const context = getContext();
   if (
     choices[0]?.message?.tool_calls?.length &&
     choices[0].message.tool_calls.length > 0
@@ -79,7 +79,6 @@ workflow.handle([chatEvent], async ({ data }) => {
       .join("\n");
     console.log("toolcall result", result);
     context.sendEvent(chatEvent(result));
-    return await context.requireEvent(chatEvent);
   } else {
     console.log("no choices");
     return stopEvent(choices[0]!.message.content!);
@@ -87,8 +86,7 @@ workflow.handle([chatEvent], async ({ data }) => {
 });
 
 promiseHandler(
-  workflow,
-  startEvent("what is weather today, im in san francisco"),
+  () => workflow.run(startEvent("what is weather today, im in san francisco")),
 ).then(({ data }) => {
   console.log("AI response", data);
 });
