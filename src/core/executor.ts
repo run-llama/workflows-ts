@@ -1,11 +1,11 @@
 // DO NOT IMPORT ASYNC-LOCAL-STORAGE DIRECTLY
 import type { AsyncLocalStorage as NodeAsyncLocalStorage } from "async_hooks";
+import type { WorkflowEvent, WorkflowEventInstance } from "./event";
+import { _getHookContext } from "fluere/shared";
 
 declare global {
   var AsyncLocalStorage: typeof NodeAsyncLocalStorage;
 }
-
-import type { WorkflowEvent, WorkflowEventInstance } from "./event";
 
 export type Handler<
   AcceptEvents extends WorkflowEvent<any>[],
@@ -21,16 +21,11 @@ export type ReadonlyHandlerMap = ReadonlyMap<
   Set<Handler<WorkflowEvent<any>[], any>>
 >;
 
-export type Wait = () => Promise<void>;
-
 export type ExecutorParams<Start, Stop> = {
   start: WorkflowEvent<Start>;
   stop: WorkflowEvent<Stop>;
   initialEvent: WorkflowEventInstance<Start>;
   steps: ReadonlyHandlerMap;
-  timeout: number | null;
-  verbose: boolean;
-  beforeDone: Wait;
 };
 
 export type ExecutorContext = {
@@ -87,7 +82,7 @@ export type Executor<Start, Stop> = {
 export function createExecutor<Start, Stop>(
   params: ExecutorParams<Start, Stop>,
 ): Executor<Start, Stop> {
-  const { steps, initialEvent, beforeDone, verbose, stop } = params;
+  const { steps, initialEvent, stop } = params;
   const queue: Queue[] = [];
   let pendingInputQueue: WorkflowEventInstance<any>[] = [];
 
@@ -235,9 +230,7 @@ export function createExecutor<Start, Stop>(
           if (idx !== -1) queue.splice(idx, 1);
         });
         if (events.length !== inputs.length) {
-          if (verbose) {
-            console.log(`Not enough inputs for step ${step.name}`);
-          }
+          _getHookContext()?.__dev__onMismatchEvents(step, ...events);
           sendEvent(instance);
           isPendingEvents.add(instance);
           return null;
@@ -254,24 +247,17 @@ export function createExecutor<Start, Stop>(
           });
         }
         if (isPendingEvents.has(instance)) isPendingEvents.delete(instance);
-        if (verbose)
-          console.log(
-            `Running step ${step.name} with inputs ${events
-              .map((ev) => ev.event)
-              .join(",")}`,
-          );
-        const result = step(
-          ...events.sort((a, b) => {
-            const aIndex = inputs.findIndex((i) => a.event === i);
-            const bIndex = inputs.findIndex((i) => b.event === i);
-            return aIndex - bIndex;
-          }),
-        );
+        const args = events.sort((a, b) => {
+          const aIndex = inputs.findIndex((i) => a.event === i);
+          const bIndex = inputs.findIndex((i) => b.event === i);
+          return aIndex - bIndex;
+        });
+        _getHookContext()?.beforeEvents(step, ...args);
+        const result = step(...args);
         if (result && "then" in result) {
           return result.then((nextEvent: void | WorkflowEventInstance<any>) => {
             if (!nextEvent) return;
-            if (verbose)
-              console.log(`Step ${step.name} completed: ${nextEvent.event}`);
+            _getHookContext()?.afterEvents(step, ...args);
             if (nextEvent.event !== stop) {
               pendingInputQueue.unshift(nextEvent);
               sendEvent(nextEvent);
@@ -279,8 +265,7 @@ export function createExecutor<Start, Stop>(
             return nextEvent;
           });
         } else if (result && "data" in result) {
-          if (verbose)
-            console.log(`Step ${step.name} completed: ${result.event}`);
+          _getHookContext()?.afterEvents(step, ...args);
           if (result.event !== stop) {
             pendingInputQueue.unshift(result);
             sendEvent(result);
@@ -339,12 +324,12 @@ export function createExecutor<Start, Stop>(
       start: async (controller) => {
         while (true) {
           await controllerAsyncLocalStorage.run(controller, handleQueue);
-
           if (queue.length === 0 && pendingTasks.size === 0) {
-            await beforeDone();
-            // double check
-            if (queue.length === 0 && pendingTasks.size === 0) {
-              if (verbose) console.log("No more events in the queue");
+            let retry = false;
+            await _getHookContext()?.afterQueue(() => {
+              retry = true;
+            });
+            if (!retry) {
               break;
             }
           }

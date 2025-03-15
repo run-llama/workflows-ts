@@ -11,12 +11,7 @@ export type Workflow<Start, Stop> = {
     accept: AcceptEvents,
     handler: Handler<AcceptEvents, Result>,
   ) => Cleanup;
-  run: (
-    initialEvent: WorkflowEventInstance<any>,
-    options?: {
-      beforeDone?: () => Promise<void>;
-    },
-  ) => Executor<Start, Stop>;
+  run: (initialEvent: WorkflowEventInstance<any>) => Executor<Start, Stop>;
   get startEvent(): WorkflowEvent<Start>;
   get stopEvent(): WorkflowEvent<Stop>;
 };
@@ -69,18 +64,12 @@ export function createWorkflow<Start, Stop>(params: {
     },
     run: (
       initialEvent: WorkflowEventInstance<Start>,
-      options?: {
-        beforeDone?: () => Promise<void>;
-      },
-    ): ReturnType<typeof createExecutor<Start, Stop>> => {
+    ): Executor<Start, Stop> => {
       return createExecutor<Start, Stop>({
         start: params.startEvent,
         stop: params.stopEvent,
         initialEvent,
         steps: config.steps,
-        timeout: 2000,
-        beforeDone: options?.beforeDone ?? (() => Promise.resolve()),
-        verbose: true,
       });
     },
   };
