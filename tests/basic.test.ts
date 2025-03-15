@@ -234,21 +234,18 @@ describe("llm", async () => {
     });
 
     workflow.handle([startEvent], async ({ data }) => {
-      console.log("start event");
       const context = getExecutorContext();
       context.sendEvent(chatEvent(data));
     });
     workflow.handle([toolCallEvent], async () => {
-      console.log("tool call event");
-      return toolCallResultEvent("Today is sunny.");
+      return toolCallResultEvent("CHAT");
     });
     let once = true;
     workflow.handle([chatEvent], async ({ data }) => {
-      console.log("chat event", data);
+      expect(data).toBe("CHAT");
       const context = getExecutorContext();
       if (once) {
         once = false;
-        console.log("sending choices");
         const result = (
           await Promise.all(
             ["tool_call"].map(async (tool_call) => {
@@ -259,18 +256,14 @@ describe("llm", async () => {
         )
           .map(({ data }) => data)
           .join("\n");
-        console.log("toolcall result", result);
         context.sendEvent(chatEvent(result));
         return await context.requireEvent(chatEvent);
       } else {
-        console.log("no choices");
         return stopEvent("STOP");
       }
     });
 
-    await promiseHandler(
-      workflow,
-      startEvent("what is weather today, im in san francisco"),
-    );
+    const result = await promiseHandler(workflow, startEvent("CHAT"));
+    expect(result.data).toBe("STOP");
   });
 });

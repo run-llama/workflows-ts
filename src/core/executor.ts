@@ -40,12 +40,7 @@ type ExecutorContext = {
   sendEvent: <Data>(event: WorkflowEventInstance<Data>) => void;
 };
 
-type EventProtocol = {
-  type: "event";
-  instance: WorkflowEventInstance<any>;
-};
-
-export type QueueProtocol = EventProtocol;
+type Queue = WorkflowEventInstance<any>;
 
 function flattenEvents(
   acceptEventTypes: WorkflowEvent<any>[],
@@ -90,8 +85,7 @@ export function createExecutor<Start, Stop>(
   params: ExecutorParams<Start, Stop>,
 ): Executor<Start, Stop> {
   const { steps, initialEvent, beforeDone, verbose, stop } = params;
-  const queue: QueueProtocol[] = [];
-  const queueEventTarget = new EventTarget();
+  const queue: Queue[] = [];
   let pendingInputQueue: WorkflowEventInstance<any>[] = [];
 
   const stepCache: WeakMap<
@@ -161,8 +155,8 @@ export function createExecutor<Start, Stop>(
 
   sendEvent(initialEvent);
 
-  function sendEvent(event: WorkflowEventInstance<any>): void {
-    queue.push({ type: "event", instance: event });
+  function sendEvent(instance: WorkflowEventInstance<any>): void {
+    queue.push(instance);
   }
 
   const controllerAsyncLocalStorage = new AsyncLocalStorage<
@@ -192,167 +186,146 @@ export function createExecutor<Start, Stop>(
 
   async function handleQueue(requestEvent?: WorkflowEvent<any>) {
     const controller = controllerAsyncLocalStorage.getStore()!;
-    const eventProtocol = queue.shift();
-    if (eventProtocol) {
-      switch (eventProtocol.type) {
-        case "event": {
-          if (requestEvent) {
-            const acceptableInput = pendingInputQueue.find(
-              (eventInstance) => eventInstance.event === requestEvent,
-            );
-            if (acceptableInput) {
-              const protocolIdx = queue.findIndex(
-                (p) => p.type === "event" && p.instance === acceptableInput,
-              );
-              if (protocolIdx !== -1) queue.splice(protocolIdx, 1);
-              pendingInputQueue.splice(
-                pendingInputQueue.indexOf(acceptableInput),
-                1,
-              );
-              return acceptableInput;
-            }
-          }
+    const instance = queue.shift();
+    if (!instance) {
+      return;
+    }
 
-          const { instance } = eventProtocol;
-          if (isPendingEvents.has(instance)) {
-            sendEvent(instance);
-          } else {
-            if (!enqueuedEvents.has(instance)) {
-              controller.enqueue(instance);
-              enqueuedEvents.add(instance);
-            }
-            // todo: outputsMap diagnostics
-            const [steps, inputsMap, _outputsMap] = getStepFunction(instance);
-            const nextEventPromises = [...steps].map((step) => {
-              const inputs = inputsMap.get(step) ?? [];
-              const acceptableInputs = pendingInputQueue.filter((e) =>
-                inputs.some((input) => e.event === input),
-              );
-              const acceptableInputsFromQueue = queue
-                .filter(
-                  (q): q is EventProtocol =>
-                    q.type === "event" &&
-                    inputs.some((input) => q.instance.event === input),
-                )
-                .map((q) => q.instance);
+    if (requestEvent) {
+      const acceptableInput = pendingInputQueue.find(
+        (eventInstance) => eventInstance.event === requestEvent,
+      );
+      if (acceptableInput) {
+        const protocolIdx = queue.findIndex((p) => p === acceptableInput);
+        if (protocolIdx !== -1) queue.splice(protocolIdx, 1);
+        pendingInputQueue.splice(pendingInputQueue.indexOf(acceptableInput), 1);
+        return acceptableInput;
+      }
+    }
+    if (isPendingEvents.has(instance)) {
+      sendEvent(instance);
+    } else {
+      if (!enqueuedEvents.has(instance)) {
+        controller.enqueue(instance);
+        enqueuedEvents.add(instance);
+      }
+      // todo: outputsMap diagnostics
+      const [steps, inputsMap, _outputsMap] = getStepFunction(instance);
+      const nextEventPromises = [...steps].map((step) => {
+        const inputs = inputsMap.get(step) ?? [];
+        const acceptableInputs = pendingInputQueue.filter((e) =>
+          inputs.some((input) => e.event === input),
+        );
+        const acceptableInputsFromQueue = queue
+          .filter((q): q is WorkflowEventInstance<any> =>
+            inputs.some((input) => q.event === input),
+          )
+          .map((q) => q);
 
-              const events = flattenEvents(inputs, [
-                instance,
-                ...acceptableInputs,
-                ...acceptableInputsFromQueue,
-              ]);
-              events.forEach((e) => {
-                const idx = queue.findIndex(
-                  (p) => p.type === "event" && p.instance === e,
-                );
-                if (idx !== -1) queue.splice(idx, 1);
-              });
-              if (events.length !== inputs.length) {
-                if (verbose) {
-                  console.log(`Not enough inputs for step ${step.name}`);
-                }
-                sendEvent(instance);
-                isPendingEvents.add(instance);
-                return null;
-              } else {
-                // remove acceptable inputs from pending queue
-                acceptableInputs.forEach((e) => {
-                  const idx = pendingInputQueue.indexOf(e);
-                  if (idx !== -1) pendingInputQueue.splice(idx, 1);
-                });
-                // remove acceptable inputs from queue
-                acceptableInputsFromQueue.forEach((e) => {
-                  const idx = queue.findIndex(
-                    (q) => q.type === "event" && q.instance === e,
-                  );
-                  if (idx !== -1) queue.splice(idx, 1);
-                });
-              }
-              if (isPendingEvents.has(instance))
-                isPendingEvents.delete(instance);
-              if (verbose)
-                console.log(
-                  `Running step ${step.name} with inputs ${events
-                    .map((ev) => ev.event)
-                    .join(",")}`,
-                );
-              const result = step(
-                ...events.sort((a, b) => {
-                  const aIndex = inputs.findIndex((i) => a.event === i);
-                  const bIndex = inputs.findIndex((i) => b.event === i);
-                  return aIndex - bIndex;
-                }),
-              );
-              if (result && "then" in result) {
-                return result.then(
-                  (nextEvent: void | WorkflowEventInstance<any>) => {
-                    if (!nextEvent) return;
-                    if (verbose)
-                      console.log(
-                        `Step ${step.name} completed: ${nextEvent.event}`,
-                      );
-                    if (nextEvent.event !== stop) {
-                      pendingInputQueue.unshift(nextEvent);
-                      sendEvent(nextEvent);
-                    }
-                    return nextEvent;
-                  },
-                );
-              } else if (result && "data" in result) {
-                if (verbose)
-                  console.log(`Step ${step.name} completed: ${result.event}`);
-                if (result.event !== stop) {
-                  pendingInputQueue.unshift(result);
-                  sendEvent(result);
-                }
-                return result;
-              }
-              return;
-            });
-            nextEventPromises.forEach((p) => {
-              if (p && "then" in p) {
-                pendingTasks.add(p);
-                p.catch((err) => console.error("Error in step", err)).finally(
-                  () => pendingTasks.delete(p),
-                );
-              }
-            });
-            if (nextEventPromises.some((p) => p && "data" in p)) {
-              const fastest = nextEventPromises.find(
-                (p): p is WorkflowEventInstance<any> => !!p && "data" in p,
-              );
-              if (fastest && !enqueuedEvents.has(fastest)) {
-                controller.enqueue(fastest);
-                enqueuedEvents.add(fastest);
-              }
-            }
-            await Promise.race(nextEventPromises)
-              .then((fastest) => {
-                if (!fastest || enqueuedEvents.has(fastest)) return null;
-                controller.enqueue(fastest);
-                enqueuedEvents.add(fastest);
-                return fastest;
-              })
-              .then(async (fastest) => {
-                const nextEvents = (
-                  await Promise.all(nextEventPromises)
-                ).filter((v): v is WorkflowEventInstance<any> => !!v);
-                for (const nextEvent of nextEvents) {
-                  if (nextEvent !== fastest && !enqueuedEvents.has(nextEvent)) {
-                    controller.enqueue(nextEvent);
-                    enqueuedEvents.add(nextEvent);
-                  }
-                }
-              })
-              .catch((err) => {
-                sendEvent(instance);
-                isPendingEvents.add(instance);
-                controller.error(err);
-              });
+        const events = flattenEvents(inputs, [
+          instance,
+          ...acceptableInputs,
+          ...acceptableInputsFromQueue,
+        ]);
+        events.forEach((e) => {
+          const idx = queue.findIndex((p) => p === e);
+          if (idx !== -1) queue.splice(idx, 1);
+        });
+        if (events.length !== inputs.length) {
+          if (verbose) {
+            console.log(`Not enough inputs for step ${step.name}`);
           }
-          break;
+          sendEvent(instance);
+          isPendingEvents.add(instance);
+          return null;
+        } else {
+          // remove acceptable inputs from pending queue
+          acceptableInputs.forEach((e) => {
+            const idx = pendingInputQueue.indexOf(e);
+            if (idx !== -1) pendingInputQueue.splice(idx, 1);
+          });
+          // remove acceptable inputs from queue
+          acceptableInputsFromQueue.forEach((e) => {
+            const idx = queue.findIndex((q) => q === e);
+            if (idx !== -1) queue.splice(idx, 1);
+          });
+        }
+        if (isPendingEvents.has(instance)) isPendingEvents.delete(instance);
+        if (verbose)
+          console.log(
+            `Running step ${step.name} with inputs ${events
+              .map((ev) => ev.event)
+              .join(",")}`,
+          );
+        const result = step(
+          ...events.sort((a, b) => {
+            const aIndex = inputs.findIndex((i) => a.event === i);
+            const bIndex = inputs.findIndex((i) => b.event === i);
+            return aIndex - bIndex;
+          }),
+        );
+        if (result && "then" in result) {
+          return result.then((nextEvent: void | WorkflowEventInstance<any>) => {
+            if (!nextEvent) return;
+            if (verbose)
+              console.log(`Step ${step.name} completed: ${nextEvent.event}`);
+            if (nextEvent.event !== stop) {
+              pendingInputQueue.unshift(nextEvent);
+              sendEvent(nextEvent);
+            }
+            return nextEvent;
+          });
+        } else if (result && "data" in result) {
+          if (verbose)
+            console.log(`Step ${step.name} completed: ${result.event}`);
+          if (result.event !== stop) {
+            pendingInputQueue.unshift(result);
+            sendEvent(result);
+          }
+          return result;
+        }
+        return;
+      });
+      nextEventPromises.forEach((p) => {
+        if (p && "then" in p) {
+          pendingTasks.add(p);
+          p.catch((err) => console.error("Error in step", err)).finally(() =>
+            pendingTasks.delete(p),
+          );
+        }
+      });
+      if (nextEventPromises.some((p) => p && "data" in p)) {
+        const fastest = nextEventPromises.find(
+          (p): p is WorkflowEventInstance<any> => !!p && "data" in p,
+        );
+        if (fastest && !enqueuedEvents.has(fastest)) {
+          controller.enqueue(fastest);
+          enqueuedEvents.add(fastest);
         }
       }
+      await Promise.race(nextEventPromises)
+        .then((fastest) => {
+          if (!fastest || enqueuedEvents.has(fastest)) return null;
+          controller.enqueue(fastest);
+          enqueuedEvents.add(fastest);
+          return fastest;
+        })
+        .then(async (fastest) => {
+          const nextEvents = (await Promise.all(nextEventPromises)).filter(
+            (v): v is WorkflowEventInstance<any> => !!v,
+          );
+          for (const nextEvent of nextEvents) {
+            if (nextEvent !== fastest && !enqueuedEvents.has(nextEvent)) {
+              controller.enqueue(nextEvent);
+              enqueuedEvents.add(nextEvent);
+            }
+          }
+        })
+        .catch((err) => {
+          sendEvent(instance);
+          isPendingEvents.add(instance);
+          controller.error(err);
+        });
     }
   }
 
