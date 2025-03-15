@@ -3,10 +3,10 @@ import {
   workflowEvent,
   getExecutorContext,
   type Workflow,
-} from "../dist";
+} from "../src/core";
 import { describe, expect, test, beforeEach } from "vitest";
-import { timeoutHandler } from "../dist/interrupter/timeout";
-import { promiseHandler } from "../dist/interrupter/promise";
+import { timeoutHandler } from "../src/interrupter/timeout";
+import { promiseHandler } from "../src/interrupter/promise";
 
 const startEvent = workflowEvent<string>({
   debugLabel: "startEvent",
