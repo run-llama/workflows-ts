@@ -1,4 +1,5 @@
 import type { Workflow, WorkflowEventInstance } from "../core";
+import { _setHookContext } from "fluere/shared";
 
 /**
  * Interrupter that wraps a workflow in a promise.
@@ -7,12 +8,14 @@ import type { Workflow, WorkflowEventInstance } from "../core";
  *  reject if the workflow throws an error or times out.
  */
 export function promiseHandler<Start, Stop>(
-  workflow: Workflow<Start, Stop>,
-  start: WorkflowEventInstance<Start>,
-  timeout: number | null = null,
+  getExecutor: () => ReturnType<Workflow<Start, Stop>["run"]>,
+  timeout: number | null = 1000,
 ): Promise<WorkflowEventInstance<Stop>> {
-  const executor = workflow.run(start);
+  let executor: ReturnType<Workflow<Start, Stop>["run"]>;
   const getIteratorSingleton = () => {
+    if (!executor) {
+      executor = getExecutor();
+    }
     return executor[Symbol.asyncIterator]();
   };
 
@@ -39,33 +42,44 @@ export function promiseHandler<Start, Stop>(
       return Promise.resolve(resolved).then(onfulfilled, onrejected);
     if (rejected) return Promise.reject(rejected).then(onfulfilled, onrejected);
 
-    const signal =
-      timeout !== null ? AbortSignal.timeout(timeout * 1000) : null;
+    const signal = timeout !== null ? AbortSignal.timeout(timeout) : null;
     signal?.addEventListener("abort", () => {
-      rejected = new Error(`Operation timed out after ${timeout} seconds`);
+      rejected = new Error(`Operation timed out after ${timeout} ms`);
       onrejected?.(rejected);
     });
 
-    try {
-      for await (const eventInstance of getIteratorSingleton()) {
-        if (rejected) return onrejected(rejected) as TResult2;
-        if (workflow.stopEvent === eventInstance.event) {
-          resolved = eventInstance as WorkflowEventInstance<Stop>;
-          return onfulfilled(
-            eventInstance as WorkflowEventInstance<Stop>,
-          ) as TResult1;
+    return _setHookContext(
+      {
+        afterQueue: async (retry) => {
+          if (signal?.aborted === false) {
+            retry();
+            await new Promise((resolve) => setTimeout(resolve, 0));
+          }
+        },
+      },
+      async () => {
+        try {
+          for await (const eventInstance of getIteratorSingleton()) {
+            if (rejected) return onrejected(rejected) as TResult2;
+            if (executor.stop === eventInstance.event) {
+              resolved = eventInstance as WorkflowEventInstance<Stop>;
+              return onfulfilled(
+                eventInstance as WorkflowEventInstance<Stop>,
+              ) as TResult1;
+            }
+          }
+        } catch (err) {
+          rejected = err instanceof Error ? err : new Error(String(err));
+          return onrejected(rejected) as TResult2;
         }
-      }
-    } catch (err) {
-      rejected = err instanceof Error ? err : new Error(String(err));
-      return onrejected(rejected) as TResult2;
-    }
-    const nextValue = await getIteratorSingleton().next();
-    if (!nextValue.done) {
-      rejected = new Error("Workflow did not complete");
-      return onrejected(rejected) as TResult2;
-    }
-    return onrejected(new Error("UNREACHABLE")) as TResult2;
+        const nextValue = await getIteratorSingleton().next();
+        if (!nextValue.done) {
+          rejected = new Error("Workflow did not complete");
+          return onrejected(rejected) as TResult2;
+        }
+        return onrejected(new Error("UNREACHABLE")) as TResult2;
+      },
+    );
   }
 
   function catchContext<TResult = never>(

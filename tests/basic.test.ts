@@ -47,7 +47,7 @@ describe("basic", () => {
       return stopEvent(convert.data > 0 ? 1 : -1);
     });
 
-    const result = await promiseHandler(workflow, startEvent("100"));
+    const result = await promiseHandler(() => workflow.run(startEvent("100")));
     expect(result.data).toBe(1);
   });
 
@@ -59,7 +59,7 @@ describe("basic", () => {
       return stopEvent(convert.data > 0 ? 1 : -1);
     });
 
-    const result = await promiseHandler(workflow, startEvent("100"));
+    const result = await promiseHandler(() => workflow.run(startEvent("100")));
     expect(result.data).toBe(1);
   });
 
@@ -71,7 +71,7 @@ describe("basic", () => {
       return stopEvent(convert.data > 0 ? 1 : -1);
     });
 
-    const result = await promiseHandler(workflow, startEvent("100"));
+    const result = await promiseHandler(() => workflow.run(startEvent("100")));
     expect(result.data).toBe(1);
   });
 
@@ -84,7 +84,7 @@ describe("basic", () => {
       return stopEvent(convert.data > 0 ? 1 : -1);
     });
 
-    const result = await promiseHandler(workflow, startEvent("100"));
+    const result = await promiseHandler(() => workflow.run(startEvent("100")));
     expect(result.data).toBe(1);
   });
 });
@@ -96,12 +96,16 @@ describe("condition", () => {
     });
 
     {
-      const result = await promiseHandler(workflow, startEvent("100"));
+      const result = await promiseHandler(() =>
+        workflow.run(startEvent("100")),
+      );
       expect(result.data).toBe(1);
     }
 
     {
-      const result = await promiseHandler(workflow, startEvent("200"));
+      const result = await promiseHandler(() =>
+        workflow.run(startEvent("200")),
+      );
       expect(result.data).toBe(-1);
     }
   });
@@ -119,7 +123,7 @@ describe("multiple inputs", () => {
       return stopEvent(convert1.data + convert2.data > 0 ? 1 : -1);
     });
 
-    const result = await promiseHandler(workflow, startEvent("100"));
+    const result = await promiseHandler(() => workflow.run(startEvent("100")));
     expect(result.data).toBe(1);
   });
 
@@ -137,7 +141,7 @@ describe("multiple inputs", () => {
       },
     );
 
-    const result = await promiseHandler(workflow, startEvent("100"));
+    const result = await promiseHandler(() => workflow.run(startEvent("100")));
     expect(result.data).toBe(1);
   });
 
@@ -156,11 +160,11 @@ describe("multiple inputs", () => {
       },
     );
 
-    const result = await promiseHandler(workflow, startEvent("100"));
+    const result = await promiseHandler(() => workflow.run(startEvent("100")));
     expect(result.data).toBe(1);
   });
 
-  test.fails("require events with no await", async () => {
+  test("require events with no await", async () => {
     workflow.handle([startEvent], async (start) => {
       for (let i = 0; i < 100; i++) {
         // it's not possible to detect if/when the event is sent
@@ -177,29 +181,19 @@ describe("multiple inputs", () => {
       },
     );
 
-    const result = await promiseHandler(workflow, startEvent("100"));
-    expect(result.data).toBe(1);
-  });
+    {
+      const result = await promiseHandler(() =>
+        workflow.run(startEvent("100")),
+      );
+      expect(result.data).toBe(1);
+    }
 
-  test("require events with no await in handler", async () => {
-    workflow.handle([startEvent], async (start) => {
-      for (let i = 0; i < 100; i++) {
-        // it's not possible to detect if/when the event is sent
-        setTimeout(() => {
-          getContext().sendEvent(convertEvent(Number.parseInt(start.data, 10)));
-        }, 10);
-      }
-    });
-
-    workflow.handle(
-      Array.from({ length: 100 }).map(() => convertEvent),
-      async () => {
-        return stopEvent(1);
-      },
-    );
-
-    const result = await timeoutHandler(workflow, startEvent("100"));
-    expect(result.data).toBe(1);
+    {
+      const result = await timeoutHandler(() =>
+        workflow.run(startEvent("100")),
+      );
+      expect(result.data).toBe(1);
+    }
   });
 });
 
@@ -255,7 +249,7 @@ describe("llm", async () => {
       }
     });
 
-    const result = await promiseHandler(workflow, startEvent("CHAT"));
+    const result = await promiseHandler(() => workflow.run(startEvent("CHAT")));
     expect(result.data).toBe("STOP");
   });
 });

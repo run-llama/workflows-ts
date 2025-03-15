@@ -69,6 +69,8 @@ export function getContext(): ExecutorContext {
 }
 
 export type Executor<Start, Stop> = {
+  get start(): WorkflowEvent<Start>;
+  get stop(): WorkflowEvent<Stop>;
   [Symbol.asyncIterator]: () => AsyncIterableIterator<
     | WorkflowEventInstance<any>
     | WorkflowEventInstance<Start>
@@ -82,7 +84,7 @@ export type Executor<Start, Stop> = {
 export function createExecutor<Start, Stop>(
   params: ExecutorParams<Start, Stop>,
 ): Executor<Start, Stop> {
-  const { steps, initialEvent, stop } = params;
+  const { steps, initialEvent, start, stop } = params;
   const queue: Queue[] = [];
   let pendingInputQueue: WorkflowEventInstance<any>[] = [];
 
@@ -353,6 +355,12 @@ export function createExecutor<Start, Stop>(
   }
 
   return {
+    get start() {
+      return start;
+    },
+    get stop() {
+      return stop;
+    },
     [Symbol.asyncIterator]: getIteratorSingleton,
   };
 }
