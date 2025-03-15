@@ -1,7 +1,7 @@
 import {
   createWorkflow,
   workflowEvent,
-  getExecutorContext,
+  getContext,
   type Workflow,
 } from "../src/core";
 import { describe, expect, test, beforeEach } from "vitest";
@@ -112,7 +112,7 @@ describe("multiple inputs", () => {
     workflow.handle([startEvent], (start) => {
       const ev1 = convertEvent(Number.parseInt(start.data, 10));
       const ev2 = convertEvent(Number.parseInt(start.data, 10));
-      getExecutorContext().sendEvent(ev1);
+      getContext().sendEvent(ev1);
       return ev2;
     });
     workflow.handle([convertEvent, convertEvent], (convert1, convert2) => {
@@ -126,9 +126,7 @@ describe("multiple inputs", () => {
   test("require events", async () => {
     workflow.handle([startEvent], (start) => {
       for (let i = 0; i < 100; i++) {
-        getExecutorContext().sendEvent(
-          convertEvent(Number.parseInt(start.data, 10)),
-        );
+        getContext().sendEvent(convertEvent(Number.parseInt(start.data, 10)));
       }
       return;
     });
@@ -147,9 +145,7 @@ describe("multiple inputs", () => {
     workflow.handle([startEvent], async (start) => {
       for (let i = 0; i < 100; i++) {
         await new Promise((resolve) => setTimeout(resolve, 1));
-        getExecutorContext().sendEvent(
-          convertEvent(Number.parseInt(start.data, 10)),
-        );
+        getContext().sendEvent(convertEvent(Number.parseInt(start.data, 10)));
       }
     });
 
@@ -169,9 +165,7 @@ describe("multiple inputs", () => {
       for (let i = 0; i < 100; i++) {
         // it's not possible to detect if/when the event is sent
         setTimeout(() => {
-          getExecutorContext().sendEvent(
-            convertEvent(Number.parseInt(start.data, 10)),
-          );
+          getContext().sendEvent(convertEvent(Number.parseInt(start.data, 10)));
         }, 10);
       }
     });
@@ -192,9 +186,7 @@ describe("multiple inputs", () => {
       for (let i = 0; i < 100; i++) {
         // it's not possible to detect if/when the event is sent
         setTimeout(() => {
-          getExecutorContext().sendEvent(
-            convertEvent(Number.parseInt(start.data, 10)),
-          );
+          getContext().sendEvent(convertEvent(Number.parseInt(start.data, 10)));
         }, 10);
       }
     });
@@ -234,7 +226,7 @@ describe("llm", async () => {
     });
 
     workflow.handle([startEvent], async ({ data }) => {
-      const context = getExecutorContext();
+      const context = getContext();
       context.sendEvent(chatEvent(data));
     });
     workflow.handle([toolCallEvent], async () => {
@@ -243,7 +235,7 @@ describe("llm", async () => {
     let once = true;
     workflow.handle([chatEvent], async ({ data }) => {
       expect(data).toBe("CHAT");
-      const context = getExecutorContext();
+      const context = getContext();
       if (once) {
         once = false;
         const result = (

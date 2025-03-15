@@ -4,6 +4,7 @@ export default defineConfig([
   // Core APIs - Node.js like
   {
     entry: ["src/core/index.ts"],
+    outDir: "dist/core",
     format: ["cjs", "esm"],
     dts: true,
     sourcemap: true,
@@ -14,6 +15,7 @@ export default defineConfig([
   // Core APIs - Serverless
   {
     entry: ["src/core/index.ts"],
+    outDir: "dist/core",
     outExtension: () => ({
       js: ".serverless.js",
     }),

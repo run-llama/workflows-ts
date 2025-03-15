@@ -33,7 +33,7 @@ export type ExecutorParams<Start, Stop> = {
   beforeDone: Wait;
 };
 
-type ExecutorContext = {
+export type ExecutorContext = {
   requireEvent: <Data>(
     event: WorkflowEvent<Data>,
   ) => Promise<WorkflowEventInstance<Data>>;
@@ -64,7 +64,7 @@ function flattenEvents(
 const executorContextAsyncLocalStorage =
   new AsyncLocalStorage<ExecutorContext>();
 
-export function getExecutorContext(): ExecutorContext {
+export function getContext(): ExecutorContext {
   const context = executorContextAsyncLocalStorage.getStore();
   if (!context)
     throw new Error(
@@ -81,6 +81,9 @@ export type Executor<Start, Stop> = {
   >;
 };
 
+/**
+ * @internal We do not expose this as we want to make the API as the minimum as possible
+ */
 export function createExecutor<Start, Stop>(
   params: ExecutorParams<Start, Stop>,
 ): Executor<Start, Stop> {
