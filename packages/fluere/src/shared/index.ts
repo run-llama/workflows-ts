@@ -1,9 +1,9 @@
-import type { WorkflowEvent, WorkflowEventInstance, Handler } from "../core";
+import type { WorkflowEvent, WorkflowEventData, Handler } from "../core";
 
 type HookContext = {
   beforeEvents: <
     const AcceptEvents extends WorkflowEvent<any>[],
-    Result extends WorkflowEventInstance<any> | void,
+    Result extends WorkflowEventData<any> | void,
   >(
     handler: Handler<AcceptEvents, Result>,
     ...event: {
@@ -12,7 +12,7 @@ type HookContext = {
   ) => void;
   afterEvents: <
     const AcceptEvents extends WorkflowEvent<any>[],
-    Result extends WorkflowEventInstance<any> | void,
+    Result extends WorkflowEventData<any> | void,
   >(
     handler: Handler<AcceptEvents, Result>,
     ...event: {
@@ -23,7 +23,7 @@ type HookContext = {
 
   __dev__onMismatchEvents: <
     AcceptEvents extends WorkflowEvent<any>[],
-    Result extends WorkflowEventInstance<any> | void,
+    Result extends WorkflowEventData<any> | void,
   >(
     handler: Handler<AcceptEvents, Result>,
     ...event: {

@@ -3,5 +3,5 @@ export { getContext, type Handler, type ExecutorContext } from "./executor";
 export {
   workflowEvent,
   type WorkflowEvent,
-  type WorkflowEventInstance,
+  type WorkflowEventData,
 } from "./event";

@@ -1,6 +1,6 @@
 // DO NOT IMPORT ASYNC-LOCAL-STORAGE DIRECTLY
 import type { AsyncLocalStorage as NodeAsyncLocalStorage } from "async_hooks";
-import type { WorkflowEvent, WorkflowEventInstance } from "./event";
+import type { WorkflowEvent, WorkflowEventData } from "./event";
 import { _getHookContext } from "fluere/shared";
 
 declare global {
@@ -9,7 +9,7 @@ declare global {
 
 export type Handler<
   AcceptEvents extends WorkflowEvent<any>[],
-  Result extends WorkflowEventInstance<any> | void,
+  Result extends WorkflowEventData<any> | void,
 > = (
   ...event: {
     [K in keyof AcceptEvents]: ReturnType<AcceptEvents[K]>;
@@ -24,31 +24,28 @@ export type ReadonlyHandlerMap = ReadonlyMap<
 export type ExecutorParams<Start, Stop> = {
   start: WorkflowEvent<Start>;
   stop: WorkflowEvent<Stop>;
-  initialEvent: WorkflowEventInstance<Start>;
+  initialEvent: WorkflowEventData<Start>;
   steps: ReadonlyHandlerMap;
 };
 
 export type ExecutorContext = {
   requireEvent: <Data>(
     event: WorkflowEvent<Data>,
-  ) => Promise<WorkflowEventInstance<Data>>;
-  sendEvent: <Data>(event: WorkflowEventInstance<Data>) => void;
+  ) => Promise<WorkflowEventData<Data>>;
+  sendEvent: <Data>(event: WorkflowEventData<Data>) => void;
 };
 
-type Queue = WorkflowEventInstance<any>;
+type Queue = WorkflowEventData<any>;
 
 function flattenEvents(
   acceptEventTypes: WorkflowEvent<any>[],
-  inputEventInstances: WorkflowEventInstance<any>[],
-): WorkflowEventInstance<any>[] {
-  const acceptance = new Set<WorkflowEventInstance<any>>();
-  for (const eventInstance of inputEventInstances) {
+  inputEventData: WorkflowEventData<any>[],
+): WorkflowEventData<any>[] {
+  const acceptance = new Set<WorkflowEventData<any>>();
+  for (const eventData of inputEventData) {
     for (const acceptType of acceptEventTypes) {
-      if (
-        eventInstance.event === acceptType &&
-        !acceptance.has(eventInstance)
-      ) {
-        acceptance.add(eventInstance);
+      if (acceptType.include(eventData) && !acceptance.has(eventData)) {
+        acceptance.add(eventData);
         break;
       }
     }
@@ -72,9 +69,7 @@ export type Executor<Start, Stop> = {
   get start(): WorkflowEvent<Start>;
   get stop(): WorkflowEvent<Stop>;
   [Symbol.asyncIterator]: () => AsyncIterableIterator<
-    | WorkflowEventInstance<any>
-    | WorkflowEventInstance<Start>
-    | WorkflowEventInstance<Stop>
+    WorkflowEventData<any> | WorkflowEventData<Start> | WorkflowEventData<Stop>
   >;
 };
 
@@ -86,64 +81,64 @@ export function createExecutor<Start, Stop>(
 ): Executor<Start, Stop> {
   const { steps, initialEvent, start, stop } = params;
   const queue: Queue[] = [];
-  let pendingInputQueue: WorkflowEventInstance<any>[] = [];
+  let pendingInputQueue: WorkflowEventData<any>[] = [];
 
   const stepCache: WeakMap<
-    WorkflowEventInstance<any>,
+    WorkflowEventData<any>,
     [
-      Set<Handler<WorkflowEvent<any>[], WorkflowEventInstance<any>>>,
+      Set<Handler<WorkflowEvent<any>[], WorkflowEventData<any>>>,
       WeakMap<
-        Handler<WorkflowEvent<any>[], WorkflowEventInstance<any>>,
+        Handler<WorkflowEvent<any>[], WorkflowEventData<any>>,
         WorkflowEvent<any>[]
       >,
       WeakMap<
-        Handler<WorkflowEvent<any>[], WorkflowEventInstance<any>>,
+        Handler<WorkflowEvent<any>[], WorkflowEventData<any>>,
         WorkflowEvent<any>[]
       >,
     ]
   > = new WeakMap();
 
   function getStepFunction(
-    eventInstance: WorkflowEventInstance<any>,
+    eventData: WorkflowEventData<any>,
   ): [
-    Set<Handler<WorkflowEvent<any>[], WorkflowEventInstance<any>>>,
+    Set<Handler<WorkflowEvent<any>[], WorkflowEventData<any>>>,
     WeakMap<
-      Handler<WorkflowEvent<any>[], WorkflowEventInstance<any>>,
+      Handler<WorkflowEvent<any>[], WorkflowEventData<any>>,
       WorkflowEvent<any>[]
     >,
     WeakMap<
-      Handler<WorkflowEvent<any>[], WorkflowEventInstance<any>>,
+      Handler<WorkflowEvent<any>[], WorkflowEventData<any>>,
       WorkflowEvent<any>[]
     >,
   ] {
-    if (stepCache.has(eventInstance)) {
-      return stepCache.get(eventInstance)!;
+    if (stepCache.has(eventData)) {
+      return stepCache.get(eventData)!;
     }
     const set = new Set<
-      Handler<WorkflowEvent<any>[], WorkflowEventInstance<any>>
+      Handler<WorkflowEvent<any>[], WorkflowEventData<any>>
     >();
     const stepInputs = new WeakMap<
-      Handler<WorkflowEvent<any>[], WorkflowEventInstance<any>>,
+      Handler<WorkflowEvent<any>[], WorkflowEventData<any>>,
       WorkflowEvent<any>[]
     >();
     const stepOutputs = new WeakMap<
-      Handler<WorkflowEvent<any>[], WorkflowEventInstance<any>>,
+      Handler<WorkflowEvent<any>[], WorkflowEventData<any>>,
       WorkflowEvent<any>[]
     >();
     const res: [
-      Set<Handler<WorkflowEvent<any>[], WorkflowEventInstance<any>>>,
+      Set<Handler<WorkflowEvent<any>[], WorkflowEventData<any>>>,
       WeakMap<
-        Handler<WorkflowEvent<any>[], WorkflowEventInstance<any>>,
+        Handler<WorkflowEvent<any>[], WorkflowEventData<any>>,
         WorkflowEvent<any>[]
       >,
       WeakMap<
-        Handler<WorkflowEvent<any>[], WorkflowEventInstance<any>>,
+        Handler<WorkflowEvent<any>[], WorkflowEventData<any>>,
         WorkflowEvent<any>[]
       >,
     ] = [set, stepInputs, stepOutputs];
-    stepCache.set(eventInstance, res);
+    stepCache.set(eventData, res);
     for (const [inputs, handlers] of steps) {
-      if ([...inputs].some((input) => input === eventInstance.event)) {
+      if ([...inputs].some((input) => input.include(eventData))) {
         for (const handler of handlers) {
           set.add(handler);
           stepInputs.set(handler, inputs);
@@ -155,21 +150,21 @@ export function createExecutor<Start, Stop>(
 
   _sendEvent(initialEvent);
 
-  function _sendEvent(instance: WorkflowEventInstance<any>): void {
-    queue.push(instance);
+  function _sendEvent(eventData: WorkflowEventData<any>): void {
+    queue.push(eventData);
   }
 
   const controllerAsyncLocalStorage = new AsyncLocalStorage<
-    ReadableStreamDefaultController<WorkflowEventInstance<any>>
+    ReadableStreamDefaultController<WorkflowEventData<any>>
   >();
 
   async function requireEvent<Data>(
     event: WorkflowEvent<Data>,
-  ): Promise<WorkflowEventInstance<Data>> {
+  ): Promise<WorkflowEventData<Data>> {
     while (true) {
-      const instance = await handleQueue(event);
-      if (instance) {
-        return instance;
+      const eventData = await handleQueue(event);
+      if (eventData) {
+        return eventData;
       } else {
         await new Promise((resolve) => setTimeout(resolve, 0));
       }
@@ -178,27 +173,27 @@ export function createExecutor<Start, Stop>(
 
   const executorContext: ExecutorContext = {
     requireEvent,
-    sendEvent: function sendEvent(instance) {
+    sendEvent: function sendEvent(eventData) {
       const controller = controllerAsyncLocalStorage.getStore()!;
-      controller.enqueue(instance);
-      enqueuedEvents.add(instance);
-      _sendEvent(instance);
+      controller.enqueue(eventData);
+      enqueuedEvents.add(eventData);
+      _sendEvent(eventData);
     },
   };
-  const isPendingEvents = new WeakSet<WorkflowEventInstance<any>>();
-  const pendingTasks = new Set<Promise<WorkflowEventInstance<any> | void>>();
-  const enqueuedEvents = new Set<WorkflowEventInstance<any>>();
+  const isPendingEvents = new WeakSet<WorkflowEventData<any>>();
+  const pendingTasks = new Set<Promise<WorkflowEventData<any> | void>>();
+  const enqueuedEvents = new Set<WorkflowEventData<any>>();
 
   async function handleQueue(requestEvent?: WorkflowEvent<any>) {
     const controller = controllerAsyncLocalStorage.getStore()!;
-    const instance = queue.shift();
-    if (!instance) {
+    const eventData = queue.shift();
+    if (!eventData) {
       return;
     }
 
     if (requestEvent) {
-      const acceptableInput = pendingInputQueue.find(
-        (eventInstance) => eventInstance.event === requestEvent,
+      const acceptableInput = pendingInputQueue.find((eventData) =>
+        requestEvent.include(eventData),
       );
       if (acceptableInput) {
         const protocolIdx = queue.findIndex((p) => p === acceptableInput);
@@ -207,28 +202,28 @@ export function createExecutor<Start, Stop>(
         return acceptableInput;
       }
     }
-    if (isPendingEvents.has(instance)) {
-      _sendEvent(instance);
+    if (isPendingEvents.has(eventData)) {
+      _sendEvent(eventData);
     } else {
-      if (!enqueuedEvents.has(instance)) {
-        controller.enqueue(instance);
-        enqueuedEvents.add(instance);
+      if (!enqueuedEvents.has(eventData)) {
+        controller.enqueue(eventData);
+        enqueuedEvents.add(eventData);
       }
       // todo: outputsMap diagnostics
-      const [steps, inputsMap, _outputsMap] = getStepFunction(instance);
+      const [steps, inputsMap, _outputsMap] = getStepFunction(eventData);
       const nextEventPromises = [...steps].map((step) => {
         const inputs = inputsMap.get(step) ?? [];
         const acceptableInputs = pendingInputQueue.filter((e) =>
-          inputs.some((input) => e.event === input),
+          inputs.some((input) => input.include(e)),
         );
         const acceptableInputsFromQueue = queue
-          .filter((q): q is WorkflowEventInstance<any> =>
-            inputs.some((input) => q.event === input),
+          .filter((q): q is WorkflowEventData<any> =>
+            inputs.some((input) => input.include(q)),
           )
           .map((q) => q);
 
         const events = flattenEvents(inputs, [
-          instance,
+          eventData,
           ...acceptableInputs,
           ...acceptableInputsFromQueue,
         ]);
@@ -238,8 +233,8 @@ export function createExecutor<Start, Stop>(
         });
         if (events.length !== inputs.length) {
           _getHookContext()?.__dev__onMismatchEvents(step, ...events);
-          _sendEvent(instance);
-          isPendingEvents.add(instance);
+          _sendEvent(eventData);
+          isPendingEvents.add(eventData);
           return null;
         } else {
           // remove acceptable inputs from pending queue
@@ -253,19 +248,19 @@ export function createExecutor<Start, Stop>(
             if (idx !== -1) queue.splice(idx, 1);
           });
         }
-        if (isPendingEvents.has(instance)) isPendingEvents.delete(instance);
+        if (isPendingEvents.has(eventData)) isPendingEvents.delete(eventData);
         const args = events.sort((a, b) => {
-          const aIndex = inputs.findIndex((i) => a.event === i);
-          const bIndex = inputs.findIndex((i) => b.event === i);
+          const aIndex = inputs.findIndex((i) => i.include(a));
+          const bIndex = inputs.findIndex((i) => i.include(b));
           return aIndex - bIndex;
         });
         _getHookContext()?.beforeEvents(step, ...args);
         const result = step(...args);
         if (result && "then" in result) {
-          return result.then((nextEvent: void | WorkflowEventInstance<any>) => {
+          return result.then((nextEvent: void | WorkflowEventData<any>) => {
             if (!nextEvent) return;
             _getHookContext()?.afterEvents(step, ...args);
-            if (nextEvent.event !== stop) {
+            if (!stop.include(nextEvent)) {
               pendingInputQueue.unshift(nextEvent);
               _sendEvent(nextEvent);
             }
@@ -273,7 +268,7 @@ export function createExecutor<Start, Stop>(
           });
         } else if (result && "data" in result) {
           _getHookContext()?.afterEvents(step, ...args);
-          if (result.event !== stop) {
+          if (!stop.include(result)) {
             pendingInputQueue.unshift(result);
             _sendEvent(result);
           }
@@ -291,7 +286,7 @@ export function createExecutor<Start, Stop>(
       });
       if (nextEventPromises.some((p) => p && "data" in p)) {
         const fastest = nextEventPromises.find(
-          (p): p is WorkflowEventInstance<any> => !!p && "data" in p,
+          (p): p is WorkflowEventData<any> => !!p && "data" in p,
         );
         if (fastest && !enqueuedEvents.has(fastest)) {
           controller.enqueue(fastest);
@@ -307,7 +302,7 @@ export function createExecutor<Start, Stop>(
         })
         .then(async (fastest) => {
           const nextEvents = (await Promise.all(nextEventPromises)).filter(
-            (v): v is WorkflowEventInstance<any> => !!v,
+            (v): v is WorkflowEventData<any> => !!v,
           );
           for (const nextEvent of nextEvents) {
             if (nextEvent !== fastest && !enqueuedEvents.has(nextEvent)) {
@@ -317,17 +312,15 @@ export function createExecutor<Start, Stop>(
           }
         })
         .catch((err) => {
-          _sendEvent(instance);
-          isPendingEvents.add(instance);
+          _sendEvent(eventData);
+          isPendingEvents.add(eventData);
           controller.error(err);
         });
     }
   }
 
-  function createStreamEvents(): AsyncIterableIterator<
-    WorkflowEventInstance<any>
-  > {
-    const stream = new ReadableStream<WorkflowEventInstance<any>>({
+  function createStreamEvents(): AsyncIterableIterator<WorkflowEventData<any>> {
+    const stream = new ReadableStream<WorkflowEventData<any>>({
       start: async (controller) => {
         while (true) {
           await controllerAsyncLocalStorage.run(controller, handleQueue);
@@ -348,10 +341,10 @@ export function createExecutor<Start, Stop>(
   }
 
   // Singleton pattern
-  let iterator: AsyncIterableIterator<WorkflowEventInstance<any>> | null = null;
+  let iterator: AsyncIterableIterator<WorkflowEventData<any>> | null = null;
 
   function getIteratorSingleton(): AsyncIterableIterator<
-    WorkflowEventInstance<any>
+    WorkflowEventData<any>
   > {
     return executorContextAsyncLocalStorage.run(executorContext, () => {
       if (!iterator) iterator = createStreamEvents();

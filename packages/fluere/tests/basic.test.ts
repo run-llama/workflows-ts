@@ -3,11 +3,12 @@ import {
   workflowEvent,
   getContext,
   type Workflow,
-  type WorkflowEventInstance,
+  type WorkflowEventData,
 } from "../src/core";
 import { describe, expect, test, beforeEach } from "vitest";
 import { timeoutHandler } from "../src/interrupter/timeout";
 import { promiseHandler } from "../src/interrupter/promise";
+import { eventSource } from "../src/core/event";
 
 const startEvent = workflowEvent<string>({
   debugLabel: "startEvent",
@@ -34,7 +35,10 @@ describe("basic", () => {
     const ev1 = startEvent("1");
     const ev2 = startEvent("2");
     // they are the same type
-    expect(ev1.event === ev2.event).toBe(true);
+    expect(eventSource(ev1) === eventSource(ev2)).toBe(true);
+    expect(startEvent.include(ev1)).toBe(true);
+    expect(startEvent.include(ev2)).toBe(true);
+
     expect(ev1 !== ev2).toBe(true);
     expect(ev1.data).toBe("1");
     expect(ev2.data).toBe("2");
@@ -210,10 +214,10 @@ describe("message queue", async () => {
     });
 
     const executor = workflow.run(startEvent("100"));
-    const queue: WorkflowEventInstance<any>[] = [];
+    const queue: WorkflowEventData<any>[] = [];
     for await (const i of executor) {
       queue.push(i);
-      if (i.event === stopEvent) {
+      if (stopEvent.include(i)) {
         break;
       }
     }

@@ -1,4 +1,4 @@
-import type { Workflow, WorkflowEventInstance } from "../core";
+import type { Workflow, WorkflowEventData } from "../core";
 import { _setHookContext } from "fluere/shared";
 
 /**
@@ -10,7 +10,7 @@ import { _setHookContext } from "fluere/shared";
 export function promiseHandler<Start, Stop>(
   getExecutor: () => ReturnType<Workflow<Start, Stop>["run"]>,
   timeout: number | null = 1000 * 10,
-): Promise<WorkflowEventInstance<Stop>> {
+): Promise<WorkflowEventData<Stop>> {
   let executor: ReturnType<Workflow<Start, Stop>["run"]>;
   const getIteratorSingleton = () => {
     if (!executor) {
@@ -19,14 +19,12 @@ export function promiseHandler<Start, Stop>(
     return executor[Symbol.asyncIterator]();
   };
 
-  let resolved: WorkflowEventInstance<Stop> | null = null;
+  let resolved: WorkflowEventData<Stop> | null = null;
   let rejected: Error | null = null;
 
   async function then<TResult1, TResult2 = never>(
     onfulfilled?:
-      | ((
-          value: WorkflowEventInstance<Stop>,
-        ) => TResult1 | PromiseLike<TResult1>)
+      | ((value: WorkflowEventData<Stop>) => TResult1 | PromiseLike<TResult1>)
       | null
       | undefined,
     onrejected?:
@@ -43,11 +41,11 @@ export function promiseHandler<Start, Stop>(
     if (rejected) return Promise.reject(rejected).then(onfulfilled, onrejected);
 
     const signal = timeout !== null ? AbortSignal.timeout(timeout) : null;
-    let lastResult: WorkflowEventInstance<any> | null = null;
+    let lastResult: WorkflowEventData<any> | null = null;
     return _setHookContext(
       {
         afterQueue: async (retry) => {
-          if (lastResult?.event === executor.stop) {
+          if (lastResult && executor.stop.include(lastResult)) {
             return;
           }
           if (signal?.aborted === false) {
@@ -62,10 +60,10 @@ export function promiseHandler<Start, Stop>(
             signal?.throwIfAborted();
             lastResult = eventInstance;
             if (rejected) return onrejected(rejected) as TResult2;
-            if (executor.stop === eventInstance.event) {
-              resolved = eventInstance as WorkflowEventInstance<Stop>;
+            if (executor.stop.include(eventInstance)) {
+              resolved = eventInstance as WorkflowEventData<Stop>;
               return onfulfilled(
-                eventInstance as WorkflowEventInstance<Stop>,
+                eventInstance as WorkflowEventData<Stop>,
               ) as TResult1;
             }
           }
@@ -88,12 +86,12 @@ export function promiseHandler<Start, Stop>(
       | ((reason: unknown) => TResult | PromiseLike<TResult>)
       | null
       | undefined,
-  ): Promise<WorkflowEventInstance<Stop> | TResult> {
+  ): Promise<WorkflowEventData<Stop> | TResult> {
     return then((v) => v, onrejected);
   }
 
   function finallyContext(
-    onfinally?: ((value?: WorkflowEventInstance<Stop>) => void) | null,
+    onfinally?: ((value?: WorkflowEventData<Stop>) => void) | null,
   ): Promise<any> {
     return then(
       (value) => {
