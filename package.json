@@ -21,13 +21,18 @@
         "types": "./dist/index.d.cts",
         "default": "./dist/index.cjs"
       }
+    },
+    "./interrupter/*": {
+      "types": "./dist/interrupter/*.d.ts",
+      "default": "./dist/interrupter/*.js"
     }
   },
   "files": [
     "dist"
   ],
   "scripts": {
-    "build": "tsup"
+    "build": "tsup",
+    "dev": "tsup --watch"
   },
   "devDependencies": {
     "@types/node": "^22.13.10",

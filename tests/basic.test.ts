@@ -1,7 +1,12 @@
-import { createWorkflow, workflowEvent, getExecutorContext } from "../src/core";
+import {
+  createWorkflow,
+  workflowEvent,
+  getExecutorContext,
+  type Workflow,
+} from "../dist";
 import { describe, expect, test, beforeEach } from "vitest";
-import { timeoutHandler } from "../src/interrupter/timeout";
-import { promiseHandler } from "../src/interrupter/promise";
+import { timeoutHandler } from "../dist/interrupter/timeout";
+import { promiseHandler } from "../dist/interrupter/promise";
 
 const startEvent = workflowEvent<string>({
   debugLabel: "startEvent",
@@ -13,7 +18,7 @@ const stopEvent = workflowEvent<1 | -1>({
   debugLabel: "stopEvent",
 });
 
-let workflow: ReturnType<typeof createWorkflow<string, 1 | -1>>;
+let workflow: Workflow<string, 1 | -1>;
 
 beforeEach(() => {
   workflow = createWorkflow<string, 1 | -1>({
@@ -203,5 +208,69 @@ describe("multiple inputs", () => {
 
     const result = await timeoutHandler(workflow, startEvent("100"));
     expect(result.data).toBe(1);
+  });
+});
+
+describe("llm", async () => {
+  test("tool call agent", async () => {
+    const startEvent = workflowEvent<string>({
+      debugLabel: "startEvent",
+    });
+    const chatEvent = workflowEvent<string>({
+      debugLabel: "chatEvent",
+    });
+    const toolCallEvent = workflowEvent<string>({
+      debugLabel: "toolCallEvent",
+    });
+    const toolCallResultEvent = workflowEvent<string>({
+      debugLabel: "toolCallResultEvent",
+    });
+    const stopEvent = workflowEvent<string>({
+      debugLabel: "stopEvent",
+    });
+    const workflow = createWorkflow({
+      startEvent,
+      stopEvent,
+    });
+
+    workflow.handle([startEvent], async ({ data }) => {
+      console.log("start event");
+      const context = getExecutorContext();
+      context.sendEvent(chatEvent(data));
+    });
+    workflow.handle([toolCallEvent], async () => {
+      console.log("tool call event");
+      return toolCallResultEvent("Today is sunny.");
+    });
+    let once = true;
+    workflow.handle([chatEvent], async ({ data }) => {
+      console.log("chat event", data);
+      const context = getExecutorContext();
+      if (once) {
+        once = false;
+        console.log("sending choices");
+        const result = (
+          await Promise.all(
+            ["tool_call"].map(async (tool_call) => {
+              context.sendEvent(toolCallEvent(tool_call));
+              return context.requireEvent(toolCallResultEvent);
+            }),
+          )
+        )
+          .map(({ data }) => data)
+          .join("\n");
+        console.log("toolcall result", result);
+        context.sendEvent(chatEvent(result));
+        return await context.requireEvent(chatEvent);
+      } else {
+        console.log("no choices");
+        return stopEvent("STOP");
+      }
+    });
+
+    await promiseHandler(
+      workflow,
+      startEvent("what is weather today, im in san francisco"),
+    );
   });
 });
