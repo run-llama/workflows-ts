@@ -9,7 +9,9 @@ export const createHonoHandler = <Start, Stop>(
 ): Handler => {
   return async (c) => {
     const start = await inferStartEvent(c);
-    const stop = await timeoutHandler(() => workflow.run(workflow.startEvent(start)));
+    const stop = await timeoutHandler(() =>
+      workflow.run(workflow.startEvent(start)),
+    );
     await wrapStopEvent(c, stop.data);
   };
 };

@@ -5,7 +5,22 @@ settings:
   excludeLinksFromLockfile: false
 
 importers:
-  .:
+  .: {}
+
+  demo:
+    dependencies:
+      fluere:
+        specifier: workspace:*
+        version: link:../packages/fluere
+      openai:
+        specifier: ^4.87.3
+        version: 4.87.3(zod@3.24.2)
+    devDependencies:
+      tsx:
+        specifier: ^4.19.3
+        version: 4.19.3
+
+  packages/fluere:
     devDependencies:
       "@types/node":
         specifier: ^22.13.10
@@ -34,19 +49,6 @@ importers:
       vitest:
         specifier: ^3.0.8
         version: 3.0.8(@types/node@22.13.10)(tsx@4.19.3)
-
-  demo:
-    dependencies:
-      fluere:
-        specifier: workspace:*
-        version: link:..
-      openai:
-        specifier: ^4.87.3
-        version: 4.87.3(zod@3.24.2)
-    devDependencies:
-      tsx:
-        specifier: ^4.19.3
-        version: 4.19.3
 
 packages:
   "@ai-sdk/provider-utils@2.1.13":

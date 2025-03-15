@@ -85,8 +85,8 @@ workflow.handle([chatEvent], async ({ data }) => {
   }
 });
 
-promiseHandler(
-  () => workflow.run(startEvent("what is weather today, im in san francisco")),
+promiseHandler(() =>
+  workflow.run(startEvent("what is weather today, im in san francisco")),
 ).then(({ data }) => {
   console.log("AI response", data);
 });
