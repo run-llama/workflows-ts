@@ -39,19 +39,22 @@ workflow.handle([convertEvent], (convert) => {
 
 ### Run workflow in multiple JS runtime/framework
 
+#### Node.js/Bun/Deno
+
 ```ts
 // One shot execution
 import { promiseHandler } from "fluere/interrupter/promise";
 
 promiseHandler(workflow, startEvent("100"));
+```
 
-// Next.js
-import { createNextHandler } from "fluere/interrupter/next";
+### Hono.js
 
-export const { GET } = createNextHandler(workflow);
-
-// Hono.js
+```ts
+import { Hono } from "hono";
 import { createHonoHandler } from "fluere/interrupter/hono";
 
-const handler = createHonoHandler(workflow);
+const app = new Hono();
+
+app.post("/workflow", createHonoHandler(workflow));
 ```
