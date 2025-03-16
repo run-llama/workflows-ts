@@ -49,7 +49,9 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "interrupter",
+    "shared"
   ],
   "scripts": {
     "build": "tsup",
