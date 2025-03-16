@@ -31,7 +31,6 @@ export default defineConfig([
     format: ["cjs", "esm"],
     dts: true,
     sourcemap: true,
-    splitting: false,
     banner: {
       js: "import { AsyncLocalStorage } from 'node:async_hooks';",
     },
@@ -40,7 +39,6 @@ export default defineConfig([
     entry: ["src/shared/index.ts"],
     outDir: "shared",
     format: ["esm"],
-    splitting: false,
     outExtension: () => ({
       js: ".serverless.js",
     }),
@@ -51,7 +49,6 @@ export default defineConfig([
     entry: ["src/interrupter/*.ts"],
     outDir: "interrupter",
     format: ["esm"],
-    splitting: false,
     external: ["react", "next", "hono", "ai/rsc", "fluere/shared"],
     dts: true,
     sourcemap: true,
