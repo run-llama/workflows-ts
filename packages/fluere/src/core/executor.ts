@@ -33,6 +33,9 @@ export type ExecutorContext = {
     event: WorkflowEvent<Data>,
   ) => Promise<WorkflowEventData<Data>>;
   sendEvent: <Data>(event: WorkflowEventData<Data>) => void;
+
+  __dev__referenceMap: WeakMap<WorkflowEventData<any>, WorkflowEventData<any>>;
+  __internal__currentInputs: WorkflowEventData<any>[]
 };
 
 type Queue = WorkflowEventData<any>;
@@ -87,6 +90,10 @@ export function createExecutor<Start, Stop>(
   const { steps, initialEvent, start, stop } = params;
   const queue: Queue[] = [];
   let pendingInputQueue: WorkflowEventData<any>[] = [];
+
+  const allPossibleInputs = [...steps].flatMap(([inputs]) => inputs);
+  // store the reference of all input data to output data
+  const referenceWeakMap = new WeakMap<WorkflowEventData<any>, WorkflowEventData<any>>();
 
   const stepCache: WeakMap<
     WorkflowEventData<any>,
@@ -163,7 +170,7 @@ export function createExecutor<Start, Stop>(
     ReadableStreamDefaultController<WorkflowEventData<any>>
   >();
 
-  const executorContext = {
+  const rootExecutorContext = {
     requireEvent: async function requireEvent<Data>(
       event: WorkflowEvent<Data>,
     ): Promise<WorkflowEventData<Data>> {
@@ -177,11 +184,16 @@ export function createExecutor<Start, Stop>(
       }
     },
     sendEvent: function sendEvent(eventData) {
+      getContext().__internal__currentInputs.forEach(input => {
+        referenceWeakMap.set(input, eventData);
+      })
       const controller = controllerAsyncLocalStorage.getStore()!;
       controller.enqueue(eventData);
       enqueuedEvents.add(eventData);
       _sendEvent(eventData);
     },
+    __dev__referenceMap: referenceWeakMap,
+    __internal__currentInputs: []
   } satisfies ExecutorContext;
   const isPendingEvents = new WeakSet<WorkflowEventData<any>>();
   const pendingTasks = new Set<Promise<WorkflowEventData<any> | void>>();
@@ -258,7 +270,11 @@ export function createExecutor<Start, Stop>(
           return aIndex - bIndex;
         });
         _getHookContext()?.beforeEvents(step, ...args);
-        const result = step(...args);
+        const result = executorContextAsyncLocalStorage.run(
+          {
+            ...rootExecutorContext,
+            __internal__currentInputs: args
+          }, () => step(...args));
         if (result && "then" in result) {
           return result.then((nextEvent: void | WorkflowEventData<any>) => {
             if (!nextEvent) return;
@@ -267,6 +283,9 @@ export function createExecutor<Start, Stop>(
               pendingInputQueue.unshift(nextEvent);
               _sendEvent(nextEvent);
             }
+            args.forEach(arg => {
+              referenceWeakMap.set(arg, nextEvent)
+            })
             return nextEvent;
           });
         } else if (result && "data" in result) {
@@ -275,6 +294,9 @@ export function createExecutor<Start, Stop>(
             pendingInputQueue.unshift(result);
             _sendEvent(result);
           }
+          args.forEach(arg => {
+            referenceWeakMap.set(arg, result);
+          })
           return result;
         }
         return;
@@ -349,7 +371,7 @@ export function createExecutor<Start, Stop>(
   function getIteratorSingleton(): AsyncIterableIterator<
     WorkflowEventData<any>
   > {
-    return executorContextAsyncLocalStorage.run(executorContext, () => {
+    return executorContextAsyncLocalStorage.run(rootExecutorContext, () => {
       if (!iterator) iterator = createStreamEvents();
       return iterator;
     });
