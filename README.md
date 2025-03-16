@@ -1,7 +1,10 @@
 # fluere
 
-fluere is a simple, lightweight workflow engine, inspired
+fluere 🌊 is a simple, lightweight workflow engine, inspired
 by [LlamaIndex Workflow](https://docs.llamaindex.ai/en/stable/module_guides/workflow/)
+
+[![Bundle Size](https://img.shields.io/bundlephobia/min/fluere)](https://bundlephobia.com/result?p=fluere)
+[![Bundle Size](https://img.shields.io/bundlephobia/minzip/fluere)](https://bundlephobia.com/result?p=fluere)
 
 - Minimal core API (<=2kb)
 - 100% Type safe
