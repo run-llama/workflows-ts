@@ -16,7 +16,7 @@ export const workflowEvent = <Data>(config?: {
   debugLabel?: string;
 }): WorkflowEvent<Data> => {
   const l1 = `${i++}`;
-  const fn = (data: Data) => {
+  const event = (data: Data) => {
     const l2 = `${j++}`;
     const ref = {
       [Symbol.toStringTag]: config?.debugLabel ?? `WorkflowEvent(${l1}.${l2})`,
@@ -35,24 +35,28 @@ export const workflowEvent = <Data>(config?: {
       },
     };
     s.add(ref);
-    refMap.set(ref, fn);
+    refMap.set(ref, event);
     return ref;
   };
 
   const s = new WeakSet();
-  eventMap.set(fn, s);
+  eventMap.set(event, s);
 
-  Object.defineProperty(fn, Symbol.toStringTag, {
+  Object.defineProperty(event, Symbol.toStringTag, {
     get: () => config?.debugLabel ?? `WorkflowEvent<${l1}>`,
   });
 
-  fn.toString = () => config?.debugLabel ?? `WorkflowEvent<${l1}>`;
-  fn.include = (
+  Object.defineProperty(event, "displayName", {
+    value: config?.debugLabel ?? `WorkflowEvent<${l1}>`,
+  });
+
+  event.toString = () => config?.debugLabel ?? `WorkflowEvent<${l1}>`;
+  event.include = (
     instance: WorkflowEventData<any>,
   ): instance is WorkflowEventData<Data> => s.has(instance);
-  Object.freeze(fn);
+  Object.freeze(event);
 
-  return fn;
+  return event;
 };
 
 // utils

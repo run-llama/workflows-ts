@@ -41,16 +41,21 @@ function flattenEvents(
   acceptEventTypes: WorkflowEvent<any>[],
   inputEventData: WorkflowEventData<any>[],
 ): WorkflowEventData<any>[] {
-  const acceptance = new Set<WorkflowEventData<any>>();
+  const acceptance: WorkflowEventData<any>[] = new Array(
+    acceptEventTypes.length,
+  );
   for (const eventData of inputEventData) {
-    for (const acceptType of acceptEventTypes) {
-      if (acceptType.include(eventData) && !acceptance.has(eventData)) {
-        acceptance.add(eventData);
+    for (let i = 0; i < acceptEventTypes.length; i++) {
+      if (acceptance[i]) {
+        continue;
+      }
+      if (acceptEventTypes[i]!.include(eventData)) {
+        acceptance[i] = eventData;
         break;
       }
     }
   }
-  return [...acceptance];
+  return acceptance.filter(Boolean);
 }
 
 const executorContextAsyncLocalStorage =
@@ -158,28 +163,26 @@ export function createExecutor<Start, Stop>(
     ReadableStreamDefaultController<WorkflowEventData<any>>
   >();
 
-  async function requireEvent<Data>(
-    event: WorkflowEvent<Data>,
-  ): Promise<WorkflowEventData<Data>> {
-    while (true) {
-      const eventData = await handleQueue(event);
-      if (eventData) {
-        return eventData;
-      } else {
-        await new Promise((resolve) => setTimeout(resolve, 0));
+  const executorContext = {
+    requireEvent: async function requireEvent<Data>(
+      event: WorkflowEvent<Data>,
+    ): Promise<WorkflowEventData<Data>> {
+      while (true) {
+        const eventData = await handleQueue(event);
+        if (eventData) {
+          return eventData;
+        } else {
+          await new Promise((resolve) => setTimeout(resolve, 0));
+        }
       }
-    }
-  }
-
-  const executorContext: ExecutorContext = {
-    requireEvent,
+    },
     sendEvent: function sendEvent(eventData) {
       const controller = controllerAsyncLocalStorage.getStore()!;
       controller.enqueue(eventData);
       enqueuedEvents.add(eventData);
       _sendEvent(eventData);
     },
-  };
+  } satisfies ExecutorContext;
   const isPendingEvents = new WeakSet<WorkflowEventData<any>>();
   const pendingTasks = new Set<Promise<WorkflowEventData<any> | void>>();
   const enqueuedEvents = new Set<WorkflowEventData<any>>();

@@ -116,6 +116,68 @@ describe("condition", () => {
   });
 });
 
+describe("loop", () => {
+  test("basic", async () => {
+    const parseEvent = workflowEvent<number>({
+      debugLabel: "parseEvent",
+    });
+    const parseResultEvent = workflowEvent<number>({
+      debugLabel: "parseResult",
+    });
+    workflow.handle([startEvent], async () => {
+      const ev = parseEvent(2);
+      getContext().sendEvent(ev);
+      await getContext().requireEvent(parseResultEvent);
+      return stopEvent(1);
+    });
+    workflow.handle([parseEvent], async ({ data }) => {
+      if (data > 0) {
+        const ev = parseEvent(data - 1);
+        getContext().sendEvent(ev);
+      } else {
+        return parseResultEvent(0);
+      }
+    });
+    const result = await promiseHandler(() => workflow.run(startEvent("100")));
+    expect(result.data).toBe(1);
+  });
+
+  test(
+    "multiple parse",
+    async () => {
+      const parseEvent = workflowEvent<number>({
+        debugLabel: "parseEvent",
+      });
+      const parseResultEvent = workflowEvent<number>({
+        debugLabel: "parseResult",
+      });
+      workflow.handle([startEvent], async () => {
+        const ev = parseEvent(2);
+        getContext().sendEvent(ev);
+        await getContext().requireEvent(parseResultEvent);
+        getContext().sendEvent(ev);
+        await getContext().requireEvent(parseResultEvent);
+        return stopEvent(1);
+      });
+      workflow.handle([parseEvent], async ({ data }) => {
+        if (data > 0) {
+          const ev = parseEvent(data - 1);
+          getContext().sendEvent(ev);
+        } else {
+          return parseResultEvent(0);
+        }
+      });
+      const result = await promiseHandler(() =>
+        workflow.run(startEvent("100")),
+      );
+      expect(result.data).toBe(1);
+    },
+    {
+      timeout: 1000000000,
+    },
+  );
+});
+
 describe("multiple inputs", () => {
   test("basic", async () => {
     workflow.handle([startEvent], (start) => {
@@ -221,22 +283,7 @@ describe("message queue", async () => {
         break;
       }
     }
-    expect(queue).toMatchInlineSnapshot(`
-      [
-        {
-          "data": "100",
-          "event": "0",
-        },
-        {
-          "data": "message",
-          "event": "3",
-        },
-        {
-          "data": 1,
-          "event": "2",
-        },
-      ]
-    `);
+    expect(queue.map((q) => q.data)).toEqual(["100", "message", 1]);
   });
 });
 
