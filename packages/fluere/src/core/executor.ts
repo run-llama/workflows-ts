@@ -29,6 +29,13 @@ export type ExecutorParams<Start, Stop> = {
   steps: ReadonlyHandlerMap;
 };
 
+export type SnapshotExecutorParams<Start, Stop> = {
+  start: WorkflowEvent<Start>;
+  stop: WorkflowEvent<Stop>;
+  steps: ReadonlyHandlerMap;
+  snapshot: Snapshot;
+};
+
 export type ExecutorContext = {
   requireEvent: <Data>(
     event: WorkflowEvent<Data>,
@@ -39,6 +46,11 @@ export type ExecutorContext = {
     next: WeakMap<WorkflowEventData<any>, WorkflowEventData<any>>;
     prev: WeakMap<WorkflowEventData<any>, WorkflowEventData<any>>;
   };
+};
+
+type InternalExecutorContext = ExecutorContext & {
+  prev: null | InternalExecutorContext;
+  next: InternalExecutorContext[];
   __internal__currentInputs: WorkflowEventData<any>[];
   __internal__currentEvents: WorkflowEventData<any>[];
 };
@@ -65,7 +77,22 @@ function flattenEvents(
 }
 
 const executorContextAsyncLocalStorage =
-  new AsyncLocalStorage<ExecutorContext>();
+  new AsyncLocalStorage<InternalExecutorContext>();
+
+function _internal_getContext(): InternalExecutorContext {
+  return executorContextAsyncLocalStorage.getStore()!;
+}
+
+function _internal_setContext<R>(
+  context: InternalExecutorContext,
+  fn: () => R,
+): R {
+  const prev = context.prev;
+  if (prev) {
+    prev.next.push(context);
+  }
+  return executorContextAsyncLocalStorage.run(context, fn);
+}
 
 export function getContext(): ExecutorContext {
   const context = executorContextAsyncLocalStorage.getStore();
@@ -73,7 +100,11 @@ export function getContext(): ExecutorContext {
     throw new Error(
       "Executor context not found, make sure you are running inside an executor",
     );
-  return context;
+  return {
+    requireEvent: context.requireEvent,
+    sendEvent: context.sendEvent,
+    __dev__reference: context.__dev__reference,
+  };
 }
 
 export type Executor<Start, Stop> = {
@@ -82,16 +113,60 @@ export type Executor<Start, Stop> = {
   [Symbol.asyncIterator]: () => AsyncIterableIterator<
     WorkflowEventData<any> | WorkflowEventData<Start> | WorkflowEventData<Stop>
   >;
+  /**
+   * Capture the current state of the executor,
+   *  useful when you want to have human-in the loop behavior
+   */
+  snapshot: () => Snapshot;
+};
+
+type InternalContext = {
+  __internal__currentInputs: WorkflowEventData<any>[];
+  __internal__currentEvents: WorkflowEventData<any>[];
+  next: InternalContext[];
+};
+
+export type Snapshot = {
+  queue: WorkflowEventData<any>[];
+  runningEvents: Promise<WorkflowEventData<any> | void>[];
+  enqueuedEvents: WorkflowEventData<any>[];
+  rootContext: InternalContext;
 };
 
 /**
  * @internal We do not expose this as we want to make the API as the minimum as possible
  */
 export function createExecutor<Start, Stop>(
-  params: ExecutorParams<Start, Stop>,
+  params: ExecutorParams<Start, Stop> | SnapshotExecutorParams<Start, Stop>,
 ): Executor<Start, Stop> {
-  const { steps, initialEvent, start, stop } = params;
+  //#region Params
+  const { start, stop, steps } = params;
+  let snapshot: Snapshot | null = null;
+  if ("snapshot" in params) {
+    snapshot = params.snapshot;
+  }
+  //#endregion
 
+  //#region Data
+  /**
+   * The queue of events to be processed
+   */
+  const queue: WorkflowEventData<any>[] = snapshot ? [...snapshot.queue] : [];
+  /**
+   * The set of event promises that are currently running
+   */
+  const runningEvents: Set<Promise<WorkflowEventData<any> | void>> = snapshot
+    ? new Set(snapshot.runningEvents)
+    : new Set<Promise<WorkflowEventData<any> | void>>();
+  /**
+   * Whether the event has been sent to the controller
+   */
+  const enqueuedEvents: Set<WorkflowEventData<any>> = snapshot
+    ? new Set(snapshot.enqueuedEvents)
+    : new Set<WorkflowEventData<any>>();
+  //#endregion
+
+  //#region Cache
   const stepCache: WeakMap<
     WorkflowEventData<any>,
     [
@@ -106,6 +181,13 @@ export function createExecutor<Start, Stop>(
       >,
     ]
   > = new WeakMap();
+  //#endregion
+
+  //#region Local variables
+  let currentController = null! as ReadableStreamDefaultController<
+    WorkflowEventData<any>
+  >;
+  //#region
 
   function getStepFunction(
     eventData: WorkflowEventData<any>,
@@ -161,10 +243,6 @@ export function createExecutor<Start, Stop>(
     queue.push(eventData);
   }
 
-  const controllerAsyncLocalStorage = new AsyncLocalStorage<
-    ReadableStreamDefaultController<WorkflowEventData<any>>
-  >();
-
   const rootExecutorContext = {
     requireEvent: async function requireEvent<Data>(
       event: WorkflowEvent<Data>,
@@ -203,7 +281,7 @@ export function createExecutor<Start, Stop>(
         __internal__currentEvents,
         __internal__currentInputs,
         __dev__reference: { next, prev },
-      } = getContext();
+      } = _internal_getContext();
       __internal__currentInputs.forEach((input) => {
         next.set(input, eventData);
         prev.set(eventData, input);
@@ -217,24 +295,13 @@ export function createExecutor<Start, Stop>(
     },
     __internal__currentInputs: [] as WorkflowEventData<any>[],
     __internal__currentEvents: [] as WorkflowEventData<any>[],
-  } satisfies ExecutorContext;
 
-  /**
-   * The queue of events to be processed
-   */
-  const queue: WorkflowEventData<any>[] = [];
-  /**
-   * The set of event promises that are currently running
-   */
-  const runningEvents = new Set<Promise<WorkflowEventData<any> | void>>();
-  /**
-   * Whether the event has been sent to the controller
-   */
-  const enqueuedEvents = new Set<WorkflowEventData<any>>();
+    prev: null,
+    next: [],
+  } satisfies InternalExecutorContext;
 
   async function handleQueue() {
-    const controller = controllerAsyncLocalStorage.getStore()!;
-
+    const controller = currentController;
     const currentEventData = queue.shift();
     if (!currentEventData) {
       return;
@@ -286,9 +353,9 @@ export function createExecutor<Start, Stop>(
       });
       _getHookContext()?.beforeEvents(step, ...args);
       const currentEvents: WorkflowEventData<any>[] = [];
-      const result = executorContextAsyncLocalStorage.run(
+      const result = _internal_setContext(
         {
-          ...rootExecutorContext,
+          ..._internal_getContext(),
           __internal__currentInputs: args,
           __internal__currentEvents: currentEvents,
         },
@@ -377,8 +444,9 @@ export function createExecutor<Start, Stop>(
   function createStreamEvents(): AsyncIterableIterator<WorkflowEventData<any>> {
     const stream = new ReadableStream<WorkflowEventData<any>>({
       start: async (controller) => {
+        currentController = controller;
         while (true) {
-          await controllerAsyncLocalStorage.run(controller, handleQueue);
+          await handleQueue();
           if (queue.length === 0 && runningEvents.size === 0) {
             let retry = false;
             await _getHookContext()?.afterQueue(() => {
@@ -401,9 +469,11 @@ export function createExecutor<Start, Stop>(
   function getIteratorSingleton(): AsyncIterableIterator<
     WorkflowEventData<any>
   > {
-    return executorContextAsyncLocalStorage.run(rootExecutorContext, () => {
+    return _internal_setContext(rootExecutorContext, () => {
       if (!iterator) {
-        _sendEvent(initialEvent);
+        if (!("snapshot" in params)) {
+          _sendEvent(params.initialEvent);
+        }
         iterator = createStreamEvents();
       }
       return iterator;
@@ -418,6 +488,23 @@ export function createExecutor<Start, Stop>(
       return stop;
     },
     [Symbol.asyncIterator]: getIteratorSingleton,
-    // TODO: support snapshot API
+    snapshot: (): Snapshot => {
+      const snapshotContext = (
+        current: InternalExecutorContext,
+      ): InternalContext => {
+        return {
+          __internal__currentInputs: [...current.__internal__currentInputs],
+          __internal__currentEvents: [...current.__internal__currentEvents],
+          next: current.next.map((next) => snapshotContext(next)),
+        };
+      };
+
+      return {
+        queue: [...queue],
+        runningEvents: [...runningEvents],
+        enqueuedEvents: [...enqueuedEvents],
+        rootContext: snapshotContext(rootExecutorContext),
+      };
+    },
   };
 }
