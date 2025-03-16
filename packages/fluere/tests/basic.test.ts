@@ -322,8 +322,8 @@ describe("source of the event data", () => {
       getContext().sendEvent(parseEvent(2));
       await Promise.all([
         getContext().requireEvent(parseResultEvent),
-        getContext().requireEvent(parseResultEvent)
-      ])
+        getContext().requireEvent(parseResultEvent),
+      ]);
       return stopEvent(1);
     });
     workflow.handle([parseEvent], async ({ data }) => {

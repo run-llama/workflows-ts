@@ -198,7 +198,7 @@ export function createExecutor<Start, Stop>(
           }
         }
         await new Promise((resolve) => setTimeout(resolve, 0));
-        await handleQueue()
+        await handleQueue();
       }
     },
     sendEvent: function sendEvent(eventData) {
@@ -272,11 +272,11 @@ export function createExecutor<Start, Stop>(
           });
           // remove acceptable inputs from queue
           acceptableEventData
-          .filter(e => events.some((p) => p === e))
-          .forEach((e) => {
-            const idx = queue.findIndex((q) => q === e);
-            if (idx !== -1) queue.splice(idx, 1);
-          });
+            .filter((e) => events.some((p) => p === e))
+            .forEach((e) => {
+              const idx = queue.findIndex((q) => q === e);
+              if (idx !== -1) queue.splice(idx, 1);
+            });
         }
         if (isPendingEvents.has(currentEventData))
           isPendingEvents.delete(currentEventData);
@@ -294,7 +294,7 @@ export function createExecutor<Start, Stop>(
             __internal__currentEvents: currentEvents,
           },
           () => {
-            return step(...args)
+            return step(...args);
           },
         );
         if (result && "then" in result) {
