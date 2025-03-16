@@ -287,13 +287,16 @@ describe("message queue", async () => {
   });
 });
 
-describe('source of the event data', () => {
+describe("source of the event data", () => {
   test("basic", async () => {
-    const events: WorkflowEventData<any>[] = []
-    let referenceMap: WeakMap<WorkflowEventData<any>, WorkflowEventData<any>> = null!
+    const events: WorkflowEventData<any>[] = [];
+    let referenceMap: WeakMap<
+      WorkflowEventData<any>,
+      WorkflowEventData<any>
+    > = null!;
     workflow.handle([startEvent], (event) => {
-      referenceMap = getContext().__dev__referenceMap
-      events.push(event)
+      referenceMap = getContext().__dev__reference.next;
+      events.push(event);
       expect(event.data).toBe("data");
       const e = stopEvent(1);
       events.push(e);
@@ -303,9 +306,9 @@ describe('source of the event data', () => {
     const result = await promiseHandler(() => workflow.run(startEvent("data")));
     expect(result.data).toBe(1);
 
-    expect(events.length).toBe(2)
-    expect(referenceMap.get(events[0]!)).toBe(events[1])
-  })
+    expect(events.length).toBe(2);
+    expect(referenceMap.get(events[0]!)).toBe(events[1]);
+  });
 
   test("loop", async () => {
     const parseEvent = workflowEvent<number>({
@@ -314,11 +317,16 @@ describe('source of the event data', () => {
     const parseResultEvent = workflowEvent<number>({
       debugLabel: "parseResult",
     });
-    let referenceMap: WeakMap<WorkflowEventData<any>, WorkflowEventData<any>> = null!
+    let referenceMap: WeakMap<
+      WorkflowEventData<any>,
+      WorkflowEventData<any>
+    > = null!;
     workflow.handle([startEvent], async () => {
-      referenceMap = getContext().__dev__referenceMap
+      referenceMap = getContext().__dev__reference.next;
       const ev = parseEvent(2);
       getContext().sendEvent(ev);
+      getContext().sendEvent(ev);
+      await getContext().requireEvent(parseResultEvent);
       await getContext().requireEvent(parseResultEvent);
       return stopEvent(1);
     });
@@ -330,19 +338,16 @@ describe('source of the event data', () => {
         return parseResultEvent(0);
       }
     });
-    const events: WorkflowEventData<any>[] = []
+    const events: WorkflowEventData<any>[] = [];
     for await (const event of workflow.run(startEvent("100"))) {
-      events.push(event)
+      events.push(event);
       if (stopEvent.include(event)) {
         break;
       }
     }
-    expect(events.length).toBe(6)
-    for (let i = 0; i < events.length - 1; i++) {
-      console.log(events[i]!.data, referenceMap.get(events[i]!)?.data)
-    }
-  })
-})
+    expect(events.length).toBe(10);
+  });
+});
 
 describe("llm", async () => {
   test("tool call agent", async () => {
