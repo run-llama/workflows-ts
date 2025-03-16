@@ -317,23 +317,18 @@ describe("source of the event data", () => {
     const parseResultEvent = workflowEvent<number>({
       debugLabel: "parseResult",
     });
-    let referenceMap: WeakMap<
-      WorkflowEventData<any>,
-      WorkflowEventData<any>
-    > = null!;
     workflow.handle([startEvent], async () => {
-      referenceMap = getContext().__dev__reference.next;
-      const ev = parseEvent(2);
-      getContext().sendEvent(ev);
-      getContext().sendEvent(ev);
-      await getContext().requireEvent(parseResultEvent);
-      await getContext().requireEvent(parseResultEvent);
+      getContext().sendEvent(parseEvent(2));
+      getContext().sendEvent(parseEvent(2));
+      await Promise.all([
+        getContext().requireEvent(parseResultEvent),
+        getContext().requireEvent(parseResultEvent)
+      ])
       return stopEvent(1);
     });
     workflow.handle([parseEvent], async ({ data }) => {
       if (data > 0) {
-        const ev = parseEvent(data - 1);
-        getContext().sendEvent(ev);
+        getContext().sendEvent(parseEvent(data - 1));
       } else {
         return parseResultEvent(0);
       }

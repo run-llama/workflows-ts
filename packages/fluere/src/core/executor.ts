@@ -174,15 +174,35 @@ export function createExecutor<Start, Stop>(
       event: WorkflowEvent<Data>,
     ): Promise<WorkflowEventData<Data>> {
       while (true) {
-        const eventData = await handleQueue(event);
-        if (eventData) {
-          return eventData;
-        } else {
-          await new Promise((resolve) => setTimeout(resolve, 0));
+        const acceptableInput = queue.find((eventData) =>
+          event.include(eventData),
+        );
+        if (acceptableInput) {
+          let current = acceptableInput;
+          const store = executorContextAsyncLocalStorage.getStore()!;
+          const prevWeakMap = store.__dev__reference.prev;
+          const acceptableEvents = [
+            ...store.__internal__currentInputs,
+            ...store.__internal__currentEvents,
+          ];
+          while (prevWeakMap.get(current) !== undefined) {
+            const inSameContext = acceptableEvents.some(
+              (input) => current === input,
+            );
+            if (inSameContext) {
+              const protocolIdx = queue.findIndex((p) => p === acceptableInput);
+              if (protocolIdx !== -1) queue.splice(protocolIdx, 1);
+              return acceptableInput;
+            }
+            current = prevWeakMap.get(current)!;
+          }
         }
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        await handleQueue()
       }
     },
     sendEvent: function sendEvent(eventData) {
+      // todo: should throw error when eventData sent multiple times
       const {
         __internal__currentEvents,
         __internal__currentInputs,
@@ -206,34 +226,8 @@ export function createExecutor<Start, Stop>(
   const pendingTasks = new Set<Promise<WorkflowEventData<any> | void>>();
   const enqueuedEvents = new Set<WorkflowEventData<any>>();
 
-  async function handleQueue(requestEvent?: WorkflowEvent<any>) {
+  async function handleQueue() {
     const controller = controllerAsyncLocalStorage.getStore()!;
-
-    if (requestEvent) {
-      const acceptableInput = queue.find((eventData) =>
-        requestEvent.include(eventData),
-      );
-      if (acceptableInput) {
-        let current = acceptableInput;
-        const store = executorContextAsyncLocalStorage.getStore()!;
-        const prevWeakMap = store.__dev__reference.prev;
-        const acceptableEvents = [
-          ...store.__internal__currentInputs,
-          ...store.__internal__currentEvents,
-        ];
-        while (prevWeakMap.get(current) !== undefined) {
-          const inSameContext = acceptableEvents.some(
-            (input) => current === input,
-          );
-          if (inSameContext) {
-            const protocolIdx = queue.findIndex((p) => p === acceptableInput);
-            if (protocolIdx !== -1) queue.splice(protocolIdx, 1);
-            return acceptableInput;
-          }
-          current = prevWeakMap.get(current)!;
-        }
-      }
-    }
 
     const currentEventData = queue.shift();
     if (!currentEventData) {
@@ -251,7 +245,11 @@ export function createExecutor<Start, Stop>(
       const [steps, inputsMap, _outputsMap] = getStepFunction(currentEventData);
       const nextEventPromises = [...steps].map((step) => {
         const inputs = inputsMap.get(step) ?? [];
-        const acceptableInputsFromQueue = queue
+        // todo: add edge case for when inputs is empty in the future with tests
+        // if (inputs.length === 0) {
+        //   throw new Error('No inputs found for step');
+        // }
+        const acceptableEventData = queue
           .filter((q): q is WorkflowEventData<any> =>
             inputs.some((input) => input.include(q)),
           )
@@ -259,7 +257,7 @@ export function createExecutor<Start, Stop>(
 
         const events = flattenEvents(inputs, [
           currentEventData,
-          ...acceptableInputsFromQueue,
+          ...acceptableEventData,
         ]);
         if (events.length !== inputs.length) {
           _getHookContext()?.__dev__onMismatchEvents(step, ...events);
@@ -273,7 +271,9 @@ export function createExecutor<Start, Stop>(
             if (idx !== -1) queue.splice(idx, 1);
           });
           // remove acceptable inputs from queue
-          acceptableInputsFromQueue.forEach((e) => {
+          acceptableEventData
+          .filter(e => events.some((p) => p === e))
+          .forEach((e) => {
             const idx = queue.findIndex((q) => q === e);
             if (idx !== -1) queue.splice(idx, 1);
           });
@@ -293,7 +293,9 @@ export function createExecutor<Start, Stop>(
             __internal__currentInputs: args,
             __internal__currentEvents: currentEvents,
           },
-          () => step(...args),
+          () => {
+            return step(...args)
+          },
         );
         if (result && "then" in result) {
           return result.then((nextEvent: void | WorkflowEventData<any>) => {
@@ -331,7 +333,6 @@ export function createExecutor<Start, Stop>(
           });
           return result;
         } else {
-          // this event returns `void`
           return;
         }
       });

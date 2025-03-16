@@ -30,11 +30,10 @@ export const workflowEvent = <Data>(config?: {
           data,
         };
       },
-      get data() {
-        return data;
-      },
+      data,
     };
     s.add(ref);
+    Object.freeze(ref);
     refMap.set(ref, event);
     return ref;
   };

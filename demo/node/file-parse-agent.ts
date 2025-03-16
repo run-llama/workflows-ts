@@ -33,7 +33,6 @@ workflow.handle([startEvent], async ({ data: dir }) => {
 });
 
 workflow.handle([readDirEvent], async ({ data: [dir, tab] }) => {
-  console.log("handle readDirEvent", dir);
   const context = getContext();
   const items = await readdir(dir);
   const results = await Promise.all(
