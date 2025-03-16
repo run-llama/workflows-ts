@@ -287,6 +287,63 @@ describe("message queue", async () => {
   });
 });
 
+describe("source of the event data", () => {
+  test("basic", async () => {
+    const events: WorkflowEventData<any>[] = [];
+    let referenceMap: WeakMap<
+      WorkflowEventData<any>,
+      WorkflowEventData<any>
+    > = null!;
+    workflow.handle([startEvent], (event) => {
+      referenceMap = getContext().__dev__reference.next;
+      events.push(event);
+      expect(event.data).toBe("data");
+      const e = stopEvent(1);
+      events.push(e);
+      return e;
+    });
+
+    const result = await promiseHandler(() => workflow.run(startEvent("data")));
+    expect(result.data).toBe(1);
+
+    expect(events.length).toBe(2);
+    expect(referenceMap.get(events[0]!)).toBe(events[1]);
+  });
+
+  test("loop", async () => {
+    const parseEvent = workflowEvent<number>({
+      debugLabel: "parseEvent",
+    });
+    const parseResultEvent = workflowEvent<number>({
+      debugLabel: "parseResult",
+    });
+    workflow.handle([startEvent], async () => {
+      getContext().sendEvent(parseEvent(2));
+      getContext().sendEvent(parseEvent(2));
+      await Promise.all([
+        getContext().requireEvent(parseResultEvent),
+        getContext().requireEvent(parseResultEvent),
+      ]);
+      return stopEvent(1);
+    });
+    workflow.handle([parseEvent], async ({ data }) => {
+      if (data > 0) {
+        getContext().sendEvent(parseEvent(data - 1));
+      } else {
+        return parseResultEvent(0);
+      }
+    });
+    const events: WorkflowEventData<any>[] = [];
+    for await (const event of workflow.run(startEvent("100"))) {
+      events.push(event);
+      if (stopEvent.include(event)) {
+        break;
+      }
+    }
+    expect(events.length).toBe(10);
+  });
+});
+
 describe("llm", async () => {
   test("tool call agent", async () => {
     const startEvent = workflowEvent<string>({
