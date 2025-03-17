@@ -89,7 +89,7 @@ app.post(
     - ...
   - [ ] `middleware/*` for processing the workflow
     - [x] log
-    - [ ] `zod` schema validation
+    - [x] `zod` schema validation
     - ...
 - [x] third party integration
   - [x] hono.js

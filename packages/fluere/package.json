@@ -66,33 +66,27 @@
   },
   "devDependencies": {
     "@types/node": "^22.13.10",
-    "@types/react": "^19.0.10",
-    "ai": "^4.1.61",
     "hono": "^4.7.4",
     "next": "^15.2.2",
-    "react": "^19.0.0",
     "tsup": "^8.4.0",
     "typescript": "^5.8.2",
-    "vitest": "^3.0.8"
+    "vitest": "^3.0.8",
+    "zod": "^3.24.2"
   },
   "peerDependencies": {
-    "ai": "^4.1.61",
     "hono": "^4.7.4",
     "next": "^15.2.2",
-    "react": "^19.0.0"
+    "zod": "^3.24.2"
   },
   "license": "MIT",
   "peerDependenciesMeta": {
     "hono": {
       "optional": true
     },
-    "react": {
-      "optional": true
-    },
     "next": {
       "optional": true
     },
-    "ai": {
+    "zod": {
       "optional": true
     }
   }
