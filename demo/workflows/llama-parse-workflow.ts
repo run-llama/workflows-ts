@@ -2,7 +2,7 @@ import { workflowEvent, createWorkflow } from "fluere";
 import { z } from "zod";
 import { zodEvent } from "fluere/util/zod";
 import { getContext } from "fluere";
-import { withStore } from "fluere/util/store";
+import { withStore } from "fluere/middleware/store";
 import { pRetryHandler } from "fluere/util/p-retry";
 
 const startEvent = zodEvent(
