@@ -5,4 +5,5 @@ export {
   workflowEvent,
   type WorkflowEvent,
   type WorkflowEventData,
+  type WorkflowEventConfig,
 } from "./event";

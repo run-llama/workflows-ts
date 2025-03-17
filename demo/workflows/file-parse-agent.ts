@@ -1,6 +1,5 @@
 import { createWorkflow, workflowEvent } from "fluere";
 import { readdir, stat } from "node:fs/promises";
-import { promiseHandler } from "fluere/interrupter/promise";
 import { resolve } from "node:path";
 import { getContext } from "fluere";
 

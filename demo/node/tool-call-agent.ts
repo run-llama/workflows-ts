@@ -1,5 +1,5 @@
 import { promiseHandler } from "fluere/interrupter/promise";
-import { toolCallWorkflow } from "../workflows/tool-call-agent";
+import { toolCallWorkflow } from "../workflows/tool-call-agent.js";
 
 promiseHandler(() =>
   toolCallWorkflow.run("what is weather today, im in san francisco"),

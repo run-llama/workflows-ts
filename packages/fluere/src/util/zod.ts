@@ -1,10 +1,15 @@
 import { z } from "zod";
-import type { WorkflowEvent } from "fluere";
+import {
+  workflowEvent,
+  type WorkflowEvent,
+  type WorkflowEventConfig,
+} from "fluere";
 
-export const withZod = <T>(
+export const zodEvent = <T>(
   schema: z.ZodType<T>,
-  event: WorkflowEvent<T>,
+  config?: WorkflowEventConfig,
 ): WorkflowEvent<T> => {
+  const event = workflowEvent<T>(config);
   const zodMiddleware: WorkflowEvent<T> = function zodMiddleware(data: T) {
     schema.parse(data);
     return event(data);
