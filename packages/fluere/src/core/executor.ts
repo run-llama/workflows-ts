@@ -257,6 +257,15 @@ export function createExecutor<Start, Stop>(
           event.include(eventData),
         );
         if (acceptableInput) {
+          const [steps] = getStepFunction(acceptableInput);
+          if (steps.size === 0) {
+            if (!enqueuedEvents.has(acceptableInput)) {
+              currentController.enqueue(acceptableInput);
+              enqueuedEvents.add(acceptableInput);
+              await handleQueue(true);
+              return acceptableInput;
+            }
+          }
           let current = acceptableInput;
           const store = executorContextAsyncLocalStorage.getStore()!;
           const prevWeakMap = store.__dev__reference.prev;
@@ -276,7 +285,6 @@ export function createExecutor<Start, Stop>(
             current = prevWeakMap.get(current)!;
           }
         }
-        await new Promise((resolve) => setTimeout(resolve, 0));
         await handleQueue();
       }
     },
@@ -307,7 +315,7 @@ export function createExecutor<Start, Stop>(
 
   let pendingEventData: WorkflowEventData<any> | undefined = undefined;
 
-  async function handleQueue() {
+  async function handleQueue(eager: boolean = false) {
     const controller = currentController;
     const currentEventData = queue.shift();
     if (!currentEventData) {
@@ -318,11 +326,13 @@ export function createExecutor<Start, Stop>(
     if (!enqueuedEvents.has(currentEventData)) {
       controller.enqueue(currentEventData);
       enqueuedEvents.add(currentEventData);
-      await new Promise((resolve) => setTimeout(resolve, 0));
+      if (!eager) {
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      }
       pendingEventData = undefined;
     }
     const [steps, inputsMap, _outputsMap] = getStepFunction(currentEventData);
-    const nextEvents = [...steps].map((step) => {
+    const nextEvents = [...steps].flatMap((step) => {
       const inputs = inputsMap.get(step) ?? [];
       // todo: add edge case for when inputs is empty in the future with tests
       // if (inputs.length === 0) {
@@ -333,52 +343,83 @@ export function createExecutor<Start, Stop>(
           inputs.some((input) => input.include(q)),
         )
         .map((q) => q);
-
-      const events = flattenEvents(inputs, [
-        currentEventData,
-        ...acceptableEventData,
-      ]);
-      if (events.length !== inputs.length) {
-        _getHookContext()?.__dev__onMismatchEvents(step, ...events);
-        _sendEvent(currentEventData);
-        return null;
-      } else {
-        // remove from queue
-        events.forEach((e) => {
-          const idx = queue.findIndex((p) => p === e);
-          if (idx !== -1) queue.splice(idx, 1);
-        });
-        // remove acceptable inputs from queue
-        acceptableEventData
-          .filter((e) => events.some((p) => p === e))
-          .forEach((e) => {
-            const idx = queue.findIndex((q) => q === e);
+      const allPossibleInputs = [currentEventData, ...acceptableEventData];
+      const results: [
+        result:
+          | Promise<WorkflowEventData<any | void>>
+          | WorkflowEventData<any>
+          | void,
+        currentEvents: WorkflowEventData<any>[],
+        args: WorkflowEventData<any>[],
+      ][] = [];
+      while (allPossibleInputs.length > 0) {
+        const events = flattenEvents(inputs, allPossibleInputs);
+        if (events.length !== inputs.length) {
+          _getHookContext()?.__dev__onMismatchEvents(step, ...events);
+          _sendEvent(currentEventData);
+          break;
+        } else {
+          // remove from queue
+          events.forEach((e) => {
+            const idx = queue.findIndex((p) => p === e);
             if (idx !== -1) queue.splice(idx, 1);
           });
+          // remove acceptable inputs from queue
+          allPossibleInputs
+            .filter((e) => events.some((p) => p === e))
+            .forEach((e) => {
+              const idx = queue.findIndex((q) => q === e);
+              if (idx !== -1) queue.splice(idx, 1);
+            });
+        }
+
+        // call many step as much as possible
+        const args = events.sort((a, b) => {
+          const aIndex = inputs.findIndex((i) => i.include(a));
+          const bIndex = inputs.findIndex((i) => i.include(b));
+          return aIndex - bIndex;
+        });
+        _getHookContext()?.beforeEvents(step, ...args);
+        const currentEvents: WorkflowEventData<any>[] = [];
+        const result = _internal_setContext(
+          {
+            ..._internal_getContext(),
+            __internal__currentInputs: args,
+            __internal__currentEvents: currentEvents,
+          },
+          () => step(...args),
+        );
+        args.forEach((arg) => {
+          const idx = allPossibleInputs.findIndex((p) => arg === p);
+          if (idx !== -1) allPossibleInputs.splice(idx, 1);
+        });
+        results.push([result, currentEvents, args]);
       }
-      const args = events.sort((a, b) => {
-        const aIndex = inputs.findIndex((i) => i.include(a));
-        const bIndex = inputs.findIndex((i) => i.include(b));
-        return aIndex - bIndex;
-      });
-      _getHookContext()?.beforeEvents(step, ...args);
-      const currentEvents: WorkflowEventData<any>[] = [];
-      const result = _internal_setContext(
-        {
-          ..._internal_getContext(),
-          __internal__currentInputs: args,
-          __internal__currentEvents: currentEvents,
-        },
-        () => {
-          return step(...args);
-        },
-      );
-      if (isPromiseLike(result)) {
-        return result.then((nextEvent: void | WorkflowEventData<any>) => {
-          if (!nextEvent) return;
+      results.forEach(([result, currentEvents, args]) => {
+        // handle result
+        if (isPromiseLike(result)) {
+          return result.then((nextEvent: void | WorkflowEventData<any>) => {
+            if (!nextEvent) return;
+            _getHookContext()?.afterEvents(step, ...args);
+            if (!stop.include(nextEvent)) {
+              _sendEvent(nextEvent);
+            }
+            currentEvents.forEach((eventData) => {
+              if (!enqueuedEvents.has(eventData)) {
+                controller.enqueue(eventData);
+                enqueuedEvents.add(eventData);
+              }
+            });
+            args.forEach((arg) => {
+              rootExecutorContext.__dev__reference.next.set(arg, nextEvent);
+              rootExecutorContext.__dev__reference.prev.set(nextEvent, arg);
+            });
+            return nextEvent;
+          });
+        } else if (isEventData(result)) {
           _getHookContext()?.afterEvents(step, ...args);
-          if (!stop.include(nextEvent)) {
-            _sendEvent(nextEvent);
+          if (!stop.include(result)) {
+            _sendEvent(result);
           }
           currentEvents.forEach((eventData) => {
             if (!enqueuedEvents.has(eventData)) {
@@ -387,30 +428,15 @@ export function createExecutor<Start, Stop>(
             }
           });
           args.forEach((arg) => {
-            rootExecutorContext.__dev__reference.next.set(arg, nextEvent);
-            rootExecutorContext.__dev__reference.prev.set(nextEvent, arg);
+            rootExecutorContext.__dev__reference.next.set(arg, result);
+            rootExecutorContext.__dev__reference.prev.set(result, arg);
           });
-          return nextEvent;
-        });
-      } else if (isEventData(result)) {
-        _getHookContext()?.afterEvents(step, ...args);
-        if (!stop.include(result)) {
-          _sendEvent(result);
+          return result;
+        } else {
+          return;
         }
-        currentEvents.forEach((eventData) => {
-          if (!enqueuedEvents.has(eventData)) {
-            controller.enqueue(eventData);
-            enqueuedEvents.add(eventData);
-          }
-        });
-        args.forEach((arg) => {
-          rootExecutorContext.__dev__reference.next.set(arg, result);
-          rootExecutorContext.__dev__reference.prev.set(result, arg);
-        });
-        return result;
-      } else {
-        return;
-      }
+      });
+      return results.map(([result]) => result);
     });
     nextEvents.forEach((ev) => {
       if (isPromiseLike(ev) || isEventData(ev)) {
@@ -453,6 +479,8 @@ export function createExecutor<Start, Stop>(
       .catch((err) => {
         controller.error(err);
       });
+
+    await Promise.all(nextEvents);
   }
 
   function createStreamEvents(): AsyncIterableIterator<WorkflowEventData<any>> {

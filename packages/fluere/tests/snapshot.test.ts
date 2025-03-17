@@ -1,10 +1,12 @@
-import { describe, expect, test, vi } from "vitest";
+import { describe, expect, test } from "vitest";
 import {
   createWorkflow,
+  getContext,
+  type Handler,
+  type WorkflowEvent,
   workflowEvent,
   type WorkflowEventData,
 } from "../src/core";
-import { promiseHandler } from "../interrupter/promise";
 import type { Snapshot } from "../src/core/executor";
 
 describe("snapshot", () => {
@@ -94,5 +96,81 @@ describe("snapshot", () => {
       }
       expect(count).toBe(0);
     }
+  });
+
+  test("should still work in a parallel workflow", async () => {
+    const workflow = createWorkflow({
+      startEvent,
+      stopEvent,
+    });
+    const parseEvent = workflowEvent<string>({
+      debugLabel: "parseEvent",
+    });
+    const waitEvent = workflowEvent<void>({
+      debugLabel: "waitEvent",
+    });
+    const parseResultEvent = workflowEvent<string>({
+      debugLabel: "parseResultEvent",
+    });
+
+    workflow.handle([startEvent], async () => {
+      const context = getContext();
+      for (let i = 0; i < 10; i++) {
+        context.sendEvent(parseEvent("start" + i));
+      }
+
+      context.sendEvent(waitEvent());
+      await context.requireEvent(waitEvent);
+
+      const promises = [];
+      for (let i = 0; i < 10; i++) {
+        promises.push(context.requireEvent(parseResultEvent));
+      }
+      await Promise.all(promises);
+      return stopEvent("stop");
+    });
+
+    const blockedList: [
+      resolve: (value: any) => void,
+      fn: (...args: WorkflowEventData<any>[]) => WorkflowEventData<any>,
+      args: WorkflowEventData<any>[],
+    ][] = [];
+
+    function withSuspense<
+      const AcceptEvents extends WorkflowEvent<any>[],
+      Result extends ReturnType<WorkflowEvent<any>> | void,
+    >(fn: Handler<AcceptEvents, Result>): Handler<AcceptEvents, Result> {
+      return (...args) => {
+        let resolve: (value: any) => void | undefined;
+        const promise = new Promise<any>((_resolve) => {
+          resolve = _resolve;
+        });
+        blockedList.push([
+          resolve!,
+          fn as (...args: WorkflowEventData<any>[]) => WorkflowEventData<any>,
+          args,
+        ]);
+        return promise;
+      };
+    }
+
+    workflow.handle(
+      [parseEvent],
+      withSuspense(async (_) => {
+        await new Promise((resolve) => setTimeout(resolve, 10));
+        return parseResultEvent("parsed");
+      }),
+    );
+
+    const executor = workflow.run(startEvent("start"));
+    const snapshots: Snapshot[] = [];
+    for await (const event of executor) {
+      snapshots.push(executor.snapshot());
+      if (waitEvent.include(event)) {
+        break;
+      }
+    }
+    expect(blockedList.length).toBe(10);
+    expect(snapshots.length).toBe(2);
   });
 });

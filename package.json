@@ -8,5 +8,11 @@
     "onlyBuiltDependencies": [
       "@swc/core"
     ]
+  },
+  "scripts": {
+    "lint:fix": "prettier . --write"
+  },
+  "devDependencies": {
+    "prettier": "^3.5.3"
   }
 }
