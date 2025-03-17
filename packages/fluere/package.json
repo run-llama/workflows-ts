@@ -60,7 +60,8 @@
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
-    "test": "vitest run"
+    "test": "vitest run",
+    "prepublish": "cp ../../README.md ./README.md"
   },
   "devDependencies": {
     "@types/node": "^22.13.10",
@@ -79,6 +80,7 @@
     "next": "^15.2.2",
     "react": "^19.0.0"
   },
+  "license": "MIT",
   "peerDependenciesMeta": {
     "hono": {
       "optional": true
