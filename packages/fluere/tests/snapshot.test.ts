@@ -1,5 +1,11 @@
-import { describe, expect, test } from "vitest";
-import { createWorkflow, workflowEvent } from "../src/core";
+import { describe, expect, test, vi } from "vitest";
+import {
+  createWorkflow,
+  workflowEvent,
+  type WorkflowEventData,
+} from "../src/core";
+import { promiseHandler } from "../interrupter/promise";
+import type { Snapshot } from "../src/core/executor";
 
 describe("snapshot", () => {
   const startEvent = workflowEvent<string>();
@@ -10,7 +16,8 @@ describe("snapshot", () => {
     stopEvent,
   });
 
-  workflow.handle([startEvent], () => {
+  workflow.handle([startEvent], async () => {
+    await new Promise((resolve) => setTimeout(resolve, 100));
     return stopEvent("stop");
   });
 
@@ -40,21 +47,52 @@ describe("snapshot", () => {
     }
   });
 
-  test.fails("should still work after one event", async () => {
+  test("should still work after one event", async () => {
     const executor = workflow.run(startEvent("start"));
+    let counter = 0;
+    const events: WorkflowEventData<any>[] = [];
+    const snapshots: Snapshot[] = [];
     for await (const event of executor) {
-      console.log("event", event);
+      events.push(event);
+      snapshots.push(executor.snapshot());
+      const snapshot = snapshots.at(-1)!;
+      counter++;
       if (startEvent.include(event)) {
-        expect(event.data).toBe("start");
-        const snapshot = executor.snapshot();
-        expect(snapshot.queue).toEqual([]);
+        expect(event.data).toBe(events[0]!.data);
+        expect(snapshot.queue).toEqual([events[0]]);
         expect(snapshot.runningEvents).toEqual([]);
         expect(snapshot.enqueuedEvents).toEqual([event]);
         expect(snapshot.rootContext.next).toEqual([]);
-        break;
       } else if (stopEvent.include(event)) {
-        console.warn(`stop event: ${event}`);
+        expect(event.data).toBe(events[1]!.data);
+        expect(snapshot.queue).toEqual([]);
+        expect(snapshot.runningEvents).toEqual([]);
+        expect(snapshot.enqueuedEvents).toEqual([events[0], event]);
+        expect(snapshot.rootContext.next).toEqual([]);
       }
+    }
+    expect(counter).toBe(2);
+    {
+      const snapshot = snapshots[0]!;
+      const executor = workflow.recover(snapshot);
+      let count = 0;
+      for await (const event of executor) {
+        count++;
+        if (stopEvent.include(event)) {
+          expect(event.data).toBe("stop");
+          break;
+        }
+      }
+      expect(count).toBe(1);
+    }
+    {
+      const snapshot = snapshots[1]!;
+      const executor = workflow.recover(snapshot);
+      let count = 0;
+      for await (const _ of executor) {
+        count++;
+      }
+      expect(count).toBe(0);
     }
   });
 });

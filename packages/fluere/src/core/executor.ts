@@ -128,7 +128,10 @@ type InternalContext = {
 
 export type Snapshot = {
   queue: WorkflowEventData<any>[];
-  runningEvents: Promise<WorkflowEventData<any> | void>[];
+  runningEvents: (
+    | Promise<WorkflowEventData<any> | void>
+    | WorkflowEventData<any>
+  )[];
   enqueuedEvents: WorkflowEventData<any>[];
   rootContext: InternalContext;
 };
@@ -155,7 +158,9 @@ export function createExecutor<Start, Stop>(
   /**
    * The set of event promises that are currently running
    */
-  const runningEvents: Set<Promise<WorkflowEventData<any> | void>> = snapshot
+  const runningEvents: Set<
+    Promise<WorkflowEventData<any> | void> | WorkflowEventData<any>
+  > = snapshot
     ? new Set(snapshot.runningEvents)
     : new Set<Promise<WorkflowEventData<any> | void>>();
   /**
@@ -300,19 +305,24 @@ export function createExecutor<Start, Stop>(
     next: [],
   } satisfies InternalExecutorContext;
 
+  let pendingEventData: WorkflowEventData<any> | undefined = undefined;
+
   async function handleQueue() {
     const controller = currentController;
     const currentEventData = queue.shift();
     if (!currentEventData) {
       return;
     }
+    pendingEventData = currentEventData;
 
     if (!enqueuedEvents.has(currentEventData)) {
       controller.enqueue(currentEventData);
       enqueuedEvents.add(currentEventData);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      pendingEventData = undefined;
     }
     const [steps, inputsMap, _outputsMap] = getStepFunction(currentEventData);
-    const nextEventPromises = [...steps].map((step) => {
+    const nextEvents = [...steps].map((step) => {
       const inputs = inputsMap.get(step) ?? [];
       // todo: add edge case for when inputs is empty in the future with tests
       // if (inputs.length === 0) {
@@ -367,15 +377,15 @@ export function createExecutor<Start, Stop>(
         return result.then((nextEvent: void | WorkflowEventData<any>) => {
           if (!nextEvent) return;
           _getHookContext()?.afterEvents(step, ...args);
+          if (!stop.include(nextEvent)) {
+            _sendEvent(nextEvent);
+          }
           currentEvents.forEach((eventData) => {
             if (!enqueuedEvents.has(eventData)) {
               controller.enqueue(eventData);
               enqueuedEvents.add(eventData);
             }
           });
-          if (!stop.include(nextEvent)) {
-            _sendEvent(nextEvent);
-          }
           args.forEach((arg) => {
             rootExecutorContext.__dev__reference.next.set(arg, nextEvent);
             rootExecutorContext.__dev__reference.prev.set(nextEvent, arg);
@@ -384,15 +394,15 @@ export function createExecutor<Start, Stop>(
         });
       } else if (isEventData(result)) {
         _getHookContext()?.afterEvents(step, ...args);
+        if (!stop.include(result)) {
+          _sendEvent(result);
+        }
         currentEvents.forEach((eventData) => {
           if (!enqueuedEvents.has(eventData)) {
             controller.enqueue(eventData);
             enqueuedEvents.add(eventData);
           }
         });
-        if (!stop.include(result)) {
-          _sendEvent(result);
-        }
         args.forEach((arg) => {
           rootExecutorContext.__dev__reference.next.set(arg, result);
           rootExecutorContext.__dev__reference.prev.set(result, arg);
@@ -402,22 +412,28 @@ export function createExecutor<Start, Stop>(
         return;
       }
     });
-    nextEventPromises.forEach((p) => {
-      if (isPromiseLike(p)) {
-        runningEvents.add(p);
-        p.catch((err) => console.error("Error in step", err)).finally(() =>
-          runningEvents.delete(p),
-        );
+    nextEvents.forEach((ev) => {
+      if (isPromiseLike(ev) || isEventData(ev)) {
+        runningEvents.add(ev);
       }
     });
-    if (nextEventPromises.some((p) => p && "data" in p)) {
-      const fastest = nextEventPromises.find(isEventData);
+    nextEvents.forEach((ev) => {
+      if (isPromiseLike(ev)) {
+        ev.finally(() => {
+          runningEvents.delete(ev);
+        });
+      } else if (isEventData(ev)) {
+        runningEvents.delete(ev);
+      }
+    });
+    if (nextEvents.some((p) => p && "data" in p)) {
+      const fastest = nextEvents.find(isEventData);
       if (fastest && !enqueuedEvents.has(fastest)) {
         controller.enqueue(fastest);
         enqueuedEvents.add(fastest);
       }
     }
-    await Promise.race(nextEventPromises)
+    await Promise.race(nextEvents)
       .then((fastest) => {
         if (!fastest || enqueuedEvents.has(fastest)) return null;
         controller.enqueue(fastest);
@@ -425,10 +441,9 @@ export function createExecutor<Start, Stop>(
         return fastest;
       })
       .then(async (fastest) => {
-        const nextEvents = (await Promise.all(nextEventPromises)).filter(
+        for (const nextEvent of (await Promise.all(nextEvents)).filter(
           isEventData,
-        );
-        for (const nextEvent of nextEvents) {
+        )) {
           if (nextEvent !== fastest && !enqueuedEvents.has(nextEvent)) {
             controller.enqueue(nextEvent);
             enqueuedEvents.add(nextEvent);
@@ -436,7 +451,6 @@ export function createExecutor<Start, Stop>(
         }
       })
       .catch((err) => {
-        _sendEvent(currentEventData);
         controller.error(err);
       });
   }
@@ -500,7 +514,7 @@ export function createExecutor<Start, Stop>(
       };
 
       return {
-        queue: [...queue],
+        queue: pendingEventData ? [pendingEventData, ...queue] : [...queue],
         runningEvents: [...runningEvents],
         enqueuedEvents: [...enqueuedEvents],
         rootContext: snapshotContext(rootExecutorContext),
