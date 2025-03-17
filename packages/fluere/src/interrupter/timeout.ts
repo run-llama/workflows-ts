@@ -2,7 +2,9 @@ import type { Workflow, WorkflowEventData } from "../core";
 import { _setHookContext } from "fluere/shared";
 
 export async function timeoutHandler<Start, Stop>(
-  getExecutor: () => ReturnType<Workflow<Start, Stop>["run"]>,
+  getExecutor: () =>
+    | ReturnType<Workflow<Start, Stop>["run"]>
+    | Promise<ReturnType<Workflow<Start, Stop>["run"]>>,
   timeout: number = 1000,
   retries: number = 0,
 ): Promise<WorkflowEventData<Stop>> {
@@ -19,7 +21,7 @@ export async function timeoutHandler<Start, Stop>(
       },
     },
     async () => {
-      const executor = getExecutor();
+      const executor = await getExecutor();
       for await (const data of executor) {
         if (executor.stop.include(data)) {
           return data as WorkflowEventData<Stop>;

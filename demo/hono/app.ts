@@ -5,7 +5,12 @@ import { toolCallWorkflow } from "../workflows/tool-call-agent";
 
 const app = new Hono();
 
-app.post("/workflow", createHonoHandler(toolCallWorkflow));
+app.post(
+  "/workflow",
+  createHonoHandler(async (ctx) =>
+    toolCallWorkflow.run(toolCallWorkflow.startEvent(await ctx.req.text())),
+  ),
+);
 
 serve(app, ({ port }) => {
   console.log(`Server started at http://localhost:${port}`);
