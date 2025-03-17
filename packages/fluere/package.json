@@ -55,7 +55,8 @@
   "files": [
     "dist",
     "interrupter",
-    "shared"
+    "shared",
+    "middleware"
   ],
   "scripts": {
     "build": "tsup",
