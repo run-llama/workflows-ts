@@ -15,7 +15,6 @@
     "outDir": "./lib",
     "tsBuildInfoFile": "./lib/.tsbuildinfo",
     "lib": ["ES2022", "DOM", "DOM.Iterable", "DOM.AsyncIterable"],
-    "types": ["node", "react/experimental"],
     "paths": {
       "fluere": ["./src/core/index.ts"],
       "fluere/shared": ["./src/shared/index.ts"]

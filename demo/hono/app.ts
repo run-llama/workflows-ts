@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { serve } from "@hono/node-server";
 import { createHonoHandler } from "fluere/interrupter/hono";
-import { toolCallWorkflow } from "../workflows/tool-call-agent";
+import { toolCallWorkflow } from "../workflows/tool-call-agent.js";
 
 const app = new Hono();
 

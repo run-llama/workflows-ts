@@ -134,4 +134,5 @@ packages/fluere/core
 packages/fluere/interrupter
 packages/fluere/shared
 packages/fluere/middleware
+packages/fluere/util
 packages/fluere/README.md

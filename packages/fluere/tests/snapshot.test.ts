@@ -6,7 +6,7 @@ import {
   type WorkflowEvent,
   workflowEvent,
   type WorkflowEventData,
-} from "../src/core";
+} from "fluere";
 import type { Snapshot } from "../src/core/executor";
 
 describe("snapshot", () => {

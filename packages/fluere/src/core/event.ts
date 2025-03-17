@@ -12,9 +12,13 @@ export type WorkflowEvent<Data> = {
   include(event: WorkflowEventData<any>): event is WorkflowEventData<Data>;
 };
 
-export const workflowEvent = <Data>(config?: {
+export type WorkflowEventConfig = {
   debugLabel?: string;
-}): WorkflowEvent<Data> => {
+};
+
+export const workflowEvent = <Data = void>(
+  config?: WorkflowEventConfig,
+): WorkflowEvent<Data> => {
   const l1 = `${i++}`;
   const event = (data: Data) => {
     const l2 = `${j++}`;

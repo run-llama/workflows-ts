@@ -29,8 +29,17 @@ export default defineConfig([
   },
   // Middleware APIs
   {
-    entry: ["src/interrupter/*.ts"],
+    entry: ["src/middleware/*.ts"],
     outDir: "middleware",
+    format: ["esm"],
+    external: ["fluere/shared", "fluere"],
+    dts: true,
+    sourcemap: true,
+  },
+  // Utility APIs
+  {
+    entry: ["src/util/*.ts"],
+    outDir: "util",
     format: ["esm"],
     external: ["fluere/shared", "fluere"],
     dts: true,
