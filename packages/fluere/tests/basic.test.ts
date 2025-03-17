@@ -318,12 +318,11 @@ describe("source of the event data", () => {
       debugLabel: "parseResult",
     });
     workflow.handle([startEvent], async () => {
-      const context = getContext();
-      context.sendEvent(parseEvent(2));
-      context.sendEvent(parseEvent(2));
+      getContext().sendEvent(parseEvent(2));
+      getContext().sendEvent(parseEvent(2));
       await Promise.all([
-        context.requireEvent(parseResultEvent),
-        context.requireEvent(parseResultEvent),
+        getContext().requireEvent(parseResultEvent),
+        getContext().requireEvent(parseResultEvent),
       ]);
       return stopEvent(1);
     });
