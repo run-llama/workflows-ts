@@ -1,7 +1,7 @@
 import { defineConfig } from "tsup";
 
 export default defineConfig([
-  // Core APIs - Node.js like
+  // Core APIs
   {
     entry: ["src/core/index.ts"],
     outDir: "dist",
@@ -9,39 +9,13 @@ export default defineConfig([
     dts: true,
     external: ["fluere/shared"],
     sourcemap: true,
-    banner: {
-      js: "import { AsyncLocalStorage } from 'node:async_hooks';",
-    },
   },
-  // Core APIs - Serverless
-  {
-    entry: ["src/core/index.ts"],
-    outDir: "dist",
-    outExtension: () => ({
-      js: ".serverless.js",
-    }),
-    format: ["esm"],
-    external: ["fluere/shared"],
-    sourcemap: true,
-  },
-  // Shared APIs - Node.js like
+  // Shared APIs
   {
     entry: ["src/shared/index.ts"],
     outDir: "shared",
     format: ["cjs", "esm"],
     dts: true,
-    sourcemap: true,
-    banner: {
-      js: "import { AsyncLocalStorage } from 'node:async_hooks';",
-    },
-  },
-  {
-    entry: ["src/shared/index.ts"],
-    outDir: "shared",
-    format: ["esm"],
-    outExtension: () => ({
-      js: ".serverless.js",
-    }),
     sourcemap: true,
   },
   // Interrupter APIs

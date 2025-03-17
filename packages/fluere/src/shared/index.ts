@@ -1,3 +1,4 @@
+import { AsyncLocalStorage } from "async_hooks";
 import type { WorkflowEvent, WorkflowEventData, Handler } from "../core";
 
 type HookContext = {

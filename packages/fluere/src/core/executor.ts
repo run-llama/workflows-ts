@@ -1,12 +1,7 @@
-// DO NOT IMPORT ASYNC-LOCAL-STORAGE DIRECTLY
-import type { AsyncLocalStorage as NodeAsyncLocalStorage } from "async_hooks";
+import { AsyncLocalStorage } from "async_hooks";
 import type { WorkflowEvent, WorkflowEventData } from "./event";
 import { _getHookContext } from "fluere/shared";
 import { isEventData, isPromiseLike } from "./utils";
-
-declare global {
-  var AsyncLocalStorage: typeof NodeAsyncLocalStorage;
-}
 
 export type Handler<
   AcceptEvents extends WorkflowEvent<any>[],

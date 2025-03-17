@@ -10,7 +10,7 @@
     ".": {
       "workerd": {
         "types": "./dist/index.d.ts",
-        "default": "./dist/index.serverless.js"
+        "default": "./dist/index.js"
       },
       "edge-light": {
         "types": "./dist/index.d.ts",
@@ -28,7 +28,7 @@
     "./shared": {
       "workerd": {
         "types": "./shared/index.d.ts",
-        "default": "./shared/index.serverless.js"
+        "default": "./shared/index.js"
       },
       "edge-light": {
         "types": "./shared/index.d.ts",
