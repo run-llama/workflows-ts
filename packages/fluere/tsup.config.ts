@@ -27,6 +27,15 @@ export default defineConfig([
     dts: true,
     sourcemap: true,
   },
+  // Middleware APIs
+  {
+    entry: ["src/middleware/*.ts"],
+    outDir: "middleware",
+    format: ["esm"],
+    external: ["fluere/shared", "fluere"],
+    dts: true,
+    sourcemap: true,
+  },
   // Utility APIs
   {
     entry: ["src/util/*.ts"],
