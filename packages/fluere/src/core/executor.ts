@@ -29,6 +29,13 @@ export type ExecutorParams<Start, Stop> = {
   steps: ReadonlyHandlerMap;
 };
 
+export type SnapshotExecutorParams<Start, Stop> = {
+  start: WorkflowEvent<Start>;
+  stop: WorkflowEvent<Stop>;
+  steps: ReadonlyHandlerMap;
+  snapshot: Snapshot;
+};
+
 export type ExecutorContext = {
   requireEvent: <Data>(
     event: WorkflowEvent<Data>,
@@ -39,6 +46,11 @@ export type ExecutorContext = {
     next: WeakMap<WorkflowEventData<any>, WorkflowEventData<any>>;
     prev: WeakMap<WorkflowEventData<any>, WorkflowEventData<any>>;
   };
+};
+
+type InternalExecutorContext = ExecutorContext & {
+  prev: null | InternalExecutorContext;
+  next: InternalExecutorContext[];
   __internal__currentInputs: WorkflowEventData<any>[];
   __internal__currentEvents: WorkflowEventData<any>[];
 };
@@ -65,7 +77,22 @@ function flattenEvents(
 }
 
 const executorContextAsyncLocalStorage =
-  new AsyncLocalStorage<ExecutorContext>();
+  new AsyncLocalStorage<InternalExecutorContext>();
+
+function _internal_getContext(): InternalExecutorContext {
+  return executorContextAsyncLocalStorage.getStore()!;
+}
+
+function _internal_setContext<R>(
+  context: InternalExecutorContext,
+  fn: () => R,
+): R {
+  const prev = context.prev;
+  if (prev) {
+    prev.next.push(context);
+  }
+  return executorContextAsyncLocalStorage.run(context, fn);
+}
 
 export function getContext(): ExecutorContext {
   const context = executorContextAsyncLocalStorage.getStore();
@@ -73,7 +100,11 @@ export function getContext(): ExecutorContext {
     throw new Error(
       "Executor context not found, make sure you are running inside an executor",
     );
-  return context;
+  return {
+    requireEvent: context.requireEvent,
+    sendEvent: context.sendEvent,
+    __dev__reference: context.__dev__reference,
+  };
 }
 
 export type Executor<Start, Stop> = {
@@ -82,16 +113,65 @@ export type Executor<Start, Stop> = {
   [Symbol.asyncIterator]: () => AsyncIterableIterator<
     WorkflowEventData<any> | WorkflowEventData<Start> | WorkflowEventData<Stop>
   >;
+  /**
+   * Capture the current state of the executor,
+   *  useful when you want to have human-in the loop behavior
+   */
+  snapshot: () => Snapshot;
+};
+
+type InternalContext = {
+  __internal__currentInputs: WorkflowEventData<any>[];
+  __internal__currentEvents: WorkflowEventData<any>[];
+  next: InternalContext[];
+};
+
+export type Snapshot = {
+  queue: WorkflowEventData<any>[];
+  runningEvents: (
+    | Promise<WorkflowEventData<any> | void>
+    | WorkflowEventData<any>
+  )[];
+  enqueuedEvents: WorkflowEventData<any>[];
+  rootContext: InternalContext;
 };
 
 /**
  * @internal We do not expose this as we want to make the API as the minimum as possible
  */
 export function createExecutor<Start, Stop>(
-  params: ExecutorParams<Start, Stop>,
+  params: ExecutorParams<Start, Stop> | SnapshotExecutorParams<Start, Stop>,
 ): Executor<Start, Stop> {
-  const { steps, initialEvent, start, stop } = params;
+  //#region Params
+  const { start, stop, steps } = params;
+  let snapshot: Snapshot | null = null;
+  if ("snapshot" in params) {
+    snapshot = params.snapshot;
+  }
+  //#endregion
 
+  //#region Data
+  /**
+   * The queue of events to be processed
+   */
+  const queue: WorkflowEventData<any>[] = snapshot ? [...snapshot.queue] : [];
+  /**
+   * The set of event promises that are currently running
+   */
+  const runningEvents: Set<
+    Promise<WorkflowEventData<any> | void> | WorkflowEventData<any>
+  > = snapshot
+    ? new Set(snapshot.runningEvents)
+    : new Set<Promise<WorkflowEventData<any> | void>>();
+  /**
+   * Whether the event has been sent to the controller
+   */
+  const enqueuedEvents: Set<WorkflowEventData<any>> = snapshot
+    ? new Set(snapshot.enqueuedEvents)
+    : new Set<WorkflowEventData<any>>();
+  //#endregion
+
+  //#region Cache
   const stepCache: WeakMap<
     WorkflowEventData<any>,
     [
@@ -106,6 +186,13 @@ export function createExecutor<Start, Stop>(
       >,
     ]
   > = new WeakMap();
+  //#endregion
+
+  //#region Local variables
+  let currentController = null! as ReadableStreamDefaultController<
+    WorkflowEventData<any>
+  >;
+  //#region
 
   function getStepFunction(
     eventData: WorkflowEventData<any>,
@@ -161,10 +248,6 @@ export function createExecutor<Start, Stop>(
     queue.push(eventData);
   }
 
-  const controllerAsyncLocalStorage = new AsyncLocalStorage<
-    ReadableStreamDefaultController<WorkflowEventData<any>>
-  >();
-
   const rootExecutorContext = {
     requireEvent: async function requireEvent<Data>(
       event: WorkflowEvent<Data>,
@@ -174,6 +257,15 @@ export function createExecutor<Start, Stop>(
           event.include(eventData),
         );
         if (acceptableInput) {
+          const [steps] = getStepFunction(acceptableInput);
+          if (steps.size === 0) {
+            if (!enqueuedEvents.has(acceptableInput)) {
+              currentController.enqueue(acceptableInput);
+              enqueuedEvents.add(acceptableInput);
+              await handleQueue(true);
+              return acceptableInput;
+            }
+          }
           let current = acceptableInput;
           const store = executorContextAsyncLocalStorage.getStore()!;
           const prevWeakMap = store.__dev__reference.prev;
@@ -193,7 +285,6 @@ export function createExecutor<Start, Stop>(
             current = prevWeakMap.get(current)!;
           }
         }
-        await new Promise((resolve) => setTimeout(resolve, 0));
         await handleQueue();
       }
     },
@@ -203,7 +294,7 @@ export function createExecutor<Start, Stop>(
         __internal__currentEvents,
         __internal__currentInputs,
         __dev__reference: { next, prev },
-      } = getContext();
+      } = _internal_getContext();
       __internal__currentInputs.forEach((input) => {
         next.set(input, eventData);
         prev.set(eventData, input);
@@ -217,35 +308,31 @@ export function createExecutor<Start, Stop>(
     },
     __internal__currentInputs: [] as WorkflowEventData<any>[],
     __internal__currentEvents: [] as WorkflowEventData<any>[],
-  } satisfies ExecutorContext;
 
-  /**
-   * The queue of events to be processed
-   */
-  const queue: WorkflowEventData<any>[] = [];
-  /**
-   * The set of event promises that are currently running
-   */
-  const runningEvents = new Set<Promise<WorkflowEventData<any> | void>>();
-  /**
-   * Whether the event has been sent to the controller
-   */
-  const enqueuedEvents = new Set<WorkflowEventData<any>>();
+    prev: null,
+    next: [],
+  } satisfies InternalExecutorContext;
 
-  async function handleQueue() {
-    const controller = controllerAsyncLocalStorage.getStore()!;
+  let pendingEventData: WorkflowEventData<any> | undefined = undefined;
 
+  async function handleQueue(eager: boolean = false) {
+    const controller = currentController;
     const currentEventData = queue.shift();
     if (!currentEventData) {
       return;
     }
+    pendingEventData = currentEventData;
 
     if (!enqueuedEvents.has(currentEventData)) {
       controller.enqueue(currentEventData);
       enqueuedEvents.add(currentEventData);
+      if (!eager) {
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      }
+      pendingEventData = undefined;
     }
     const [steps, inputsMap, _outputsMap] = getStepFunction(currentEventData);
-    const nextEventPromises = [...steps].map((step) => {
+    const nextEvents = [...steps].flatMap((step) => {
       const inputs = inputsMap.get(step) ?? [];
       // todo: add edge case for when inputs is empty in the future with tests
       // if (inputs.length === 0) {
@@ -256,101 +343,123 @@ export function createExecutor<Start, Stop>(
           inputs.some((input) => input.include(q)),
         )
         .map((q) => q);
-
-      const events = flattenEvents(inputs, [
-        currentEventData,
-        ...acceptableEventData,
-      ]);
-      if (events.length !== inputs.length) {
-        _getHookContext()?.__dev__onMismatchEvents(step, ...events);
-        _sendEvent(currentEventData);
-        return null;
-      } else {
-        // remove from queue
-        events.forEach((e) => {
-          const idx = queue.findIndex((p) => p === e);
-          if (idx !== -1) queue.splice(idx, 1);
-        });
-        // remove acceptable inputs from queue
-        acceptableEventData
-          .filter((e) => events.some((p) => p === e))
-          .forEach((e) => {
-            const idx = queue.findIndex((q) => q === e);
+      const allPossibleInputs = [currentEventData, ...acceptableEventData];
+      const results: [
+        result:
+          | Promise<WorkflowEventData<any | void>>
+          | WorkflowEventData<any>
+          | void,
+        currentEvents: WorkflowEventData<any>[],
+        args: WorkflowEventData<any>[],
+      ][] = [];
+      while (allPossibleInputs.length > 0) {
+        const events = flattenEvents(inputs, allPossibleInputs);
+        if (events.length !== inputs.length) {
+          _getHookContext()?.__dev__onMismatchEvents(step, ...events);
+          _sendEvent(currentEventData);
+          break;
+        } else {
+          // remove from queue
+          events.forEach((e) => {
+            const idx = queue.findIndex((p) => p === e);
             if (idx !== -1) queue.splice(idx, 1);
           });
+          // remove acceptable inputs from queue
+          allPossibleInputs
+            .filter((e) => events.some((p) => p === e))
+            .forEach((e) => {
+              const idx = queue.findIndex((q) => q === e);
+              if (idx !== -1) queue.splice(idx, 1);
+            });
+        }
+
+        // call many step as much as possible
+        const args = events.sort((a, b) => {
+          const aIndex = inputs.findIndex((i) => i.include(a));
+          const bIndex = inputs.findIndex((i) => i.include(b));
+          return aIndex - bIndex;
+        });
+        _getHookContext()?.beforeEvents(step, ...args);
+        const currentEvents: WorkflowEventData<any>[] = [];
+        const result = _internal_setContext(
+          {
+            ..._internal_getContext(),
+            __internal__currentInputs: args,
+            __internal__currentEvents: currentEvents,
+          },
+          () => step(...args),
+        );
+        args.forEach((arg) => {
+          const idx = allPossibleInputs.findIndex((p) => arg === p);
+          if (idx !== -1) allPossibleInputs.splice(idx, 1);
+        });
+        results.push([result, currentEvents, args]);
       }
-      const args = events.sort((a, b) => {
-        const aIndex = inputs.findIndex((i) => i.include(a));
-        const bIndex = inputs.findIndex((i) => i.include(b));
-        return aIndex - bIndex;
-      });
-      _getHookContext()?.beforeEvents(step, ...args);
-      const currentEvents: WorkflowEventData<any>[] = [];
-      const result = executorContextAsyncLocalStorage.run(
-        {
-          ...rootExecutorContext,
-          __internal__currentInputs: args,
-          __internal__currentEvents: currentEvents,
-        },
-        () => {
-          return step(...args);
-        },
-      );
-      if (isPromiseLike(result)) {
-        return result.then((nextEvent: void | WorkflowEventData<any>) => {
-          if (!nextEvent) return;
+      results.forEach(([result, currentEvents, args]) => {
+        // handle result
+        if (isPromiseLike(result)) {
+          return result.then((nextEvent: void | WorkflowEventData<any>) => {
+            if (!nextEvent) return;
+            _getHookContext()?.afterEvents(step, ...args);
+            if (!stop.include(nextEvent)) {
+              _sendEvent(nextEvent);
+            }
+            currentEvents.forEach((eventData) => {
+              if (!enqueuedEvents.has(eventData)) {
+                controller.enqueue(eventData);
+                enqueuedEvents.add(eventData);
+              }
+            });
+            args.forEach((arg) => {
+              rootExecutorContext.__dev__reference.next.set(arg, nextEvent);
+              rootExecutorContext.__dev__reference.prev.set(nextEvent, arg);
+            });
+            return nextEvent;
+          });
+        } else if (isEventData(result)) {
           _getHookContext()?.afterEvents(step, ...args);
+          if (!stop.include(result)) {
+            _sendEvent(result);
+          }
           currentEvents.forEach((eventData) => {
             if (!enqueuedEvents.has(eventData)) {
               controller.enqueue(eventData);
               enqueuedEvents.add(eventData);
             }
           });
-          if (!stop.include(nextEvent)) {
-            _sendEvent(nextEvent);
-          }
           args.forEach((arg) => {
-            rootExecutorContext.__dev__reference.next.set(arg, nextEvent);
-            rootExecutorContext.__dev__reference.prev.set(nextEvent, arg);
+            rootExecutorContext.__dev__reference.next.set(arg, result);
+            rootExecutorContext.__dev__reference.prev.set(result, arg);
           });
-          return nextEvent;
-        });
-      } else if (isEventData(result)) {
-        _getHookContext()?.afterEvents(step, ...args);
-        currentEvents.forEach((eventData) => {
-          if (!enqueuedEvents.has(eventData)) {
-            controller.enqueue(eventData);
-            enqueuedEvents.add(eventData);
-          }
-        });
-        if (!stop.include(result)) {
-          _sendEvent(result);
+          return result;
+        } else {
+          return;
         }
-        args.forEach((arg) => {
-          rootExecutorContext.__dev__reference.next.set(arg, result);
-          rootExecutorContext.__dev__reference.prev.set(result, arg);
+      });
+      return results.map(([result]) => result);
+    });
+    nextEvents.forEach((ev) => {
+      if (isPromiseLike(ev) || isEventData(ev)) {
+        runningEvents.add(ev);
+      }
+    });
+    nextEvents.forEach((ev) => {
+      if (isPromiseLike(ev)) {
+        ev.finally(() => {
+          runningEvents.delete(ev);
         });
-        return result;
-      } else {
-        return;
+      } else if (isEventData(ev)) {
+        runningEvents.delete(ev);
       }
     });
-    nextEventPromises.forEach((p) => {
-      if (isPromiseLike(p)) {
-        runningEvents.add(p);
-        p.catch((err) => console.error("Error in step", err)).finally(() =>
-          runningEvents.delete(p),
-        );
-      }
-    });
-    if (nextEventPromises.some((p) => p && "data" in p)) {
-      const fastest = nextEventPromises.find(isEventData);
+    if (nextEvents.some((p) => p && "data" in p)) {
+      const fastest = nextEvents.find(isEventData);
       if (fastest && !enqueuedEvents.has(fastest)) {
         controller.enqueue(fastest);
         enqueuedEvents.add(fastest);
       }
     }
-    await Promise.race(nextEventPromises)
+    await Promise.race(nextEvents)
       .then((fastest) => {
         if (!fastest || enqueuedEvents.has(fastest)) return null;
         controller.enqueue(fastest);
@@ -358,10 +467,9 @@ export function createExecutor<Start, Stop>(
         return fastest;
       })
       .then(async (fastest) => {
-        const nextEvents = (await Promise.all(nextEventPromises)).filter(
+        for (const nextEvent of (await Promise.all(nextEvents)).filter(
           isEventData,
-        );
-        for (const nextEvent of nextEvents) {
+        )) {
           if (nextEvent !== fastest && !enqueuedEvents.has(nextEvent)) {
             controller.enqueue(nextEvent);
             enqueuedEvents.add(nextEvent);
@@ -369,16 +477,18 @@ export function createExecutor<Start, Stop>(
         }
       })
       .catch((err) => {
-        _sendEvent(currentEventData);
         controller.error(err);
       });
+
+    await Promise.all(nextEvents);
   }
 
   function createStreamEvents(): AsyncIterableIterator<WorkflowEventData<any>> {
     const stream = new ReadableStream<WorkflowEventData<any>>({
       start: async (controller) => {
+        currentController = controller;
         while (true) {
-          await controllerAsyncLocalStorage.run(controller, handleQueue);
+          await handleQueue();
           if (queue.length === 0 && runningEvents.size === 0) {
             let retry = false;
             await _getHookContext()?.afterQueue(() => {
@@ -401,9 +511,11 @@ export function createExecutor<Start, Stop>(
   function getIteratorSingleton(): AsyncIterableIterator<
     WorkflowEventData<any>
   > {
-    return executorContextAsyncLocalStorage.run(rootExecutorContext, () => {
+    return _internal_setContext(rootExecutorContext, () => {
       if (!iterator) {
-        _sendEvent(initialEvent);
+        if (!("snapshot" in params)) {
+          _sendEvent(params.initialEvent);
+        }
         iterator = createStreamEvents();
       }
       return iterator;
@@ -418,6 +530,23 @@ export function createExecutor<Start, Stop>(
       return stop;
     },
     [Symbol.asyncIterator]: getIteratorSingleton,
-    // TODO: support snapshot API
+    snapshot: (): Snapshot => {
+      const snapshotContext = (
+        current: InternalExecutorContext,
+      ): InternalContext => {
+        return {
+          __internal__currentInputs: [...current.__internal__currentInputs],
+          __internal__currentEvents: [...current.__internal__currentEvents],
+          next: current.next.map((next) => snapshotContext(next)),
+        };
+      };
+
+      return {
+        queue: pendingEventData ? [pendingEventData, ...queue] : [...queue],
+        runningEvents: [...runningEvents],
+        enqueuedEvents: [...enqueuedEvents],
+        rootContext: snapshotContext(rootExecutorContext),
+      };
+    },
   };
 }

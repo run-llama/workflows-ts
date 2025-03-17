@@ -55,7 +55,8 @@
   ],
   "scripts": {
     "build": "tsup",
-    "dev": "tsup --watch"
+    "dev": "tsup --watch",
+    "test": "vitest run"
   },
   "devDependencies": {
     "@types/node": "^22.13.10",

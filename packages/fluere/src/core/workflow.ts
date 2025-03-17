@@ -1,9 +1,16 @@
 import { type WorkflowEvent, type WorkflowEventData } from "./event";
-import { createExecutor, type Executor, type Handler } from "./executor";
+import {
+  createExecutor,
+  type Executor,
+  type Handler,
+  type Snapshot,
+} from "./executor";
 
 type Cleanup = () => void;
 
 export type Workflow<Start, Stop> = {
+  get startEvent(): WorkflowEvent<Start>;
+  get stopEvent(): WorkflowEvent<Stop>;
   handle: <
     const AcceptEvents extends WorkflowEvent<any>[],
     Result extends ReturnType<WorkflowEvent<any>> | void,
@@ -12,14 +19,13 @@ export type Workflow<Start, Stop> = {
     handler: Handler<AcceptEvents, Result>,
   ) => Cleanup;
   run: (initialEvent: WorkflowEventData<any>) => Executor<Start, Stop>;
-  get startEvent(): WorkflowEvent<Start>;
-  get stopEvent(): WorkflowEvent<Stop>;
+  recover: (snapshot: any) => Executor<Start, Stop>;
 };
 
 export function createWorkflow<Start, Stop>(params: {
   startEvent: WorkflowEvent<Start>;
   stopEvent: WorkflowEvent<Stop>;
-}) {
+}): Workflow<Start, Stop> {
   const config = {
     steps: new Map<
       WorkflowEvent<any>[],
@@ -68,6 +74,14 @@ export function createWorkflow<Start, Stop>(params: {
         stop: params.stopEvent,
         initialEvent,
         steps: config.steps,
+      });
+    },
+    recover: (snapshot: Snapshot): Executor<Start, Stop> => {
+      return createExecutor<Start, Stop>({
+        start: params.startEvent,
+        stop: params.stopEvent,
+        steps: config.steps,
+        snapshot,
       });
     },
   };
