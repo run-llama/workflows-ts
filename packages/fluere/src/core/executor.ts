@@ -1,4 +1,4 @@
-import { AsyncLocalStorage } from "async_hooks";
+import { AsyncLocalStorage } from "node:async_hooks";
 import type { WorkflowEvent, WorkflowEventData } from "./event";
 import { _getHookContext } from "fluere/shared";
 import { isEventData, isPromiseLike } from "./utils";
