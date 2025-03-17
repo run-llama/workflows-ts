@@ -46,6 +46,10 @@
     "./interrupter/*": {
       "types": "./interrupter/*.d.ts",
       "default": "./interrupter/*.js"
+    },
+    "./middleware/*": {
+      "types": "./middleware/*.d.ts",
+      "default": "./middleware/*.js"
     }
   },
   "files": [

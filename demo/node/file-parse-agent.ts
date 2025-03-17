@@ -3,8 +3,6 @@ import { fileParseWorkflow } from "../workflows/file-parse-agent";
 
 const directory = "..";
 
-promiseHandler(() =>
-  fileParseWorkflow.run(fileParseWorkflow.startEvent(directory)),
-).then(({ data }) => {
+promiseHandler(() => fileParseWorkflow.run(directory)).then(({ data }) => {
   console.log(data);
 });

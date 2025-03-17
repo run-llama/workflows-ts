@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { timeoutHandler } from "./timeout";
-import type { Workflow } from "../core";
+import type { Workflow } from "fluere";
 
 type WorkflowAPI = {
   GET: (request: NextRequest) => Promise<Response>;

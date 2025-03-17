@@ -18,7 +18,7 @@ export type Workflow<Start, Stop> = {
     accept: AcceptEvents,
     handler: Handler<AcceptEvents, Result>,
   ) => Cleanup;
-  run: (initialEvent: WorkflowEventData<any>) => Executor<Start, Stop>;
+  run: (startData: Start) => Executor<Start, Stop>;
   recover: (snapshot: any) => Executor<Start, Stop>;
 };
 
@@ -68,11 +68,11 @@ export function createWorkflow<Start, Stop>(params: {
         };
       }
     },
-    run: (initialEvent: WorkflowEventData<Start>): Executor<Start, Stop> => {
+    run: (startData: Start): Executor<Start, Stop> => {
       return createExecutor<Start, Stop>({
         start: params.startEvent,
         stop: params.stopEvent,
-        initialEvent,
+        initialEvent: params.startEvent(startData),
         steps: config.steps,
       });
     },

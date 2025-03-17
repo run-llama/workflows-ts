@@ -133,3 +133,4 @@ dist
 packages/fluere/core
 packages/fluere/interrupter
 packages/fluere/shared
+packages/fluere/middleware

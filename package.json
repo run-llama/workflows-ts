@@ -13,6 +13,7 @@
     "lint:fix": "prettier . --write"
   },
   "devDependencies": {
-    "prettier": "^3.5.3"
+    "prettier": "^3.5.3",
+    "vite-tsconfig-paths": "^5.1.4"
   }
 }

@@ -18,9 +18,7 @@ workflow.handle([startEvent], ({ data }) => {
 
 app.post(
   "/workflow",
-  createHonoHandler(async (ctx) =>
-    workflow.run(startEvent(await ctx.req.text())),
-  ),
+  createHonoHandler(async (ctx) => workflow.run(await ctx.req.text())),
 );
 
 app.get("/", (c) => {

@@ -24,7 +24,7 @@ describe("snapshot", () => {
   });
 
   test("should be still same in multiple times", () => {
-    const executor = workflow.run(startEvent("hello"));
+    const executor = workflow.run("hello");
     const output = executor.snapshot();
     expect(output).toMatchInlineSnapshot(`
       {
@@ -50,7 +50,7 @@ describe("snapshot", () => {
   });
 
   test("should still work after one event", async () => {
-    const executor = workflow.run(startEvent("start"));
+    const executor = workflow.run("start");
     let counter = 0;
     const events: WorkflowEventData<any>[] = [];
     const snapshots: Snapshot[] = [];
@@ -162,7 +162,7 @@ describe("snapshot", () => {
       }),
     );
 
-    const executor = workflow.run(startEvent("start"));
+    const executor = workflow.run("start");
     const snapshots: Snapshot[] = [];
     for await (const event of executor) {
       snapshots.push(executor.snapshot());

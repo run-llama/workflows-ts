@@ -1,4 +1,4 @@
-import type { Workflow, WorkflowEventData } from "../core";
+import type { Workflow, WorkflowEventData } from "fluere";
 import { _setHookContext } from "fluere/shared";
 
 export async function timeoutHandler<Start, Stop>(

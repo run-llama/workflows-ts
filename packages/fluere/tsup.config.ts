@@ -23,7 +23,16 @@ export default defineConfig([
     entry: ["src/interrupter/*.ts"],
     outDir: "interrupter",
     format: ["esm"],
-    external: ["react", "next", "hono", "ai/rsc", "fluere/shared"],
+    external: ["react", "next", "hono", "ai/rsc", "fluere/shared", "fluere"],
+    dts: true,
+    sourcemap: true,
+  },
+  // Middleware APIs
+  {
+    entry: ["src/interrupter/*.ts"],
+    outDir: "middleware",
+    format: ["esm"],
+    external: ["fluere/shared", "fluere"],
     dts: true,
     sourcemap: true,
   },

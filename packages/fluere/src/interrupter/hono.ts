@@ -1,5 +1,5 @@
 import type { Context, Handler } from "hono";
-import type { Workflow } from "../core";
+import type { Workflow } from "fluere";
 import { timeoutHandler } from "./timeout";
 
 export const createHonoHandler = <Start, Stop>(
