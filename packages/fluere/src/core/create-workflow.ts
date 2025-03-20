@@ -1,8 +1,6 @@
 import type { WorkflowEvent } from "./event";
-import {
-  createExecutor, type Executor
-} from './create-executor'
-import type { Handler } from './executor'
+import { createExecutor, type Executor } from "./create-executor";
+import type { Handler } from "./executor";
 
 type Cleanup = () => void;
 

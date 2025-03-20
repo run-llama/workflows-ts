@@ -5,6 +5,7 @@ let j = 0;
 
 export type WorkflowEventData<Data> = {
   get data(): Data;
+  get type(): WorkflowEvent<Data>;
 };
 
 export type WorkflowEvent<Data> = {
@@ -34,7 +35,12 @@ export const workflowEvent = <Data = void>(
           data,
         };
       },
-      data,
+      get type() {
+        return event;
+      },
+      get data() {
+        return data;
+      },
     };
     s.add(ref);
     Object.freeze(ref);

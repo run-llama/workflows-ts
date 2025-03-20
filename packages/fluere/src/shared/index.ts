@@ -1,5 +1,5 @@
 import { AsyncLocalStorage } from "node:async_hooks";
-import type { WorkflowEvent, WorkflowEventData, Handler } from 'fluere';
+import type { WorkflowEvent, WorkflowEventData, Handler } from "fluere";
 
 type HookContext = {
   beforeEvents: <
