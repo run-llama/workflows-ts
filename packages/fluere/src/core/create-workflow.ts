@@ -1,4 +1,8 @@
-import type { WorkflowEvent } from "./event";
+import {
+  eventSource,
+  type WorkflowEvent,
+  type WorkflowEventData
+} from './event'
 import { createExecutor, type Executor } from "./create-executor";
 import type { Handler } from "./executor";
 
@@ -7,14 +11,20 @@ type Cleanup = () => void;
 export type Workflow<Start, Stop> = {
   get startEvent(): WorkflowEvent<Start>;
   get stopEvent(): WorkflowEvent<Stop>;
-  handle: <
+  handle<
     const AcceptEvents extends WorkflowEvent<any>[],
     Result extends ReturnType<WorkflowEvent<any>> | void,
   >(
     accept: AcceptEvents,
     handler: Handler<AcceptEvents, Result>,
-  ) => Cleanup;
-  run: (startData: Start) => Executor<Start, Stop>;
+  ): Cleanup;
+
+  run(
+    start: Start
+  ): Executor<Start, Stop>
+  run(
+    initialEvent: WorkflowEventData<any>
+  ): Executor<Start, Stop>;
 };
 
 export function createWorkflow<Start, Stop>(params: {
@@ -63,13 +73,24 @@ export function createWorkflow<Start, Stop>(params: {
         };
       }
     },
-    run: (startData: Start): Executor<Start, Stop> => {
-      return createExecutor<Start, Stop>({
-        start: params.startEvent,
-        stop: params.stopEvent,
-        initialEvent: params.startEvent(startData),
-        steps: config.steps,
-      });
+    run: (
+      initialEventOrStart: WorkflowEventData<any> | Start
+    ): Executor<Start, Stop> => {
+      if (eventSource(initialEventOrStart as any)) {
+        return createExecutor<Start, Stop>({
+          start: params.startEvent,
+          stop: params.stopEvent,
+          initialEvent: initialEventOrStart as WorkflowEventData<any>,
+          steps: config.steps,
+        });
+      } else {
+        return createExecutor<Start, Stop>({
+          start: params.startEvent,
+          stop: params.stopEvent,
+          initialEvent: params.startEvent(initialEventOrStart as Start),
+          steps: config.steps,
+        });
+      }
     },
   };
 }

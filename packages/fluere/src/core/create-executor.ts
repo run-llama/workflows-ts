@@ -31,6 +31,7 @@ export type ExecutorResponse =
   | {
       type: "send";
       data: WorkflowEventData<any>[];
+      deplete: WorkflowEventData<any>[];
       execute: (eventData: WorkflowEventData<any>) => void;
     }
   | {
@@ -127,7 +128,6 @@ export function createExecutor<Start, Stop>(
       prev.set(eventData, input);
     });
     __internal__currentEvents.push(eventData);
-    queue.push(eventData);
   }
   async function requireEvent<Data>(
     event: WorkflowEvent<Data>,
@@ -400,7 +400,8 @@ export function createExecutor<Start, Stop>(
             nextStepSendEvents: WorkflowEventData<any>[],
             nextStep: WorkflowEventData<any>[],
           ][];
-          for (const currentEventData of currentEventDataInLoop) {
+          while (currentEventDataInLoop.length > 0) {
+            const currentEventData = currentEventDataInLoop.shift()!;
             if (!enqueuedEvents.has(currentEventData)) {
               yield {
                 type: "start",
@@ -431,9 +432,11 @@ export function createExecutor<Start, Stop>(
               }
             });
           let executed = false;
+          const deplete = nextStepResults.flatMap((r) => r[2]!).filter(e => !enqueuedEvents.has(e));
           yield {
             type: "send",
             data: nextStepSendEvents,
+            deplete,
             execute: (eventData) => {
               if (!executed) {
                 nextStepResults = [];

@@ -1,5 +1,9 @@
 import type { Executor, ExecutorResponse } from "./create-executor";
-import type { WorkflowEvent, WorkflowEventData } from "./event";
+import {
+  eventSource,
+  type WorkflowEvent,
+  type WorkflowEventData
+} from './event'
 import { isEventData, isPromiseLike } from "./utils";
 
 export function readableStream<Start, Stop>(executor: Executor<Start, Stop>) {
@@ -48,7 +52,10 @@ export function readableStream<Start, Stop>(executor: Executor<Start, Stop>) {
           return;
         }
         case "send": {
-          const { data, execute } = response;
+          const { data, execute, deplete } = response;
+          deplete.forEach(event => {
+            controller.enqueue(event)
+          })
           for (const ev of data) {
             execute(ev);
           }

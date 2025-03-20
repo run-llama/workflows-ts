@@ -7,6 +7,7 @@ import {
   type WorkflowEventData,
 } from "../../src/core/event";
 import { readableStream } from "../../src/core/readable-stream";
+import { promiseHandler } from '../../src/interrupter/promise'
 
 describe("workflow basic", () => {
   const startEvent = workflowEvent<string>();
@@ -210,6 +211,205 @@ describe("workflow simple logic", () => {
     expect(f2).toBeCalledTimes(2);
     expect(f3).toBeCalledTimes(2);
     expect(events).toHaveLength(6);
+  });
+
+  test("should work with if-else base on event", async () => {
+    const startEvent = workflowEvent<string>({
+      debugLabel: "startEvent",
+    });
+    const stopEvent = workflowEvent<1 | -1>({
+      debugLabel: "stopEvent",
+    });
+    const workflow = createWorkflow<string, 1 | -1>({
+      startEvent,
+      stopEvent,
+    });
+    workflow.handle([startEvent], (start) => {
+      return start.data === "100" ? stopEvent(1) : stopEvent(-1);
+    });
+    {
+      const stream = readableStream(
+        workflow.run("100")
+      );
+      const events: WorkflowEventData<any>[] = [];
+      for await (const ev of stream) {
+        events.push(ev);
+      }
+      expect(events).toHaveLength(2);
+      expect(events.at(-1)!.data).toBe(1);
+    }
+
+    {
+      const stream = readableStream(
+        workflow.run("200")
+      );
+      const events: WorkflowEventData<any>[] = [];
+      for await (const ev of stream) {
+        events.push(ev);
+      }
+      expect(events).toHaveLength(2);
+      expect(events.at(-1)!.data).toBe(-1);
+    }
+  });
+
+  test("should work when one event invoke two handler", async () => {
+    const startEvent = workflowEvent<string>({
+      debugLabel: "startEvent",
+    });
+    const stopEvent = workflowEvent<string>({
+      debugLabel: "stopEvent",
+    });
+    const jokeEvent = workflowEvent<{ joke: string }>({
+      debugLabel: "jokeEvent",
+    });
+    const critiqueEvent = workflowEvent<{ critique: string }>({
+      debugLabel: "critiqueEvent",
+    });
+    const analysisEvent = workflowEvent<{ analysis: string }>({
+      debugLabel: "analysisEvent",
+    });
+
+    const jokeFlow = createWorkflow({
+      startEvent,
+      stopEvent,
+    });
+
+    jokeFlow.handle([startEvent], async () => {
+      return jokeEvent({ joke: "joke" });
+    });
+    jokeFlow.handle([jokeEvent], async () => {
+      return critiqueEvent({ critique: "critique" });
+    });
+    jokeFlow.handle([jokeEvent], async () => {
+      return analysisEvent({ analysis: "analysis" });
+    });
+    jokeFlow.handle(
+      [analysisEvent, critiqueEvent],
+      async (analysisEvent, critiqueEvent) => {
+        return stopEvent(
+          critiqueEvent.data.critique + " " + analysisEvent.data.analysis,
+        );
+      },
+    );
+
+    const stream = readableStream(jokeFlow.run("pirates"));
+    const events: WorkflowEventData<any>[] = [];
+    for await (const ev of stream) {
+      events.push(ev);
+    }
+    expect(events).toHaveLength(5);
+    expect(events.at(-1)!.data).toBe(
+      "critique analysis",
+    );
+    expect(events.map((e) => eventSource(e))).toEqual([
+      startEvent,
+      jokeEvent,
+      analysisEvent,
+      critiqueEvent,
+      stopEvent,
+    ]);
+  });
+
+
+  test("should work in loop", async () => {
+    const startEvent = workflowEvent<string>({
+      debugLabel: "startEvent",
+    });
+    const stopEvent = workflowEvent<1 | -1>({
+      debugLabel: "stopEvent",
+    });
+    const workflow = createWorkflow<string, 1 | -1>({
+      startEvent,
+      stopEvent,
+    });
+    const parseEvent = workflowEvent<number>({
+      debugLabel: "parseEvent",
+    });
+    const parseResultEvent = workflowEvent<number>({
+      debugLabel: "parseResult",
+    });
+    workflow.handle([startEvent], async () => {
+      const ev = parseEvent(2);
+      getContext().sendEvent(ev);
+      await getContext().requireEvent(parseResultEvent);
+      return stopEvent(1);
+    });
+    workflow.handle([parseEvent], async ({ data }) => {
+      if (data > 0) {
+        const ev = parseEvent(data - 1);
+        getContext().sendEvent(ev);
+      } else {
+        return parseResultEvent(0);
+      }
+    });
+    const executor = workflow.run("100");
+    const stream = readableStream(executor);
+    const events: WorkflowEventData<any>[] = [];
+    for await (const ev of stream) {
+      events.push(ev);
+    }
+    expect(events.length).toBe(6);
+    expect(events.at(-1)!.data).toBe(1);
+    expect(events.map((e) => eventSource(e))).toEqual([
+      startEvent,
+      parseEvent,
+      parseEvent,
+      parseEvent,
+      parseResultEvent,
+      stopEvent,
+    ]);
+  });
+
+  test("multiple parse", async () => {
+    const startEvent = workflowEvent<string>({
+      debugLabel: "startEvent",
+    });
+    const stopEvent = workflowEvent<1 | -1>({
+      debugLabel: "stopEvent",
+    });
+    const workflow = createWorkflow<string, 1 | -1>({
+      startEvent,
+      stopEvent,
+    });
+    const parseEvent = workflowEvent<number>({
+      debugLabel: "parseEvent",
+    });
+    const parseResultEvent = workflowEvent<number>({
+      debugLabel: "parseResult",
+    });
+    workflow.handle([startEvent], async () => {
+      const ev = parseEvent(2);
+      getContext().sendEvent(ev);
+      await getContext().requireEvent(parseResultEvent);
+      getContext().sendEvent(ev);
+      await getContext().requireEvent(parseResultEvent);
+      return stopEvent(1);
+    });
+    workflow.handle([parseEvent], async ({ data }) => {
+      if (data > 0) {
+        const ev = parseEvent(data - 1);
+        getContext().sendEvent(ev);
+      } else {
+        return parseResultEvent(0);
+      }
+    });
+
+    const executor = workflow.run("100");
+    const stream = readableStream(executor);
+    const events: WorkflowEventData<any>[] = [];
+    for await (const ev of stream) {
+      events.push(ev);
+    }
+    expect(events.length).toBe(6);
+    expect(events.at(-1)!.data).toBe(1);
+    expect(events.map((e) => eventSource(e))).toEqual([
+      startEvent,
+      parseEvent,
+      parseEvent,
+      parseEvent,
+      parseResultEvent,
+      stopEvent,
+    ]);
   });
 });
 
