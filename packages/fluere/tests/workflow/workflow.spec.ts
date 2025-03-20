@@ -243,7 +243,7 @@ describe("workflow context api", () => {
     expect(events).toHaveLength(2);
   });
 
-  test("should work when request event", async () => {
+  test("should work when request event single", async () => {
     const aEvent = workflowEvent({
       debugLabel: "aEvent",
     });
@@ -272,7 +272,7 @@ describe("workflow context api", () => {
       events.push(ev);
     }
     expect(fn).toBeCalledTimes(1);
-    expect(events.map((e) => e.type)).toEqual([
+    expect(events.map((e) => eventSource(e))).toEqual([
       startEvent,
       aEvent,
       aResultEvent,
