@@ -15,11 +15,6 @@ export type ExecutorResponse =
       data: WorkflowEventData<any>;
     }
   | {
-      type: "prepare";
-      iterate: () => IterableIterator<ExecutorResponse>;
-      onWait: (waitEvent: (event: WorkflowEvent<any>) => Promise<void>) => void;
-    }
-  | {
       type: "running";
       data: (
         | Promise<WorkflowEventData<any> | void>
@@ -383,15 +378,6 @@ export function createExecutor<Start, Stop>(
           };
           enqueuedEvents.add(currentEventData);
         }
-        let onWaitEvent: ((event: WorkflowEvent<any>) => Promise<void>) | null =
-          null;
-        yield {
-          type: "prepare",
-          onWait: (waitEvent) => {
-            onWaitEvent = waitEvent;
-          },
-          iterate: queueIterator,
-        };
         const nextStepEvents: (
           | Promise<WorkflowEventData<any> | void>
           | WorkflowEventData<any>
@@ -487,11 +473,25 @@ export function createExecutor<Start, Stop>(
           squeeze,
         };
       } else {
-        // todo: it's possible that we have staling event after calling a handler
-        yield {
-          type: "empty",
-          squeeze,
-        };
+        function fallbackFoundMissing(executor: InternalExecutorContext) {
+          const events = executor.__internal__currentEvents;
+          events.forEach((ev) => {
+            if (!enqueuedEvents.has(ev)) {
+              // todo: should warn user?
+              queue.push(ev);
+            }
+          });
+          for (const next of executor.next) {
+            fallbackFoundMissing(next);
+          }
+        }
+        fallbackFoundMissing(rootExecutorContext);
+        if (queue.length === 0) {
+          yield {
+            type: "empty",
+            squeeze,
+          };
+        }
       }
     }
   }

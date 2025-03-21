@@ -1,10 +1,18 @@
 import type { Executor, ExecutorResponse } from "./create-executor";
-import { type WorkflowEvent, type WorkflowEventData } from "./event";
+import {
+  type WorkflowEvent,
+  type WorkflowEventData,
+  eventSource,
+} from "./event";
 import { isEventData, isPromiseLike } from "./utils";
 
 export function readableStream<Start, Stop>(executor: Executor<Start, Stop>) {
-  const targetingEvents = new Set<WorkflowEvent<any>>();
-
+  // By default, we assume the stop event is the last event,
+  //  but it's interesting
+  //  that we can allow the user to specify the stop event.
+  //  Or even there's no stop event at all
+  const targetingEvent = executor.stop;
+  const allEvents = new WeakSet<WorkflowEvent<any>>();
   async function handleIterator(
     controller: ReadableStreamDefaultController<WorkflowEventData<any>>,
     iterator: IterableIterator<ExecutorResponse, ExecutorResponse>,
@@ -14,15 +22,8 @@ export function readableStream<Start, Stop>(executor: Executor<Start, Stop>) {
       switch (response.type) {
         case "start": {
           const { data } = response;
+          allEvents.add(eventSource(data));
           controller.enqueue(data);
-          break;
-        }
-        case "prepare": {
-          const { iterate, onWait } = response;
-          onWait(async (event: WorkflowEvent<any>) => {
-            targetingEvents.add(event);
-            await handleIterator(controller, iterate());
-          });
           break;
         }
         case "running": {
@@ -46,12 +47,18 @@ export function readableStream<Start, Stop>(executor: Executor<Start, Stop>) {
         }
         case "empty": {
           // todo: check if we have encountered stop event
-          controller.close();
-          return;
+          if (allEvents.has(targetingEvent)) {
+            controller.close();
+            return;
+          } else {
+            await new Promise((resolve) => setTimeout(resolve, 0));
+            break;
+          }
         }
         case "send": {
           const { data, execute, deplete } = response;
           deplete.forEach((event) => {
+            allEvents.add(eventSource(event));
             controller.enqueue(event);
           });
           for (const ev of data) {
