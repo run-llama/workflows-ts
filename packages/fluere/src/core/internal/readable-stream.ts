@@ -1,12 +1,16 @@
-import type { Executor, ExecutorResponse } from "./create-executor";
+import type { Executor, ExecutorResponse } from "../create-executor";
 import {
   type WorkflowEvent,
   type WorkflowEventData,
   eventSource,
-} from "./event";
-import { isEventData, isPromiseLike } from "./utils";
+} from "../event";
+import { isEventData, isPromiseLike } from "../utils";
 
-export function readableStream<Start, Stop>(executor: Executor<Start, Stop>) {
+export function readableStream<Start, Stop>(
+  executor: Executor<Start, Stop>,
+): ReadableStream<
+  WorkflowEventData<any> | WorkflowEventData<Start> | WorkflowEventData<Stop>
+> {
   // By default, we assume the stop event is the last event,
   //  but it's interesting
   //  that we can allow the user to specify the stop event.

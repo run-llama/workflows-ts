@@ -1,13 +1,40 @@
-import type {
-  ExecutorContext,
-  ExecutorParams,
-  Handler,
-  SnapshotExecutorParams,
-} from "./executor";
 import type { WorkflowEvent, WorkflowEventData } from "./event";
 import { _getHookContext } from "fluere/shared";
 import { AsyncLocalStorage } from "node:async_hooks";
 import { flattenEvents, isEventData, isPromiseLike } from "./utils";
+
+export type Handler<
+  AcceptEvents extends WorkflowEvent<any>[],
+  Result extends WorkflowEventData<any> | void,
+> = (
+  ...event: {
+    [K in keyof AcceptEvents]: ReturnType<AcceptEvents[K]>;
+  }
+) => Result | Promise<Result>;
+
+export type ReadonlyHandlerMap = ReadonlyMap<
+  WorkflowEvent<any>[],
+  Set<Handler<WorkflowEvent<any>[], any>>
+>;
+
+export type ExecutorParams<Start, Stop> = {
+  start: WorkflowEvent<Start>;
+  stop: WorkflowEvent<Stop>;
+  initialEvent: WorkflowEventData<Start>;
+  steps: ReadonlyHandlerMap;
+};
+
+export type ExecutorContext = {
+  requireEvent: <Data>(
+    event: WorkflowEvent<Data>,
+  ) => Promise<WorkflowEventData<Data>>;
+  sendEvent: <Data>(event: WorkflowEventData<Data>) => void;
+
+  __dev__reference: {
+    next: WeakMap<WorkflowEventData<any>, WorkflowEventData<any>>;
+    prev: WeakMap<WorkflowEventData<any>, WorkflowEventData<any>>;
+  };
+};
 
 export type ExecutorResponse =
   | {
@@ -88,7 +115,7 @@ export function getContext(): ExecutorContext {
 }
 
 export function createExecutor<Start, Stop>(
-  params: ExecutorParams<Start, Stop> | SnapshotExecutorParams<Start, Stop>,
+  params: ExecutorParams<Start, Stop>,
 ): Executor<Start, Stop> {
   const { start, steps, stop } = params;
   //#region Data
@@ -383,15 +410,15 @@ export function createExecutor<Start, Stop>(
           | WorkflowEventData<any>
         )[] = [];
         let currentEventDataInLoop = [currentEventData];
+        let nextStepResults = [] as [
+          nextStepEvents:
+            | Promise<WorkflowEventData<any> | void>
+            | WorkflowEventData<any>
+            | void,
+          nextStepSendEvents: WorkflowEventData<any>[],
+          nextStepArgs: WorkflowEventData<any>[],
+        ][];
         while (true) {
-          let nextStepResults = [] as [
-            nextStepEvents:
-              | Promise<WorkflowEventData<any> | void>
-              | WorkflowEventData<any>
-              | void,
-            nextStepSendEvents: WorkflowEventData<any>[],
-            nextStep: WorkflowEventData<any>[],
-          ][];
           while (currentEventDataInLoop.length > 0) {
             const currentEventData = currentEventDataInLoop.shift()!;
             if (!enqueuedEvents.has(currentEventData)) {
@@ -449,11 +476,10 @@ export function createExecutor<Start, Stop>(
             deplete,
             execute: (eventData) => {
               if (!executed) {
-                nextStepResults = [];
+                executed = true;
                 currentEventDataInLoop = [];
+                nextStepResults = [];
               }
-              executed = true;
-              nextStepResults.push(...handleEventData(eventData));
               currentEventDataInLoop.push(eventData);
             },
           };
