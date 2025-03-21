@@ -46,7 +46,6 @@ export function readableStream<Start, Stop>(executor: Executor<Start, Stop>) {
           break;
         }
         case "empty": {
-          // todo: check if we have encountered stop event
           if (allEvents.has(targetingEvent)) {
             controller.close();
             return;

@@ -44,7 +44,7 @@ export type Executor<Start, Stop> = {
 
 type InternalExecutorContext = ExecutorContext & {
   prev: null | InternalExecutorContext;
-  next: InternalExecutorContext[];
+  next: Set<InternalExecutorContext>;
   __internal__waitEvent: ((event: WorkflowEvent<any>) => Promise<void>) | null;
   __internal__currentInputs: WorkflowEventData<any>[];
   __internal__currentEvents: WorkflowEventData<any>[];
@@ -70,7 +70,7 @@ function _internal_setContext<R>(
 ): R {
   const prev = context.prev;
   if (prev) {
-    prev.next.push(context);
+    prev.next.add(context);
   }
   return executorContextAsyncLocalStorage.run(context, fn);
 }
@@ -171,7 +171,7 @@ export function createExecutor<Start, Stop>(
     __internal__currentEvents: [] as WorkflowEventData<any>[],
 
     prev: null,
-    next: [],
+    next: new Set(),
   };
   //#endregion
 
@@ -303,7 +303,7 @@ export function createExecutor<Start, Stop>(
         const currentEvents: WorkflowEventData<any>[] = [];
         const context: InternalExecutorContext = {
           prev: executorContextAsyncLocalStorage.getStore() ?? null,
-          next: [],
+          next: new Set(),
           __internal__currentInputs: args,
           __internal__currentEvents: currentEvents,
           // keep the same
@@ -457,6 +457,7 @@ export function createExecutor<Start, Stop>(
               currentEventDataInLoop.push(eventData);
             },
           };
+          deplete.forEach((d) => enqueuedEvents.add(d));
           if (!executed) {
             queue.push(...nextStepSendEvents);
             break;

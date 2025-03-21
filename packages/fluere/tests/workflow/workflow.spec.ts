@@ -528,6 +528,48 @@ describe("workflow simple logic", () => {
       ]);
     }
   });
+
+  test("require events with no await - large amount", async () => {
+    const startEvent = workflowEvent<string>({
+      debugLabel: "startEvent",
+    });
+    const convertEvent = workflowEvent<number>({
+      debugLabel: "convertEvent",
+    });
+    const stopEvent = workflowEvent<1 | -1>({
+      debugLabel: "stopEvent",
+    });
+    const workflow = createWorkflow<string, 1 | -1>({
+      startEvent,
+      stopEvent,
+    });
+
+    workflow.handle([startEvent], async (start) => {
+      setTimeout(() => {
+        const context = getContext();
+        for (let i = 0; i < 100; i++) {
+          context.sendEvent(convertEvent(Number.parseInt(start.data, 10)));
+        }
+      }, 10);
+    });
+
+    workflow.handle(
+      Array.from({ length: 100 }).map(() => convertEvent),
+      async () => {
+        return stopEvent(1);
+      },
+    );
+
+    {
+      const executor = workflow.run("100");
+      const stream = readableStream(executor);
+      const events: WorkflowEventData<any>[] = [];
+      for await (const ev of stream) {
+        events.push(ev);
+      }
+      expect(events).toHaveLength(102);
+    }
+  });
 });
 
 describe("workflow context api", () => {
