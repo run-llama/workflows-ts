@@ -1,9 +1,5 @@
 import type { Executor, ExecutorResponse } from "./create-executor";
-import {
-  eventSource,
-  type WorkflowEvent,
-  type WorkflowEventData
-} from './event'
+import { type WorkflowEvent, type WorkflowEventData } from "./event";
 import { isEventData, isPromiseLike } from "./utils";
 
 export function readableStream<Start, Stop>(executor: Executor<Start, Stop>) {
@@ -36,7 +32,9 @@ export function readableStream<Start, Stop>(executor: Executor<Start, Stop>) {
             if (isPromiseLike(ev)) {
               pendingEvents.push(
                 ev.then((ev) => {
-                  if (ev) squeeze(ev);
+                  if (ev) {
+                    squeeze(ev);
+                  }
                 }),
               );
             } else if (isEventData(ev)) {
@@ -53,9 +51,9 @@ export function readableStream<Start, Stop>(executor: Executor<Start, Stop>) {
         }
         case "send": {
           const { data, execute, deplete } = response;
-          deplete.forEach(event => {
-            controller.enqueue(event)
-          })
+          deplete.forEach((event) => {
+            controller.enqueue(event);
+          });
           for (const ev of data) {
             execute(ev);
           }

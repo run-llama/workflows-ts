@@ -1,8 +1,8 @@
 import {
   eventSource,
   type WorkflowEvent,
-  type WorkflowEventData
-} from './event'
+  type WorkflowEventData,
+} from "./event";
 import { createExecutor, type Executor } from "./create-executor";
 import type { Handler } from "./executor";
 
@@ -19,12 +19,8 @@ export type Workflow<Start, Stop> = {
     handler: Handler<AcceptEvents, Result>,
   ): Cleanup;
 
-  run(
-    start: Start
-  ): Executor<Start, Stop>
-  run(
-    initialEvent: WorkflowEventData<any>
-  ): Executor<Start, Stop>;
+  run(start: Start): Executor<Start, Stop>;
+  run(initialEvent: WorkflowEventData<any>): Executor<Start, Stop>;
 };
 
 export function createWorkflow<Start, Stop>(params: {
@@ -74,7 +70,7 @@ export function createWorkflow<Start, Stop>(params: {
       }
     },
     run: (
-      initialEventOrStart: WorkflowEventData<any> | Start
+      initialEventOrStart: WorkflowEventData<any> | Start,
     ): Executor<Start, Stop> => {
       if (eventSource(initialEventOrStart as any)) {
         return createExecutor<Start, Stop>({

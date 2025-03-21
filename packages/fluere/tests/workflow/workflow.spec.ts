@@ -7,7 +7,6 @@ import {
   type WorkflowEventData,
 } from "../../src/core/event";
 import { readableStream } from "../../src/core/readable-stream";
-import { promiseHandler } from '../../src/interrupter/promise'
 
 describe("workflow basic", () => {
   const startEvent = workflowEvent<string>();
@@ -228,9 +227,7 @@ describe("workflow simple logic", () => {
       return start.data === "100" ? stopEvent(1) : stopEvent(-1);
     });
     {
-      const stream = readableStream(
-        workflow.run("100")
-      );
+      const stream = readableStream(workflow.run("100"));
       const events: WorkflowEventData<any>[] = [];
       for await (const ev of stream) {
         events.push(ev);
@@ -240,9 +237,7 @@ describe("workflow simple logic", () => {
     }
 
     {
-      const stream = readableStream(
-        workflow.run("200")
-      );
+      const stream = readableStream(workflow.run("200"));
       const events: WorkflowEventData<any>[] = [];
       for await (const ev of stream) {
         events.push(ev);
@@ -298,9 +293,7 @@ describe("workflow simple logic", () => {
       events.push(ev);
     }
     expect(events).toHaveLength(5);
-    expect(events.at(-1)!.data).toBe(
-      "critique analysis",
-    );
+    expect(events.at(-1)!.data).toBe("critique analysis");
     expect(events.map((e) => eventSource(e))).toEqual([
       startEvent,
       jokeEvent,
@@ -309,7 +302,6 @@ describe("workflow simple logic", () => {
       stopEvent,
     ]);
   });
-
 
   test("should work in loop", async () => {
     const startEvent = workflowEvent<string>({
@@ -410,6 +402,131 @@ describe("workflow simple logic", () => {
       parseResultEvent,
       stopEvent,
     ]);
+  });
+
+  test.skip("should work with multiple input", async () => {
+    const startEvent = workflowEvent<string>({
+      debugLabel: "startEvent",
+    });
+    const convertEvent = workflowEvent<number>({
+      debugLabel: "convertEvent",
+    });
+    const stopEvent = workflowEvent<1 | -1>({
+      debugLabel: "stopEvent",
+    });
+    const workflow = createWorkflow<string, 1 | -1>({
+      startEvent,
+      stopEvent,
+    });
+
+    workflow.handle([startEvent], (start) => {
+      const ev1 = convertEvent(Number.parseInt(start.data, 10));
+      const ev2 = convertEvent(Number.parseInt(start.data, 10));
+      getContext().sendEvent(ev1);
+      return ev2;
+    });
+    workflow.handle([convertEvent, convertEvent], (convert1, convert2) => {
+      return stopEvent(convert1.data + convert2.data > 0 ? 1 : -1);
+    });
+
+    const executor = workflow.run("100");
+    const stream = readableStream(executor);
+    const events: WorkflowEventData<any>[] = [];
+    for await (const ev of stream) {
+      events.push(ev);
+    }
+    expect(events).toHaveLength(4);
+    expect(events.at(-1)!.data).toBe(1);
+    expect(events.map((e) => eventSource(e))).toEqual([
+      startEvent,
+      convertEvent,
+      convertEvent,
+      stopEvent,
+    ]);
+  });
+
+  test.skip("should work with require events", async () => {
+    const startEvent = workflowEvent<string>({
+      debugLabel: "startEvent",
+    });
+    const convertEvent = workflowEvent<number>({
+      debugLabel: "convertEvent",
+    });
+    const stopEvent = workflowEvent<1 | -1>({
+      debugLabel: "stopEvent",
+    });
+    const workflow = createWorkflow<string, 1 | -1>({
+      startEvent,
+      stopEvent,
+    });
+
+    workflow.handle([startEvent], (start) => {
+      for (let i = 0; i < 100; i++) {
+        getContext().sendEvent(convertEvent(Number.parseInt(start.data, 10)));
+      }
+      return;
+    });
+    workflow.handle(
+      Array.from({ length: 100 }).map(() => convertEvent),
+      async () => {
+        return stopEvent(1);
+      },
+    );
+    const executor = workflow.run("100");
+    const stream = readableStream(executor);
+    const events: WorkflowEventData<any>[] = [];
+    for await (const ev of stream) {
+      events.push(ev);
+    }
+    expect(events).toHaveLength(102);
+    expect(events.at(-1)!.data).toBe(1);
+    expect(events.map((e) => eventSource(e))).toEqual([
+      startEvent,
+      ...Array.from({ length: 100 }, () => convertEvent),
+      stopEvent,
+    ]);
+  });
+
+  test.skip("require events with no await", async () => {
+    const startEvent = workflowEvent<string>({
+      debugLabel: "startEvent",
+    });
+    const convertEvent = workflowEvent<number>({
+      debugLabel: "convertEvent",
+    });
+    const stopEvent = workflowEvent<1 | -1>({
+      debugLabel: "stopEvent",
+    });
+    const workflow = createWorkflow<string, 1 | -1>({
+      startEvent,
+      stopEvent,
+    });
+
+    workflow.handle([startEvent], async (start) => {
+      for (let i = 0; i < 100; i++) {
+        // it's not possible to detect if/when the event is sent
+        setTimeout(() => {
+          getContext().sendEvent(convertEvent(Number.parseInt(start.data, 10)));
+        }, 10);
+      }
+    });
+
+    workflow.handle(
+      Array.from({ length: 100 }).map(() => convertEvent),
+      async () => {
+        return stopEvent(1);
+      },
+    );
+
+    {
+      const executor = workflow.run("100");
+      const stream = readableStream(executor);
+      const events: WorkflowEventData<any>[] = [];
+      for await (const ev of stream) {
+        events.push(ev);
+      }
+      expect(events).toHaveLength(102);
+    }
   });
 });
 

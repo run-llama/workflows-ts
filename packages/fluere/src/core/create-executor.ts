@@ -162,7 +162,7 @@ export function createExecutor<Start, Stop>(
   //#endregion
 
   //#region Context
-  const rootExecutorContext = {
+  const rootExecutorContext: InternalExecutorContext = {
     requireEvent,
     sendEvent,
     __dev__reference: {
@@ -177,7 +177,7 @@ export function createExecutor<Start, Stop>(
 
     prev: null,
     next: [],
-  } satisfies InternalExecutorContext;
+  };
   //#endregion
 
   //#region Cache
@@ -306,16 +306,22 @@ export function createExecutor<Start, Stop>(
         });
         _getHookContext()?.beforeEvents(nextStep, ...args);
         const currentEvents: WorkflowEventData<any>[] = [];
-        const result = _internal_setContext(
-          {
-            ..._internal_getContext(rootExecutorContext),
-            sendEvent,
-            requireEvent,
-            __internal__currentInputs: args,
-            __internal__currentEvents: currentEvents,
-          },
-          () => nextStep(...args),
-        );
+        const context: InternalExecutorContext = {
+          prev: executorContextAsyncLocalStorage.getStore() ?? null,
+          next: [],
+          __internal__currentInputs: args,
+          __internal__currentEvents: currentEvents,
+          // keep the same
+          __dev__reference: rootExecutorContext.__dev__reference,
+          __internal__waitEvent: null,
+          __internal__result_counter:
+            rootExecutorContext.__internal__result_counter,
+          __internal__result_counter_map:
+            rootExecutorContext.__internal__result_counter_map,
+          sendEvent: rootExecutorContext.sendEvent,
+          requireEvent: rootExecutorContext.requireEvent,
+        };
+        const result = _internal_setContext(context, () => nextStep(...args));
         args.forEach((arg) => {
           const idx = allPossibleInputs.findIndex((p) => arg === p);
           if (idx !== -1) allPossibleInputs.splice(idx, 1);
@@ -409,13 +415,29 @@ export function createExecutor<Start, Stop>(
               };
               enqueuedEvents.add(currentEventData);
             }
+            const context: InternalExecutorContext = {
+              prev: _internal_getContext(rootExecutorContext).prev,
+              next: _internal_getContext(rootExecutorContext).next,
+              __internal__currentInputs:
+                _internal_getContext(rootExecutorContext)
+                  .__internal__currentInputs,
+              __internal__currentEvents:
+                _internal_getContext(rootExecutorContext)
+                  .__internal__currentEvents,
+              // keep the same
+              __dev__reference: rootExecutorContext.__dev__reference,
+              __internal__waitEvent: null,
+              __internal__result_counter:
+                rootExecutorContext.__internal__result_counter,
+              __internal__result_counter_map:
+                rootExecutorContext.__internal__result_counter_map,
+              sendEvent: rootExecutorContext.sendEvent,
+              requireEvent: rootExecutorContext.requireEvent,
+            };
+
             nextStepResults.push(
-              ..._internal_setContext(
-                {
-                  ..._internal_getContext(rootExecutorContext),
-                  __internal__waitEvent: onWaitEvent,
-                },
-                () => handleEventData(currentEventData),
+              ..._internal_setContext(context, () =>
+                handleEventData(currentEventData),
               ),
             );
           }
@@ -432,7 +454,9 @@ export function createExecutor<Start, Stop>(
               }
             });
           let executed = false;
-          const deplete = nextStepResults.flatMap((r) => r[2]!).filter(e => !enqueuedEvents.has(e));
+          const deplete = nextStepResults
+            .flatMap((r) => r[2]!)
+            .filter((e) => !enqueuedEvents.has(e));
           yield {
             type: "send",
             data: nextStepSendEvents,
@@ -463,6 +487,7 @@ export function createExecutor<Start, Stop>(
           squeeze,
         };
       } else {
+        // todo: it's possible that we have staling event after calling a handler
         yield {
           type: "empty",
           squeeze,

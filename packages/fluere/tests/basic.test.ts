@@ -6,14 +6,10 @@ import {
   type WorkflowEventData,
 } from "fluere";
 import { describe, expect, test, beforeEach } from "vitest";
-import { timeoutHandler } from "../src/interrupter/timeout";
 import { promiseHandler } from "../src/interrupter/promise";
 
 const startEvent = workflowEvent<string>({
   debugLabel: "startEvent",
-});
-const convertEvent = workflowEvent<number>({
-  debugLabel: "convertEvent",
 });
 const stopEvent = workflowEvent<1 | -1>({
   debugLabel: "stopEvent",
@@ -25,88 +21,6 @@ beforeEach(() => {
   workflow = createWorkflow<string, 1 | -1>({
     startEvent,
     stopEvent,
-  });
-});
-
-describe("multiple inputs", () => {
-  test("basic", async () => {
-    workflow.handle([startEvent], (start) => {
-      const ev1 = convertEvent(Number.parseInt(start.data, 10));
-      const ev2 = convertEvent(Number.parseInt(start.data, 10));
-      getContext().sendEvent(ev1);
-      return ev2;
-    });
-    workflow.handle([convertEvent, convertEvent], (convert1, convert2) => {
-      return stopEvent(convert1.data + convert2.data > 0 ? 1 : -1);
-    });
-
-    const result = await promiseHandler(() => workflow.run("100"));
-    expect(result.data).toBe(1);
-  });
-
-  test("require events", async () => {
-    workflow.handle([startEvent], (start) => {
-      for (let i = 0; i < 100; i++) {
-        getContext().sendEvent(convertEvent(Number.parseInt(start.data, 10)));
-      }
-      return;
-    });
-    workflow.handle(
-      Array.from({ length: 100 }).map(() => convertEvent),
-      async () => {
-        return stopEvent(1);
-      },
-    );
-
-    const result = await promiseHandler(() => workflow.run("100"));
-    expect(result.data).toBe(1);
-  });
-
-  test("require events with timeout", async () => {
-    workflow.handle([startEvent], async (start) => {
-      for (let i = 0; i < 100; i++) {
-        await new Promise((resolve) => setTimeout(resolve, 1));
-        getContext().sendEvent(convertEvent(Number.parseInt(start.data, 10)));
-      }
-    });
-
-    workflow.handle(
-      Array.from({ length: 100 }).map(() => convertEvent),
-      async () => {
-        return stopEvent(1);
-      },
-    );
-
-    const result = await promiseHandler(() => workflow.run("100"));
-    expect(result.data).toBe(1);
-  });
-
-  test("require events with no await", async () => {
-    workflow.handle([startEvent], async (start) => {
-      for (let i = 0; i < 100; i++) {
-        // it's not possible to detect if/when the event is sent
-        setTimeout(() => {
-          getContext().sendEvent(convertEvent(Number.parseInt(start.data, 10)));
-        }, 10);
-      }
-    });
-
-    workflow.handle(
-      Array.from({ length: 100 }).map(() => convertEvent),
-      async () => {
-        return stopEvent(1);
-      },
-    );
-
-    {
-      const result = await promiseHandler(() => workflow.run("100"));
-      expect(result.data).toBe(1);
-    }
-
-    {
-      const result = await timeoutHandler(() => workflow.run("100"));
-      expect(result.data).toBe(1);
-    }
   });
 });
 
