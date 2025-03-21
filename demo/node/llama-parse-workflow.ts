@@ -7,7 +7,6 @@ promiseHandler(
       inputFile: process.argv[2],
       apiKey: process.env.LLAMA_CLOUD_API!,
     }),
-  null,
 ).then(({ data }) => {
   console.log(data.markdown);
 });
