@@ -8,9 +8,11 @@ import { _setHookContext } from "fluere/shared";
  *  reject if the workflow throws an error or times out.
  */
 export async function promiseHandler<Start, Stop>(
-  getExecutor: () => ReturnType<Workflow<Start, Stop>["run"]>,
+  getExecutor: () =>
+    | ReturnType<Workflow<Start, Stop>["run"]>
+    | Promise<ReturnType<Workflow<Start, Stop>["run"]>>,
 ): Promise<WorkflowEventData<Stop>> {
-  const executor = getExecutor();
+  const executor = await getExecutor();
   const stream = readableStream(executor);
   for await (const event of stream) {
     if (executor.stop.include(event)) {

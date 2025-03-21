@@ -3,7 +3,11 @@ import type { Workflow } from "fluere";
 import { promiseHandler } from "./promise";
 
 export const createHonoHandler = <Start, Stop>(
-  getExecutor: (c: Context) => ReturnType<Workflow<Start, Stop>["run"]>,
+  getExecutor: (
+    c: Context,
+  ) =>
+    | Promise<ReturnType<Workflow<Start, Stop>["run"]>>
+    | ReturnType<Workflow<Start, Stop>["run"]>,
   wrapStopEvent?: (c: Context, stop: Stop) => Response,
 ): Handler => {
   if (!wrapStopEvent) {
