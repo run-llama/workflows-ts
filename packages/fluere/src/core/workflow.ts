@@ -3,7 +3,7 @@ import {
   type WorkflowEvent,
   type WorkflowEventData,
 } from "./event";
-import { createExecutor, type Executor, type Handler } from "./create-executor";
+import { createExecutor, type Executor, type Handler } from "./executor";
 
 type Cleanup = () => void;
 

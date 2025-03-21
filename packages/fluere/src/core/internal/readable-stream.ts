@@ -1,4 +1,8 @@
-import type { Executor, ExecutorResponse } from "../create-executor";
+/**
+ * Readable Stream is one of the implementations of the executor.
+ *  It follows the general single-threaded event loop model.
+ */
+import type { Executor, ExecutorResponse } from "../executor";
 import {
   type WorkflowEvent,
   type WorkflowEventData,
