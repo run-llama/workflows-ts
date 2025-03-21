@@ -404,7 +404,7 @@ describe("workflow simple logic", () => {
     ]);
   });
 
-  test.skip("should work with multiple input", async () => {
+  test("should work with multiple input", async () => {
     const startEvent = workflowEvent<string>({
       debugLabel: "startEvent",
     });
@@ -445,7 +445,7 @@ describe("workflow simple logic", () => {
     ]);
   });
 
-  test.skip("should work with require events", async () => {
+  test("should work with require events", async () => {
     const startEvent = workflowEvent<string>({
       debugLabel: "startEvent",
     });
@@ -487,7 +487,7 @@ describe("workflow simple logic", () => {
     ]);
   });
 
-  test.skip("require events with no await", async () => {
+  test("require events with no await", async () => {
     const startEvent = workflowEvent<string>({
       debugLabel: "startEvent",
     });
@@ -503,20 +503,14 @@ describe("workflow simple logic", () => {
     });
 
     workflow.handle([startEvent], async (start) => {
-      for (let i = 0; i < 100; i++) {
-        // it's not possible to detect if/when the event is sent
-        setTimeout(() => {
-          getContext().sendEvent(convertEvent(Number.parseInt(start.data, 10)));
-        }, 10);
-      }
+      setTimeout(() => {
+        getContext().sendEvent(convertEvent(Number.parseInt(start.data, 10)));
+      }, 10);
     });
 
-    workflow.handle(
-      Array.from({ length: 100 }).map(() => convertEvent),
-      async () => {
-        return stopEvent(1);
-      },
-    );
+    workflow.handle([convertEvent], async () => {
+      return stopEvent(1);
+    });
 
     {
       const executor = workflow.run("100");
@@ -525,7 +519,13 @@ describe("workflow simple logic", () => {
       for await (const ev of stream) {
         events.push(ev);
       }
-      expect(events).toHaveLength(102);
+      expect(events).toHaveLength(3);
+      expect(events.at(-1)!.data).toBe(1);
+      expect(events.map((e) => eventSource(e))).toEqual([
+        startEvent,
+        convertEvent,
+        stopEvent,
+      ]);
     }
   });
 });
