@@ -566,6 +566,45 @@ describe("workflow simple logic", () => {
       expect(events).toHaveLength(102);
     }
   });
+
+  test("require events with setTimeout & return event same time", async () => {
+    const startEvent = workflowEvent<string>({
+      debugLabel: "startEvent",
+    });
+    const convertEvent = workflowEvent<number>({
+      debugLabel: "convertEvent",
+    });
+    const stopEvent = workflowEvent<1 | -1>({
+      debugLabel: "stopEvent",
+    });
+    const workflow = createWorkflow<string, 1 | -1>({
+      startEvent,
+      stopEvent,
+    });
+    workflow.handle([startEvent], async () => {
+      setTimeout(() => {
+        getContext().sendEvent(convertEvent(1));
+      }, 10);
+      return convertEvent(2);
+    });
+    workflow.handle([convertEvent, convertEvent], async () => {
+      return stopEvent(1);
+    });
+    const executor = workflow.run("100");
+    const stream = readableStream(executor);
+    const events: WorkflowEventData<any>[] = [];
+    for await (const ev of stream) {
+      events.push(ev);
+    }
+    expect(events).toHaveLength(4);
+    expect(events.at(-1)!.data).toBe(1);
+    expect(events.map((e) => eventSource(e))).toEqual([
+      startEvent,
+      convertEvent,
+      convertEvent,
+      stopEvent,
+    ]);
+  });
 });
 
 describe("workflow context api", () => {
