@@ -397,6 +397,22 @@ export function createExecutor<Start, Stop>(
     while (true) {
       const currentEventData = queue.shift();
 
+      // FIXME: REMOVE THIS IN THE FUTURE!
+      //  THIS IS A TEMPORARY FIX FOR THE EMPTY QUEUE
+      function fallbackFoundMissing(executor: InternalExecutorContext) {
+        const events = executor.__internal__currentEvents;
+        events.forEach((ev) => {
+          if (!enqueuedEvents.has(ev)) {
+            // todo: should warn user?
+            queue.push(ev);
+          }
+        });
+        for (const next of executor.next) {
+          fallbackFoundMissing(next);
+        }
+      }
+      fallbackFoundMissing(rootExecutorContext);
+
       if (currentEventData) {
         if (!enqueuedEvents.has(currentEventData)) {
           yield {
@@ -500,19 +516,6 @@ export function createExecutor<Start, Stop>(
           squeeze,
         };
       } else {
-        function fallbackFoundMissing(executor: InternalExecutorContext) {
-          const events = executor.__internal__currentEvents;
-          events.forEach((ev) => {
-            if (!enqueuedEvents.has(ev)) {
-              // todo: should warn user?
-              queue.push(ev);
-            }
-          });
-          for (const next of executor.next) {
-            fallbackFoundMissing(next);
-          }
-        }
-        fallbackFoundMissing(rootExecutorContext);
         if (queue.length === 0) {
           yield {
             type: "empty",

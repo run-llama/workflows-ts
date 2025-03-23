@@ -584,7 +584,7 @@ describe("workflow simple logic", () => {
     workflow.handle([startEvent], async () => {
       setTimeout(() => {
         getContext().sendEvent(convertEvent(1));
-      }, 10);
+      }, 0);
       return convertEvent(2);
     });
     workflow.handle([convertEvent, convertEvent], async () => {

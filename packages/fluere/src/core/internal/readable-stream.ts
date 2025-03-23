@@ -73,6 +73,8 @@ export function readableStream<Start, Stop>(
           }
         }
       }
+      // FIXME: REMOVE THIS IN THE FUTURE!
+      await new Promise((resolve) => setTimeout(resolve, 0));
     }
   }
 
