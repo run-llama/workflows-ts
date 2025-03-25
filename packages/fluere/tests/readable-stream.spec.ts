@@ -5,9 +5,15 @@ import { eventSource, workflowEvent, type WorkflowEventData } from "fluere";
 import { readableStream } from "fluere";
 
 describe("workflow basic", () => {
-  const startEvent = workflowEvent<string>();
-  const convertEvent = workflowEvent<number>();
-  const stopEvent = workflowEvent<number>();
+  const startEvent = workflowEvent<string>({
+    debugLabel: "startEvent",
+  });
+  const convertEvent = workflowEvent<number>({
+    debugLabel: "convertEvent",
+  });
+  const stopEvent = workflowEvent<number>({
+    debugLabel: "stopEvent",
+  });
   let workflow: ReturnType<typeof createWorkflow<string, number>>;
   beforeEach(() => {
     // refresh workflow
@@ -38,7 +44,7 @@ describe("workflow basic", () => {
       return stopEvent(convert.data > 0 ? 1 : -1);
     });
 
-    const stream = readableStream(workflow.run("100"));
+    const stream = readableStream(workflow, "100");
     const events: WorkflowEventData<any>[] = [];
     for await (const ev of stream) {
       events.push(ev);
@@ -55,7 +61,7 @@ describe("workflow basic", () => {
       return stopEvent(convert.data > 0 ? 1 : -1);
     });
 
-    const stream = readableStream(workflow.run("100"));
+    const stream = readableStream(workflow, "100");
     const events: WorkflowEventData<any>[] = [];
     for await (const ev of stream) {
       events.push(ev);
@@ -72,7 +78,7 @@ describe("workflow basic", () => {
       return stopEvent(convert.data > 0 ? 1 : -1);
     });
 
-    const stream = readableStream(workflow.run("100"));
+    const stream = readableStream(workflow, "100");
     const events: WorkflowEventData<any>[] = [];
     for await (const ev of stream) {
       events.push(ev);
@@ -90,7 +96,7 @@ describe("workflow basic", () => {
       return stopEvent(convert.data > 0 ? 1 : -1);
     });
 
-    const stream = readableStream(workflow.run("100"));
+    const stream = readableStream(workflow, "100");
     const events: WorkflowEventData<any>[] = [];
     for await (const ev of stream) {
       events.push(ev);
@@ -101,8 +107,12 @@ describe("workflow basic", () => {
 });
 
 describe("workflow simple logic", () => {
-  const startEvent = workflowEvent();
-  const stopEvent = workflowEvent();
+  const startEvent = workflowEvent({
+    debugLabel: "startEvent",
+  });
+  const stopEvent = workflowEvent({
+    debugLabel: "stopEvent",
+  });
   test("should work with single handler", async () => {
     const workflow = createWorkflow({
       startEvent,
@@ -110,9 +120,7 @@ describe("workflow simple logic", () => {
     });
     const f1 = vi.fn(async () => stopEvent());
     workflow.handle([startEvent], f1);
-
-    const executor = workflow.run();
-    const stream = readableStream(executor);
+    const stream = readableStream(workflow);
     const events: WorkflowEventData<any>[] = [];
     for await (const ev of stream) {
       events.push(ev);
@@ -132,8 +140,7 @@ describe("workflow simple logic", () => {
     workflow.handle([startEvent], f1);
 
     workflow.handle([event], f2);
-    const executor = workflow.run();
-    const stream = readableStream(executor);
+    const stream = readableStream(workflow);
     const events: WorkflowEventData<any>[] = [];
     for await (const ev of stream) {
       events.push(ev);
@@ -155,8 +162,7 @@ describe("workflow simple logic", () => {
     );
     workflow.handle([startEvent], f1);
     {
-      const executor = workflow.run(1);
-      const stream = readableStream(executor);
+      const stream = readableStream(workflow, 1);
       const events: WorkflowEventData<any>[] = [];
       for await (const ev of stream) {
         events.push(ev);
@@ -166,8 +172,7 @@ describe("workflow simple logic", () => {
     }
     f1.mockClear();
     {
-      const executor = workflow.run(-1);
-      const stream = readableStream(executor);
+      const stream = readableStream(workflow, -1);
       const events: WorkflowEventData<any>[] = [];
       for await (const ev of stream) {
         events.push(ev);
@@ -196,8 +201,7 @@ describe("workflow simple logic", () => {
     workflow.handle([event1], f2);
 
     workflow.handle([event2], f3);
-    const executor = workflow.run();
-    const stream = readableStream(executor);
+    const stream = readableStream(workflow);
     const events: WorkflowEventData<any>[] = [];
     for await (const ev of stream) {
       events.push(ev);
@@ -223,7 +227,7 @@ describe("workflow simple logic", () => {
       return start.data === "100" ? stopEvent(1) : stopEvent(-1);
     });
     {
-      const stream = readableStream(workflow.run("100"));
+      const stream = readableStream(workflow, "100");
       const events: WorkflowEventData<any>[] = [];
       for await (const ev of stream) {
         events.push(ev);
@@ -233,7 +237,7 @@ describe("workflow simple logic", () => {
     }
 
     {
-      const stream = readableStream(workflow.run("200"));
+      const stream = readableStream(workflow, "200");
       const events: WorkflowEventData<any>[] = [];
       for await (const ev of stream) {
         events.push(ev);
@@ -283,7 +287,7 @@ describe("workflow simple logic", () => {
       },
     );
 
-    const stream = readableStream(jokeFlow.run("pirates"));
+    const stream = readableStream(jokeFlow, "pirates");
     const events: WorkflowEventData<any>[] = [];
     for await (const ev of stream) {
       events.push(ev);
@@ -293,8 +297,8 @@ describe("workflow simple logic", () => {
     expect(events.map((e) => eventSource(e))).toEqual([
       startEvent,
       jokeEvent,
-      analysisEvent,
       critiqueEvent,
+      analysisEvent,
       stopEvent,
     ]);
   });
@@ -330,8 +334,7 @@ describe("workflow simple logic", () => {
         return parseResultEvent(0);
       }
     });
-    const executor = workflow.run("100");
-    const stream = readableStream(executor);
+    const stream = readableStream(workflow, "100");
     const events: WorkflowEventData<any>[] = [];
     for await (const ev of stream) {
       events.push(ev);
@@ -382,16 +385,19 @@ describe("workflow simple logic", () => {
       }
     });
 
-    const executor = workflow.run("100");
-    const stream = readableStream(executor);
+    const stream = readableStream(workflow, "100");
     const events: WorkflowEventData<any>[] = [];
     for await (const ev of stream) {
       events.push(ev);
     }
-    expect(events.length).toBe(6);
+    expect(events.length).toBe(10);
     expect(events.at(-1)!.data).toBe(1);
     expect(events.map((e) => eventSource(e))).toEqual([
       startEvent,
+      parseEvent,
+      parseEvent,
+      parseEvent,
+      parseResultEvent,
       parseEvent,
       parseEvent,
       parseEvent,
@@ -425,8 +431,7 @@ describe("workflow simple logic", () => {
       return stopEvent(convert1.data + convert2.data > 0 ? 1 : -1);
     });
 
-    const executor = workflow.run("100");
-    const stream = readableStream(executor);
+    const stream = readableStream(workflow, "100");
     const events: WorkflowEventData<any>[] = [];
     for await (const ev of stream) {
       events.push(ev);
@@ -468,8 +473,7 @@ describe("workflow simple logic", () => {
         return stopEvent(1);
       },
     );
-    const executor = workflow.run("100");
-    const stream = readableStream(executor);
+    const stream = readableStream(workflow, "100");
     const events: WorkflowEventData<any>[] = [];
     for await (const ev of stream) {
       events.push(ev);
@@ -509,8 +513,7 @@ describe("workflow simple logic", () => {
     });
 
     {
-      const executor = workflow.run("100");
-      const stream = readableStream(executor);
+      const stream = readableStream(workflow, "100");
       const events: WorkflowEventData<any>[] = [];
       for await (const ev of stream) {
         events.push(ev);
@@ -557,8 +560,7 @@ describe("workflow simple logic", () => {
     );
 
     {
-      const executor = workflow.run("100");
-      const stream = readableStream(executor);
+      const stream = readableStream(workflow, "100");
       const events: WorkflowEventData<any>[] = [];
       for await (const ev of stream) {
         events.push(ev);
@@ -590,8 +592,7 @@ describe("workflow simple logic", () => {
     workflow.handle([convertEvent, convertEvent], async () => {
       return stopEvent(1);
     });
-    const executor = workflow.run("100");
-    const stream = readableStream(executor);
+    const stream = readableStream(workflow, "100");
     const events: WorkflowEventData<any>[] = [];
     for await (const ev of stream) {
       events.push(ev);
@@ -627,8 +628,7 @@ describe("workflow context api", () => {
       return stopEvent();
     });
     workflow.handle([startEvent], fn);
-    const executor = workflow.run();
-    const stream = readableStream(executor);
+    const stream = readableStream(workflow);
     const events: WorkflowEventData<any>[] = [];
     for await (const ev of stream) {
       events.push(ev);
@@ -659,8 +659,7 @@ describe("workflow context api", () => {
     });
     workflow.handle([startEvent], fn);
     workflow.handle([aEvent], fn2);
-    const executor = workflow.run();
-    const stream = readableStream(executor);
+    const stream = readableStream(workflow);
     const events: WorkflowEventData<any>[] = [];
     for await (const ev of stream) {
       events.push(ev);

@@ -1,5 +1,4 @@
 import { readableStream, type Workflow, type WorkflowEventData } from "fluere";
-import { _setHookContext } from "fluere/shared";
 
 /**
  * Interrupter that wraps a workflow in a promise.
@@ -8,14 +7,12 @@ import { _setHookContext } from "fluere/shared";
  *  reject if the workflow throws an error or times out.
  */
 export async function promiseHandler<Start, Stop>(
-  getExecutor: () =>
-    | ReturnType<Workflow<Start, Stop>["run"]>
-    | Promise<ReturnType<Workflow<Start, Stop>["run"]>>,
+  workflow: Workflow<Start, Stop>,
+  start: Start | WorkflowEventData<Start>,
 ): Promise<WorkflowEventData<Stop>> {
-  const executor = await getExecutor();
-  const stream = readableStream(executor);
+  const stream = readableStream(workflow, start);
   for await (const event of stream) {
-    if (executor.stop.include(event)) {
+    if (workflow.stopEvent.include(event)) {
       return event;
     }
   }

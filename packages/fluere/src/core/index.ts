@@ -1,5 +1,5 @@
 export { createWorkflow, type Workflow } from "./workflow";
-export { getContext, type Handler, type ExecutorContext } from "./executor";
+export { getContext, type Handler, type Context } from "./internal/executor";
 export {
   eventSource,
   workflowEvent,

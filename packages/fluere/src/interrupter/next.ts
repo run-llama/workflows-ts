@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import type { Workflow } from "fluere";
+import type { Workflow, WorkflowEventData } from "fluere";
 import { promiseHandler } from "./promise";
 
 type WorkflowAPI = {
@@ -7,13 +7,17 @@ type WorkflowAPI = {
 };
 
 export const createNextHandler = <Start, Stop>(
-  getExecutor: (
+  workflow: Workflow<Start, Stop>,
+  getStart: (
     request: NextRequest,
-  ) => ReturnType<Workflow<Start, Stop>["run"]>,
+  ) =>
+    | Start
+    | WorkflowEventData<Start>
+    | Promise<Start | WorkflowEventData<Start>>,
 ): WorkflowAPI => {
   return {
     GET: async (request) => {
-      const result = await promiseHandler(() => getExecutor(request));
+      const result = await promiseHandler(workflow, await getStart(request));
       return Response.json(result.data);
     },
   };
