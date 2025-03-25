@@ -37,7 +37,7 @@ export type ExecutorContext = {
   ) => Promise<WorkflowEventData<Data>>;
   sendEvent: <Data>(event: WorkflowEventData<Data>) => void;
 
-  __dev__reference: {
+  reference: {
     next: WeakMap<WorkflowEventData<any>, WorkflowEventData<any>>;
     prev: WeakMap<WorkflowEventData<any>, WorkflowEventData<any>>;
   };
@@ -98,7 +98,7 @@ export function getContext(): ExecutorContext {
   return {
     requireEvent: context.requireEvent,
     sendEvent: context.sendEvent,
-    __dev__reference: context.__dev__reference,
+    reference: context.reference,
   };
 }
 
@@ -263,7 +263,7 @@ export function createExecutor<Start, Stop>(
           }
           let current = acceptableInput;
           const store = executorContextAsyncLocalStorage.getStore()!;
-          const prevWeakMap = store.__dev__reference.prev;
+          const prevWeakMap = store.reference.prev;
           const acceptableEvents = [
             ...store.__internal__currentInputs,
             ...store.__internal__currentEvents,
@@ -288,7 +288,7 @@ export function createExecutor<Start, Stop>(
       const {
         __internal__currentEvents,
         __internal__currentInputs,
-        __dev__reference: { next, prev },
+        reference: { next, prev },
       } = _internal_getContext();
       __internal__currentInputs.forEach((input) => {
         next.set(input, eventData);
@@ -297,7 +297,7 @@ export function createExecutor<Start, Stop>(
       __internal__currentEvents.push(eventData);
       _sendEvent(eventData);
     },
-    __dev__reference: {
+    reference: {
       next: new WeakMap<WorkflowEventData<any>, WorkflowEventData<any>>(),
       prev: new WeakMap<WorkflowEventData<any>, WorkflowEventData<any>>(),
     },
@@ -406,8 +406,8 @@ export function createExecutor<Start, Stop>(
               }
             });
             args.forEach((arg) => {
-              rootExecutorContext.__dev__reference.next.set(arg, nextEvent);
-              rootExecutorContext.__dev__reference.prev.set(nextEvent, arg);
+              rootExecutorContext.reference.next.set(arg, nextEvent);
+              rootExecutorContext.reference.prev.set(nextEvent, arg);
             });
             return nextEvent;
           });
@@ -423,8 +423,8 @@ export function createExecutor<Start, Stop>(
             }
           });
           args.forEach((arg) => {
-            rootExecutorContext.__dev__reference.next.set(arg, result);
-            rootExecutorContext.__dev__reference.prev.set(result, arg);
+            rootExecutorContext.reference.next.set(arg, result);
+            rootExecutorContext.reference.prev.set(result, arg);
           });
           return result;
         } else {

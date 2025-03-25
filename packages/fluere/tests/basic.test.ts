@@ -314,7 +314,7 @@ describe("source of the event data", () => {
       WorkflowEventData<any>
     > = null!;
     workflow.handle([startEvent], (event) => {
-      referenceMap = getContext().__dev__reference.next;
+      referenceMap = getContext().reference.next;
       events.push(event);
       expect(event.data).toBe("data");
       const e = stopEvent(1);
