@@ -2,7 +2,7 @@ import { expect, test } from "vitest";
 import { readdir, stat } from "node:fs/promises";
 import { resolve } from "node:path";
 import { createWorkflow, getContext, workflowEvent } from "fluere";
-import { promiseHandler } from "../interrupter/promise";
+import { promiseHandler } from "../../interrupter/promise";
 
 test("read dir recursively", async () => {
   const startEvent = workflowEvent<string>({

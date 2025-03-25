@@ -284,7 +284,6 @@ export function createExecutor<Start, Stop>(
       }
     },
     sendEvent: function sendEvent(eventData) {
-      // todo: should throw error when eventData sent multiple times
       const {
         __internal__currentEvents,
         __internal__currentInputs,
@@ -373,6 +372,12 @@ export function createExecutor<Start, Stop>(
           const aIndex = inputs.findIndex((i) => i.include(a));
           const bIndex = inputs.findIndex((i) => i.include(b));
           return aIndex - bIndex;
+        });
+        args.forEach((arg) => {
+          if (!enqueuedEvents.has(arg)) {
+            controller.enqueue(arg);
+            enqueuedEvents.add(arg);
+          }
         });
         _getHookContext()?.beforeEvents(step, ...args);
         const currentEvents: WorkflowEventData<any>[] = [];

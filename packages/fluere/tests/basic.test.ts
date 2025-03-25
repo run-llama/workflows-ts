@@ -1,37 +1,28 @@
+import { beforeEach, describe, expect, test, vi } from "vitest";
 import {
   createWorkflow,
-  workflowEvent,
+  eventSource,
   getContext,
-  type Workflow,
+  workflowEvent,
   type WorkflowEventData,
 } from "fluere";
-import { describe, expect, test, beforeEach } from "vitest";
-import { timeoutHandler } from "../src/interrupter/timeout";
-import { promiseHandler } from "../src/interrupter/promise";
-import { eventSource } from "fluere";
+import { promiseHandler } from "../interrupter/promise";
+import { timeoutHandler } from "../interrupter/timeout";
 
-const startEvent = workflowEvent<string>({
-  debugLabel: "startEvent",
-});
-const convertEvent = workflowEvent<number>({
-  debugLabel: "convertEvent",
-});
-const stopEvent = workflowEvent<1 | -1>({
-  debugLabel: "stopEvent",
-});
-
-let workflow: Workflow<string, 1 | -1>;
-
-beforeEach(() => {
-  workflow = createWorkflow<string, 1 | -1>({
-    startEvent,
-    stopEvent,
+describe("workflow basic", () => {
+  const startEvent = workflowEvent<string>();
+  const convertEvent = workflowEvent<number>();
+  const stopEvent = workflowEvent<number>();
+  let workflow: ReturnType<typeof createWorkflow<string, number>>;
+  beforeEach(() => {
+    // refresh workflow
+    workflow = createWorkflow({
+      startEvent,
+      stopEvent,
+    });
   });
-});
 
-describe("basic", () => {
-  // basic test for workflowEvent
-  {
+  test("workflow event", () => {
     const ev1 = startEvent("1");
     const ev2 = startEvent("2");
     // they are the same type
@@ -42,7 +33,7 @@ describe("basic", () => {
     expect(ev1 !== ev2).toBe(true);
     expect(ev1.data).toBe("1");
     expect(ev2.data).toBe("2");
-  }
+  });
 
   test("sync", async () => {
     workflow.handle([startEvent], (start) => {
@@ -52,8 +43,13 @@ describe("basic", () => {
       return stopEvent(convert.data > 0 ? 1 : -1);
     });
 
-    const result = await promiseHandler(() => workflow.run("100"));
-    expect(result.data).toBe(1);
+    const stream = workflow.run("100");
+    const events: WorkflowEventData<any>[] = [];
+    for await (const ev of stream) {
+      events.push(ev);
+    }
+    expect(events).toHaveLength(3);
+    expect(events.at(-1)!.data).toBe(1);
   });
 
   test("async", async () => {
@@ -64,8 +60,13 @@ describe("basic", () => {
       return stopEvent(convert.data > 0 ? 1 : -1);
     });
 
-    const result = await promiseHandler(() => workflow.run("100"));
-    expect(result.data).toBe(1);
+    const stream = workflow.run("100");
+    const events: WorkflowEventData<any>[] = [];
+    for await (const ev of stream) {
+      events.push(ev);
+    }
+    expect(events).toHaveLength(3);
+    expect(events.at(-1)!.data).toBe(1);
   });
 
   test("async + sync", async () => {
@@ -76,8 +77,13 @@ describe("basic", () => {
       return stopEvent(convert.data > 0 ? 1 : -1);
     });
 
-    const result = await promiseHandler(() => workflow.run("100"));
-    expect(result.data).toBe(1);
+    const stream = workflow.run("100");
+    const events: WorkflowEventData<any>[] = [];
+    for await (const ev of stream) {
+      events.push(ev);
+    }
+    expect(events).toHaveLength(3);
+    expect(events.at(-1)!.data).toBe(1);
   });
 
   test("async + timeout", async () => {
@@ -89,34 +95,170 @@ describe("basic", () => {
       return stopEvent(convert.data > 0 ? 1 : -1);
     });
 
-    const result = await promiseHandler(() => workflow.run("100"));
-    expect(result.data).toBe(1);
+    const stream = workflow.run("100");
+    const events: WorkflowEventData<any>[] = [];
+    for await (const ev of stream) {
+      events.push(ev);
+    }
+    expect(events).toHaveLength(3);
+    expect(events.at(-1)!.data).toBe(1);
   });
 });
 
-describe("condition", () => {
-  test("basic", async () => {
-    workflow.handle([startEvent], (start) => {
-      return start.data === "100" ? stopEvent(1) : stopEvent(-1);
+describe("workflow simple logic", () => {
+  const startEvent = workflowEvent();
+  const stopEvent = workflowEvent();
+  test("should work with single handler", async () => {
+    const workflow = createWorkflow({
+      startEvent,
+      stopEvent,
     });
+    const f1 = vi.fn(async () => stopEvent());
+    workflow.handle([startEvent], f1);
 
-    {
-      const result = await promiseHandler(() => workflow.run("100"));
-      expect(result.data).toBe(1);
+    const stream = workflow.run();
+    const events: WorkflowEventData<any>[] = [];
+    for await (const ev of stream) {
+      events.push(ev);
     }
+    expect(f1).toBeCalledTimes(1);
+    expect(events).toHaveLength(2);
+  });
 
+  test("should work with multiple handlers", async () => {
+    const workflow = createWorkflow({
+      startEvent,
+      stopEvent,
+    });
+    const event = workflowEvent();
+    const f1 = vi.fn(async () => event());
+    const f2 = vi.fn(async () => stopEvent());
+    workflow.handle([startEvent], f1);
+
+    workflow.handle([event], f2);
+    const stream = workflow.run();
+    const events: WorkflowEventData<any>[] = [];
+    for await (const ev of stream) {
+      events.push(ev);
+    }
+    expect(f1).toBeCalledTimes(1);
+    expect(f2).toBeCalledTimes(1);
+    expect(events).toHaveLength(3);
+  });
+
+  test("should work with multiple handlers (if-else)", async () => {
+    const startEvent = workflowEvent<number>();
+    const stopEvent = workflowEvent();
+    const workflow = createWorkflow({
+      startEvent,
+      stopEvent,
+    });
+    const f1 = vi.fn(async ({ data }: ReturnType<typeof startEvent>) =>
+      data > 0 ? startEvent(data - 1) : stopEvent(),
+    );
+    workflow.handle([startEvent], f1);
     {
-      const result = await promiseHandler(() => workflow.run("200"));
-      expect(result.data).toBe(-1);
+      const stream = workflow.run(1);
+      const events: WorkflowEventData<any>[] = [];
+      for await (const ev of stream) {
+        events.push(ev);
+      }
+      expect(f1).toBeCalledTimes(2);
+      expect(events).toHaveLength(3);
+    }
+    f1.mockClear();
+    {
+      const stream = workflow.run(-1);
+      const events: WorkflowEventData<any>[] = [];
+      for await (const ev of stream) {
+        events.push(ev);
+      }
+      expect(f1).toBeCalledTimes(1);
+      expect(events).toHaveLength(2);
     }
   });
 
-  test("one event cause two handler", async () => {
-    const startEvent = workflowEvent<string>();
-    const stopEvent = workflowEvent<string>();
-    const jokeEvent = workflowEvent<{ joke: string }>();
-    const critiqueEvent = workflowEvent<{ critique: string }>();
-    const analysisEvent = workflowEvent<{ analysis: string }>();
+  test("should work with multiple handlers (if-else loop)", async () => {
+    const workflow = createWorkflow({
+      startEvent,
+      stopEvent,
+    });
+    const event1 = workflowEvent<number>();
+    const event2 = workflowEvent<number>();
+    const f1 = vi.fn(async () => event1(2));
+    const f2 = vi.fn(async ({ data }: ReturnType<typeof event1>) =>
+      event2(data - 1),
+    );
+    const f3 = vi.fn(async ({ data }: ReturnType<typeof event2>) =>
+      data > 0 ? event1(data) : stopEvent(),
+    );
+    workflow.handle([startEvent], f1);
+
+    workflow.handle([event1], f2);
+
+    workflow.handle([event2], f3);
+    const stream = workflow.run();
+    const events: WorkflowEventData<any>[] = [];
+    for await (const ev of stream) {
+      events.push(ev);
+    }
+    expect(f1).toBeCalledTimes(1);
+    expect(f2).toBeCalledTimes(2);
+    expect(f3).toBeCalledTimes(2);
+    expect(events).toHaveLength(6);
+  });
+
+  test("should work with if-else base on event", async () => {
+    const startEvent = workflowEvent<string>({
+      debugLabel: "startEvent",
+    });
+    const stopEvent = workflowEvent<1 | -1>({
+      debugLabel: "stopEvent",
+    });
+    const workflow = createWorkflow<string, 1 | -1>({
+      startEvent,
+      stopEvent,
+    });
+    workflow.handle([startEvent], (start) => {
+      return start.data === "100" ? stopEvent(1) : stopEvent(-1);
+    });
+    {
+      const stream = workflow.run("100");
+      const events: WorkflowEventData<any>[] = [];
+      for await (const ev of stream) {
+        events.push(ev);
+      }
+      expect(events).toHaveLength(2);
+      expect(events.at(-1)!.data).toBe(1);
+    }
+
+    {
+      const stream = workflow.run("200");
+      const events: WorkflowEventData<any>[] = [];
+      for await (const ev of stream) {
+        events.push(ev);
+      }
+      expect(events).toHaveLength(2);
+      expect(events.at(-1)!.data).toBe(-1);
+    }
+  });
+
+  test("should work when one event invoke two handler", async () => {
+    const startEvent = workflowEvent<string>({
+      debugLabel: "startEvent",
+    });
+    const stopEvent = workflowEvent<string>({
+      debugLabel: "stopEvent",
+    });
+    const jokeEvent = workflowEvent<{ joke: string }>({
+      debugLabel: "jokeEvent",
+    });
+    const critiqueEvent = workflowEvent<{ critique: string }>({
+      debugLabel: "critiqueEvent",
+    });
+    const analysisEvent = workflowEvent<{ analysis: string }>({
+      debugLabel: "analysisEvent",
+    });
 
     const jokeFlow = createWorkflow({
       startEvent,
@@ -141,14 +283,34 @@ describe("condition", () => {
       },
     );
 
-    const result = await promiseHandler(() => jokeFlow.run("pirates"), null);
-    expect(result.data).toBeDefined();
-    expect(result.data).toBe("critique analysis");
+    const stream = jokeFlow.run("pirates");
+    const events: WorkflowEventData<any>[] = [];
+    for await (const ev of stream) {
+      events.push(ev);
+    }
+    expect(events).toHaveLength(5);
+    expect(events.at(-1)!.data).toBe("critique analysis");
+    expect(events.map((e) => eventSource(e))).toEqual([
+      startEvent,
+      jokeEvent,
+      // fixme: why get the result reversed?
+      critiqueEvent,
+      analysisEvent,
+      stopEvent,
+    ]);
   });
-});
 
-describe("loop", () => {
-  test("basic", async () => {
+  test("should work in loop", async () => {
+    const startEvent = workflowEvent<string>({
+      debugLabel: "startEvent",
+    });
+    const stopEvent = workflowEvent<1 | -1>({
+      debugLabel: "stopEvent",
+    });
+    const workflow = createWorkflow<string, 1 | -1>({
+      startEvent,
+      stopEvent,
+    });
     const parseEvent = workflowEvent<number>({
       debugLabel: "parseEvent",
     });
@@ -169,11 +331,34 @@ describe("loop", () => {
         return parseResultEvent(0);
       }
     });
-    const result = await promiseHandler(() => workflow.run("100"));
-    expect(result.data).toBe(1);
+    const stream = workflow.run("100");
+    const events: WorkflowEventData<any>[] = [];
+    for await (const ev of stream) {
+      events.push(ev);
+    }
+    expect(events.length).toBe(6);
+    expect(events.at(-1)!.data).toBe(1);
+    expect(events.map((e) => eventSource(e))).toEqual([
+      startEvent,
+      parseEvent,
+      parseEvent,
+      parseEvent,
+      parseResultEvent,
+      stopEvent,
+    ]);
   });
 
   test("multiple parse", async () => {
+    const startEvent = workflowEvent<string>({
+      debugLabel: "startEvent",
+    });
+    const stopEvent = workflowEvent<1 | -1>({
+      debugLabel: "stopEvent",
+    });
+    const workflow = createWorkflow<string, 1 | -1>({
+      startEvent,
+      stopEvent,
+    });
     const parseEvent = workflowEvent<number>({
       debugLabel: "parseEvent",
     });
@@ -196,13 +381,42 @@ describe("loop", () => {
         return parseResultEvent(0);
       }
     });
-    const result = await promiseHandler(() => workflow.run("100"));
-    expect(result.data).toBe(1);
-  });
-});
 
-describe("multiple inputs", () => {
-  test("basic", async () => {
+    const stream = workflow.run("100");
+    const events: WorkflowEventData<any>[] = [];
+    for await (const ev of stream) {
+      events.push(ev);
+    }
+    expect(events.length).toBe(9);
+    expect(events.at(-1)!.data).toBe(1);
+    expect(events.map((e) => eventSource(e))).toEqual([
+      startEvent,
+      parseEvent,
+      parseEvent,
+      parseEvent,
+      parseResultEvent,
+      parseEvent,
+      parseEvent,
+      parseResultEvent,
+      stopEvent,
+    ]);
+  });
+
+  test("should work with multiple input", async () => {
+    const startEvent = workflowEvent<string>({
+      debugLabel: "startEvent",
+    });
+    const convertEvent = workflowEvent<number>({
+      debugLabel: "convertEvent",
+    });
+    const stopEvent = workflowEvent<1 | -1>({
+      debugLabel: "stopEvent",
+    });
+    const workflow = createWorkflow<string, 1 | -1>({
+      startEvent,
+      stopEvent,
+    });
+
     workflow.handle([startEvent], (start) => {
       const ev1 = convertEvent(Number.parseInt(start.data, 10));
       const ev2 = convertEvent(Number.parseInt(start.data, 10));
@@ -213,11 +427,36 @@ describe("multiple inputs", () => {
       return stopEvent(convert1.data + convert2.data > 0 ? 1 : -1);
     });
 
-    const result = await promiseHandler(() => workflow.run("100"));
-    expect(result.data).toBe(1);
+    const stream = workflow.run("100");
+    const events: WorkflowEventData<any>[] = [];
+    for await (const ev of stream) {
+      events.push(ev);
+    }
+    expect(events).toHaveLength(4);
+    expect(events.at(-1)!.data).toBe(1);
+    expect(events.map((e) => eventSource(e))).toEqual([
+      startEvent,
+      convertEvent,
+      convertEvent,
+      stopEvent,
+    ]);
   });
 
-  test("require events", async () => {
+  test("should work with require events", async () => {
+    const startEvent = workflowEvent<string>({
+      debugLabel: "startEvent",
+    });
+    const convertEvent = workflowEvent<number>({
+      debugLabel: "convertEvent",
+    });
+    const stopEvent = workflowEvent<1 | -1>({
+      debugLabel: "stopEvent",
+    });
+    const workflow = createWorkflow<string, 1 | -1>({
+      startEvent,
+      stopEvent,
+    });
+
     workflow.handle([startEvent], (start) => {
       for (let i = 0; i < 100; i++) {
         getContext().sendEvent(convertEvent(Number.parseInt(start.data, 10)));
@@ -230,38 +469,74 @@ describe("multiple inputs", () => {
         return stopEvent(1);
       },
     );
-
-    const result = await promiseHandler(() => workflow.run("100"));
-    expect(result.data).toBe(1);
-  });
-
-  test("require events with timeout", async () => {
-    workflow.handle([startEvent], async (start) => {
-      for (let i = 0; i < 100; i++) {
-        await new Promise((resolve) => setTimeout(resolve, 1));
-        getContext().sendEvent(convertEvent(Number.parseInt(start.data, 10)));
-      }
-    });
-
-    workflow.handle(
-      Array.from({ length: 100 }).map(() => convertEvent),
-      async () => {
-        return stopEvent(1);
-      },
-    );
-
-    const result = await promiseHandler(() => workflow.run("100"));
-    expect(result.data).toBe(1);
+    const stream = workflow.run("100");
+    const events: WorkflowEventData<any>[] = [];
+    for await (const ev of stream) {
+      events.push(ev);
+    }
+    expect(events).toHaveLength(102);
+    expect(events.at(-1)!.data).toBe(1);
+    expect(events.map((e) => eventSource(e))).toEqual([
+      startEvent,
+      ...Array.from({ length: 100 }, () => convertEvent),
+      stopEvent,
+    ]);
   });
 
   test("require events with no await", async () => {
+    const startEvent = workflowEvent<string>({
+      debugLabel: "startEvent",
+    });
+    const convertEvent = workflowEvent<number>({
+      debugLabel: "convertEvent",
+    });
+    const stopEvent = workflowEvent<1 | -1>({
+      debugLabel: "stopEvent",
+    });
+    const workflow = createWorkflow<string, 1 | -1>({
+      startEvent,
+      stopEvent,
+    });
+
     workflow.handle([startEvent], async (start) => {
-      for (let i = 0; i < 100; i++) {
-        // it's not possible to detect if/when the event is sent
-        setTimeout(() => {
-          getContext().sendEvent(convertEvent(Number.parseInt(start.data, 10)));
-        }, 10);
-      }
+      setTimeout(() => {
+        getContext().sendEvent(convertEvent(Number.parseInt(start.data, 10)));
+      }, 10);
+    });
+
+    workflow.handle([convertEvent], async () => {
+      return stopEvent(1);
+    });
+
+    {
+      const stream = workflow.run("100");
+      const result = await timeoutHandler(() => stream);
+      expect(result.data).toBe(1);
+    }
+  });
+
+  test("require events with no await - large amount", async () => {
+    const startEvent = workflowEvent<string>({
+      debugLabel: "startEvent",
+    });
+    const convertEvent = workflowEvent<number>({
+      debugLabel: "convertEvent",
+    });
+    const stopEvent = workflowEvent<1 | -1>({
+      debugLabel: "stopEvent",
+    });
+    const workflow = createWorkflow<string, 1 | -1>({
+      startEvent,
+      stopEvent,
+    });
+
+    workflow.handle([startEvent], async (start) => {
+      setTimeout(() => {
+        const context = getContext();
+        for (let i = 0; i < 100; i++) {
+          context.sendEvent(convertEvent(Number.parseInt(start.data, 10)));
+        }
+      }, 10);
     });
 
     workflow.handle(
@@ -272,150 +547,117 @@ describe("multiple inputs", () => {
     );
 
     {
-      const result = await promiseHandler(() => workflow.run("100"));
-      expect(result.data).toBe(1);
-    }
-
-    {
-      const result = await timeoutHandler(() => workflow.run("100"));
-      expect(result.data).toBe(1);
-    }
-  });
-});
-
-describe("message queue", async () => {
-  test("basic", async () => {
-    const messageEvent = workflowEvent<string>({
-      debugLabel: "messageEvent",
-    });
-    workflow.handle([startEvent], () => {
-      const context = getContext();
-      context.sendEvent(messageEvent("message"));
-      return stopEvent(1);
-    });
-
-    const executor = workflow.run("100");
-    const queue: WorkflowEventData<any>[] = [];
-    for await (const i of executor) {
-      queue.push(i);
-      if (stopEvent.include(i)) {
-        break;
+      const stream = workflow.run("100");
+      const events: WorkflowEventData<any>[] = [];
+      for await (const ev of stream) {
+        events.push(ev);
       }
+      expect(events).toHaveLength(102);
     }
-    expect(queue.map((q) => q.data)).toEqual(["100", "message", 1]);
-  });
-});
-
-describe("source of the event data", () => {
-  test("basic", async () => {
-    const events: WorkflowEventData<any>[] = [];
-    let referenceMap: WeakMap<
-      WorkflowEventData<any>,
-      WorkflowEventData<any>
-    > = null!;
-    workflow.handle([startEvent], (event) => {
-      referenceMap = getContext().reference.next;
-      events.push(event);
-      expect(event.data).toBe("data");
-      const e = stopEvent(1);
-      events.push(e);
-      return e;
-    });
-
-    const result = await promiseHandler(() => workflow.run("data"));
-    expect(result.data).toBe(1);
-
-    expect(events.length).toBe(2);
-    expect(referenceMap.get(events[0]!)).toBe(events[1]);
   });
 
-  test("loop", async () => {
-    const parseEvent = workflowEvent<number>({
-      debugLabel: "parseEvent",
-    });
-    const parseResultEvent = workflowEvent<number>({
-      debugLabel: "parseResult",
-    });
-    workflow.handle([startEvent], async () => {
-      getContext().sendEvent(parseEvent(2));
-      getContext().sendEvent(parseEvent(2));
-      await Promise.all([
-        getContext().requireEvent(parseResultEvent),
-        getContext().requireEvent(parseResultEvent),
-      ]);
-      return stopEvent(1);
-    });
-    workflow.handle([parseEvent], async ({ data }) => {
-      if (data > 0) {
-        getContext().sendEvent(parseEvent(data - 1));
-      } else {
-        return parseResultEvent(0);
-      }
-    });
-    const events: WorkflowEventData<any>[] = [];
-    for await (const event of workflow.run("100")) {
-      events.push(event);
-      if (stopEvent.include(event)) {
-        break;
-      }
-    }
-    expect(events.length).toBe(10);
-  });
-});
-
-describe("llm", async () => {
-  test("tool call agent", async () => {
+  test("require events with setTimeout & return event same time", async () => {
     const startEvent = workflowEvent<string>({
       debugLabel: "startEvent",
     });
-    const chatEvent = workflowEvent<string>({
-      debugLabel: "chatEvent",
+    const convertEvent = workflowEvent<number>({
+      debugLabel: "convertEvent",
     });
-    const toolCallEvent = workflowEvent<string>({
-      debugLabel: "toolCallEvent",
-    });
-    const toolCallResultEvent = workflowEvent<string>({
-      debugLabel: "toolCallResultEvent",
-    });
-    const stopEvent = workflowEvent<string>({
+    const stopEvent = workflowEvent<1 | -1>({
       debugLabel: "stopEvent",
+    });
+    const workflow = createWorkflow<string, 1 | -1>({
+      startEvent,
+      stopEvent,
+    });
+    workflow.handle([startEvent], async () => {
+      setTimeout(() => {
+        getContext().sendEvent(convertEvent(1));
+      }, 100);
+      return convertEvent(2);
+    });
+    workflow.handle([convertEvent, convertEvent], async () => {
+      return stopEvent(1);
+    });
+    const stream = workflow.run("100");
+    const events: WorkflowEventData<any>[] = [];
+    for await (const ev of stream) {
+      events.push(ev);
+    }
+    expect(events).toHaveLength(4);
+    expect(events.at(-1)!.data).toBe(1);
+    expect(events.map((e) => eventSource(e))).toEqual([
+      startEvent,
+      convertEvent,
+      convertEvent,
+      stopEvent,
+    ]);
+  });
+});
+
+describe("workflow context api", () => {
+  const startEvent = workflowEvent({
+    debugLabel: "startEvent",
+  });
+  const stopEvent = workflowEvent({
+    debugLabel: "stopEvent",
+  });
+  test("should exist in workflow", async () => {
+    const workflow = createWorkflow({
+      startEvent,
+      stopEvent,
+    });
+    const fn = vi.fn(() => {
+      const context = getContext();
+      expect(context).toBeDefined();
+      expect(context.requireEvent).toBeTypeOf("function");
+      expect(context.sendEvent).toBeTypeOf("function");
+      return stopEvent();
+    });
+    workflow.handle([startEvent], fn);
+    const stream = workflow.run();
+    const events: WorkflowEventData<any>[] = [];
+    for await (const ev of stream) {
+      events.push(ev);
+    }
+    expect(fn).toBeCalledTimes(1);
+    expect(events).toHaveLength(2);
+  });
+
+  test("should work when request event single", async () => {
+    const aEvent = workflowEvent({
+      debugLabel: "aEvent",
+    });
+    const aResultEvent = workflowEvent({
+      debugLabel: "aResultEvent",
     });
     const workflow = createWorkflow({
       startEvent,
       stopEvent,
     });
-
-    workflow.handle([startEvent], async ({ data }) => {
+    const fn = vi.fn(async () => {
       const context = getContext();
-      context.sendEvent(chatEvent(data));
+      context.sendEvent(aEvent());
+      await context.requireEvent(aResultEvent);
+      return stopEvent();
     });
-    workflow.handle([toolCallEvent], async () => {
-      return toolCallResultEvent("CHAT");
+    const fn2 = vi.fn(async () => {
+      return aResultEvent();
     });
-    let once = true;
-    workflow.handle([chatEvent], async ({ data }) => {
-      expect(data).toBe("CHAT");
-      const context = getContext();
-      if (once) {
-        once = false;
-        const result = (
-          await Promise.all(
-            ["tool_call"].map(async (tool_call) => {
-              context.sendEvent(toolCallEvent(tool_call));
-              return context.requireEvent(toolCallResultEvent);
-            }),
-          )
-        )
-          .map(({ data }) => data)
-          .join("\n");
-        context.sendEvent(chatEvent(result));
-        return await context.requireEvent(chatEvent);
-      } else {
-        return stopEvent("STOP");
-      }
-    });
-
-    const result = await promiseHandler(() => workflow.run("CHAT"));
-    expect(result.data).toBe("STOP");
+    workflow.handle([startEvent], fn);
+    workflow.handle([aEvent], fn2);
+    const stream = workflow.run();
+    const events: WorkflowEventData<any>[] = [];
+    for await (const ev of stream) {
+      events.push(ev);
+    }
+    expect(fn).toBeCalledTimes(1);
+    expect(events.map((e) => eventSource(e))).toEqual([
+      startEvent,
+      aEvent,
+      aResultEvent,
+      stopEvent,
+    ]);
+    expect(events).toHaveLength(4);
   });
 });
