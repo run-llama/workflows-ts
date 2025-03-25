@@ -50,7 +50,6 @@ export function readableStream<Start, Stop>(
               squeeze(ev);
             }
           });
-          await Promise.all(pendingEvents);
           break;
         }
         case "empty": {

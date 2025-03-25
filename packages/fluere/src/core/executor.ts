@@ -1,4 +1,8 @@
-import type { WorkflowEvent, WorkflowEventData } from "./event";
+import {
+  eventSource,
+  type WorkflowEvent,
+  type WorkflowEventData,
+} from "./event";
 import { _getHookContext } from "fluere/shared";
 import { AsyncLocalStorage } from "node:async_hooks";
 import { flattenEvents, isEventData, isPromiseLike } from "./utils";
@@ -30,8 +34,8 @@ export type ExecutorContext = {
   ) => Promise<WorkflowEventData<Data>>;
   sendEvent: <Data>(event: WorkflowEventData<Data>) => void;
 
-  __dev__reference: {
-    next: WeakMap<WorkflowEventData<any>, WorkflowEventData<any>>;
+  __reference: {
+    next: WeakMap<WorkflowEventData<any>, Set<WorkflowEventData<any>>>;
     prev: WeakMap<WorkflowEventData<any>, WorkflowEventData<any>>;
   };
 };
@@ -110,7 +114,7 @@ export function getContext(): ExecutorContext {
   return {
     sendEvent: store.sendEvent,
     requireEvent: store.requireEvent,
-    __dev__reference: store.__dev__reference,
+    __reference: store.__reference,
   };
 }
 
@@ -143,10 +147,14 @@ export function createExecutor<Start, Stop>(
     const {
       __internal__currentEvents,
       __internal__currentInputs,
-      __dev__reference: { next, prev },
+      __reference: { next, prev },
     } = _internal_getContext(rootExecutorContext);
     __internal__currentInputs.forEach((input) => {
-      next.set(input, eventData);
+      if (!next.has(input)) {
+        next.set(input, new Set([eventData]));
+      } else {
+        next.get(input)!.add(eventData);
+      }
       prev.set(eventData, input);
     });
     __internal__currentEvents.push(eventData);
@@ -160,9 +168,9 @@ export function createExecutor<Start, Stop>(
       );
       if (acceptableInput) {
         let current = acceptableInput;
-        while (current) {
+        while (current && eventSource(current) !== start) {
           const store = executorContextAsyncLocalStorage.getStore()!;
-          const prevWeakMap = store.__dev__reference.prev;
+          const prevWeakMap = store.__reference.prev;
           const acceptableEvents = [
             ...store.__internal__currentInputs,
             ...store.__internal__currentEvents,
@@ -187,8 +195,8 @@ export function createExecutor<Start, Stop>(
   const rootExecutorContext: InternalExecutorContext = {
     requireEvent,
     sendEvent,
-    __dev__reference: {
-      next: new WeakMap<WorkflowEventData<any>, WorkflowEventData<any>>(),
+    __reference: {
+      next: new WeakMap<WorkflowEventData<any>, Set<WorkflowEventData<any>>>(),
       prev: new WeakMap<WorkflowEventData<any>, WorkflowEventData<any>>(),
     },
     __internal__waitEvent: null,
@@ -334,7 +342,7 @@ export function createExecutor<Start, Stop>(
           __internal__currentInputs: args,
           __internal__currentEvents: currentEvents,
           // keep the same
-          __dev__reference: rootExecutorContext.__dev__reference,
+          __reference: rootExecutorContext.__reference,
           __internal__waitEvent: null,
           __internal__result_counter:
             rootExecutorContext.__internal__result_counter,
@@ -361,9 +369,15 @@ export function createExecutor<Start, Stop>(
           return result.then((nextEvent: void | WorkflowEventData<any>) => {
             if (!nextEvent) return;
             _getHookContext()?.afterEvents(nextStep, ...args);
+            const next = rootExecutorContext.__reference.next;
+            const prev = rootExecutorContext.__reference.prev;
             args.forEach((arg) => {
-              rootExecutorContext.__dev__reference.next.set(arg, nextEvent);
-              rootExecutorContext.__dev__reference.prev.set(nextEvent, arg);
+              if (!next.has(arg)) {
+                next.set(arg, new Set([nextEvent]));
+              } else {
+                next.get(arg)!.add(nextEvent);
+              }
+              prev.set(nextEvent, arg);
             });
             return nextEvent;
           });
@@ -374,8 +388,14 @@ export function createExecutor<Start, Stop>(
           );
           _getHookContext()?.afterEvents(nextStep, ...args);
           args.forEach((arg) => {
-            rootExecutorContext.__dev__reference.next.set(arg, result);
-            rootExecutorContext.__dev__reference.prev.set(result, arg);
+            const next = rootExecutorContext.__reference.next;
+            const prev = rootExecutorContext.__reference.prev;
+            if (!next.has(arg)) {
+              next.set(arg, new Set([result]));
+            } else {
+              next.get(arg)!.add(result);
+            }
+            prev.set(result, arg);
           });
           return result;
         } else {
@@ -454,7 +474,7 @@ export function createExecutor<Start, Stop>(
                 _internal_getContext(rootExecutorContext)
                   .__internal__currentEvents,
               // keep the same
-              __dev__reference: rootExecutorContext.__dev__reference,
+              __reference: rootExecutorContext.__reference,
               __internal__waitEvent: null,
               __internal__result_counter:
                 rootExecutorContext.__internal__result_counter,

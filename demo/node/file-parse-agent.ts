@@ -4,5 +4,5 @@ import { fileParseWorkflow } from "../workflows/file-parse-agent.js";
 const directory = "..";
 
 promiseHandler(() => fileParseWorkflow.run(directory)).then(({ data }) => {
-  console.log(data);
+  console.log("stop", data);
 });
