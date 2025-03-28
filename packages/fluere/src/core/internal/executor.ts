@@ -1,43 +1,28 @@
 import type { WorkflowEvent, WorkflowEventData } from "fluere";
 import { AsyncLocalStorage } from "node:async_hooks";
 import { flattenEvents, isEventData, isPromiseLike } from "../utils";
+import type { Handler, HandlerRef } from "./handler";
+import { _executorAsyncLocalStorage, type Context } from "./context";
 
 type HandlerContext = {
+  handler: Handler<WorkflowEvent<any>[], any>;
   inputs: WorkflowEventData<any>[];
   outputs: WorkflowEventData<any>[];
   prev: HandlerContext;
   next: Set<HandlerContext>;
 };
 
-const executorAsyncLocalStorage = new AsyncLocalStorage<Context>();
 const handlerContextAsyncLocalStorage = new AsyncLocalStorage<HandlerContext>();
 
-export type Handler<
-  AcceptEvents extends WorkflowEvent<any>[],
-  Result extends WorkflowEventData<any> | void,
-> = (
-  ...event: {
-    [K in keyof AcceptEvents]: ReturnType<AcceptEvents[K]>;
-  }
-) => Result | Promise<Result>;
-
-export type Context = {
-  sendEvent: (event: WorkflowEventData<any>) => void;
-  requireEvent: (event: WorkflowEvent<any>) => Promise<WorkflowEventData<any>>;
-};
-
-export function getContext(): Context {
-  const context = executorAsyncLocalStorage.getStore();
-  if (!context) {
-    throw new Error("No context found");
-  }
-  return context;
-}
+const eventContextWeakMap = new WeakMap<
+  WorkflowEventData<any>,
+  HandlerContext
+>();
 
 export type ExecutorParams = {
   listeners: ReadonlyMap<
     WorkflowEvent<any>[],
-    Set<Handler<WorkflowEvent<any>[], any>>
+    Set<HandlerRef<WorkflowEvent<any>[], any>>
   >;
 };
 
@@ -54,8 +39,16 @@ export const createExecutor = ({ listeners }: ExecutorParams) => {
     handler: Handler<WorkflowEvent<any>[], any>,
     inputs: WorkflowEventData<any>[],
   ) => {
-    handlerContextAsyncLocalStorage.run(handlerRootContext, () => {
-      const result = executorAsyncLocalStorage.run(context, () =>
+    const handlerContext: HandlerContext = {
+      handler,
+      inputs,
+      outputs: [],
+      prev: handlerContextAsyncLocalStorage.getStore() ?? handlerRootContext,
+      next: new Set(),
+    };
+    handlerContext.prev.next.add(handlerContext);
+    handlerContextAsyncLocalStorage.run(handlerContext, () => {
+      const result = _executorAsyncLocalStorage.run(context, () =>
         handler(...inputs),
       );
       // return value is a special event
@@ -77,13 +70,13 @@ export const createExecutor = ({ listeners }: ExecutorParams) => {
         const inputs = flattenEvents(events, queueSnapshot);
         return inputs.length === events.length;
       })
-      .map(([events, handlers]) => {
+      .map(([events, refs]) => {
         const inputs = flattenEvents(events, queueSnapshot);
         inputs.forEach((input) => {
           queue.splice(queue.indexOf(input), 1);
         });
-        for (const handler of handlers) {
-          runHandler(handler, inputs);
+        for (const ref of refs) {
+          runHandler(ref.handler, inputs);
         }
       });
   };
@@ -92,55 +85,66 @@ export const createExecutor = ({ listeners }: ExecutorParams) => {
     sendEvent: (event) => {
       const context =
         handlerContextAsyncLocalStorage.getStore() ?? handlerRootContext;
+      eventContextWeakMap.set(event, context);
       context.outputs.push(event);
       queue.push(event);
       updateCallbacks.forEach((cb) => cb(event));
       queueUpdateCallback();
-    },
-    requireEvent: async (event) => {
-      const allOutputs = [] as WorkflowEventData<any>[];
-      const check = () => {
-        const handlerContexts = [
-          handlerContextAsyncLocalStorage.getStore() ?? handlerRootContext,
-        ];
-        while (handlerContexts.length) {
-          const context = handlerContexts.pop()!;
-          allOutputs.push(...context.outputs);
-          handlerContexts.push(...context.next);
-        }
-        return allOutputs.find((output) => event.include(output));
-      };
-      return new Promise((resolve) => {
-        const output = check();
-        if (output) {
-          resolve(output);
-        }
-        const cb = () => {
-          const output = check();
-          if (output) {
-            updateCallbacks.splice(updateCallbacks.indexOf(cb), 1);
-            resolve(output);
+      return {
+        wait: async (conditionOrWhenOrRef: any) => {
+          if (typeof conditionOrWhenOrRef === "function") {
+            // when
+            return new Promise<WorkflowEventData<any>>((resolve) => {
+              const cb = () => {
+                const event = queue.find(conditionOrWhenOrRef);
+                if (event) {
+                  resolve(event);
+                }
+                updateCallbacks.splice(updateCallbacks.indexOf(cb), 1);
+              };
+              updateCallbacks.push(cb);
+            });
+          } else if ("handler" in conditionOrWhenOrRef) {
+            // ref
+            const ref = conditionOrWhenOrRef as HandlerRef<
+              WorkflowEvent<any>[],
+              any
+            >;
+            return new Promise<WorkflowEventData<any>>((resolve) => {
+              const cb = () => {
+                const event = queue.find(
+                  (q) => eventContextWeakMap.get(q)?.handler === ref.handler,
+                );
+                if (event) {
+                  resolve(event);
+                }
+                updateCallbacks.splice(updateCallbacks.indexOf(cb), 1);
+              };
+              updateCallbacks.push(cb);
+            });
           }
-        };
-        updateCallbacks.push(cb);
-      });
+          throw new Error("Invalid argument for wait");
+        },
+      };
     },
   };
+
   const handlerRootContext: HandlerContext = {
     inputs: [],
     outputs: [],
+    handler: null!,
     prev: null!,
     next: new Set(),
   };
 
   function run(inputs: WorkflowEventData<any>[]) {
-    const handlers = [...listeners].find(([events]) => {
+    const refs = [...listeners].find(([events]) => {
       return events.every((event, i) => {
         return event.include(inputs[i]!);
       });
     })![1];
-    for (const handler of handlers) {
-      runHandler(handler, inputs);
+    for (const ref of refs) {
+      runHandler(ref.handler, inputs);
     }
   }
 

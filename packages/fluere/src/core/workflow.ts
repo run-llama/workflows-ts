@@ -1,11 +1,6 @@
 import { type WorkflowEvent } from "./event";
-import {
-  createExecutor,
-  type Executor,
-  type Handler,
-} from "./internal/executor";
-
-type Cleanup = () => void;
+import { createExecutor, type Executor } from "./internal/executor";
+import { type Handler, type HandlerRef } from "./internal/handler";
 
 export type Workflow<Start, Stop> = {
   handle<
@@ -14,7 +9,7 @@ export type Workflow<Start, Stop> = {
   >(
     accept: AcceptEvents,
     handler: Handler<AcceptEvents, Result>,
-  ): Cleanup;
+  ): void;
 
   get startEvent(): WorkflowEvent<Start>;
   get stopEvent(): WorkflowEvent<Stop>;
@@ -28,7 +23,7 @@ export function createWorkflow<Start, Stop>(params: {
   const config = {
     steps: new Map<
       WorkflowEvent<any>[],
-      Set<Handler<WorkflowEvent<any>[], any>>
+      Set<HandlerRef<WorkflowEvent<any>[], any>>
     >(),
   };
   const { startEvent, stopEvent } = params;
@@ -46,25 +41,43 @@ export function createWorkflow<Start, Stop>(params: {
     >(
       accept: AcceptEvents,
       handler: Handler<AcceptEvents, Result>,
-    ): Cleanup => {
+    ): HandlerRef<AcceptEvents, Result> => {
       if (config.steps.has(accept)) {
         const set = config.steps.get(accept) as Set<
-          Handler<AcceptEvents, Result>
+          HandlerRef<AcceptEvents, Result>
         >;
-        set.add(handler);
-        return () => {
-          set.delete(handler);
+        const ref: HandlerRef<AcceptEvents, Result> = {
+          get handler() {
+            return handler;
+          },
+          unsubscribe: () => {
+            set.delete(ref);
+            if (set.size === 0) {
+              config.steps.delete(accept);
+            }
+          },
         };
+        set.add(ref);
+        return ref;
       } else {
-        const set = new Set<Handler<AcceptEvents, Result>>();
-        set.add(handler);
+        const set = new Set<HandlerRef<AcceptEvents, Result>>();
+        const ref: HandlerRef<AcceptEvents, Result> = {
+          get handler() {
+            return handler;
+          },
+          unsubscribe: () => {
+            set.delete(ref);
+            if (set.size === 0) {
+              config.steps.delete(accept);
+            }
+          },
+        };
+        set.add(ref);
         config.steps.set(
           accept,
-          set as Set<Handler<WorkflowEvent<any>[], any>>,
+          set as Set<HandlerRef<WorkflowEvent<any>[], any>>,
         );
-        return () => {
-          set.delete(handler);
-        };
+        return ref;
       }
     },
     get executor() {
