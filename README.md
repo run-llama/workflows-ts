@@ -46,10 +46,10 @@ workflow.handle([convertEvent], (convert) => {
 });
 ```
 
-## Core concepts
+## Concepts
 
-- **Event**: A named signal that can be emitted with data attached.
 - **Workflow**: A directed graph of event handlers.
+- **Event**: A named signal that can be emitted with data attached.
 - **Handler**: A function that processes events and can emit new events.
 
 # LICENSE
