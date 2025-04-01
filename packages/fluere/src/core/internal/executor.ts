@@ -112,5 +112,5 @@ export const createContext = ({ listeners }: ExecutorParams): Context => {
     next: new Set(),
   };
 
-  return context
+  return context;
 };

@@ -88,12 +88,14 @@ describe("workflow context api", () => {
     workflow.handle([startEvent], async () => {
       const ev = parseEvent(2);
       getContext().sendEvent(ev);
-      await until(getContext().stream, (e) =>
-        parseResultEvent.include(e) && e.data === 0,
+      await until(
+        getContext().stream,
+        (e) => parseResultEvent.include(e) && e.data === 0,
       );
       getContext().sendEvent(ev);
-      await until(getContext().stream, (e) =>
-        parseResultEvent.include(e) && e.data === 0,
+      await until(
+        getContext().stream,
+        (e) => parseResultEvent.include(e) && e.data === 0,
       );
       return stopEvent(1);
     });

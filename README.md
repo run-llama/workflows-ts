@@ -20,56 +20,53 @@ npm i fluere
 ### First, define events
 
 ```ts
-import { workflowEvent } from 'fluere'
+import { workflowEvent } from "fluere";
 
-const startEvent = workflowEvent<string>()
-const stopEvent = workflowEvent<1 | -1>()
+const startEvent = workflowEvent<string>();
+const stopEvent = workflowEvent<1 | -1>();
 ```
 
 ### Connect events with workflow
 
 ```ts
-import { createWorkflow } from 'fluere'
+import { createWorkflow } from "fluere";
 
-const convertEvent = workflowEvent()
+const convertEvent = workflowEvent();
 
 const workflow = createWorkflow({
   startEvent,
-  stopEvent
-})
+  stopEvent,
+});
 
 workflow.handle([startEvent], (start) => {
-  return convertEvent(Number.parseInt(start.data, 10))
-})
+  return convertEvent(Number.parseInt(start.data, 10));
+});
 workflow.handle([convertEvent], (convert) => {
-  return stopEvent(convert.data > 0 ? 1 : -1)
-})
+  return stopEvent(convert.data > 0 ? 1 : -1);
+});
 ```
 
 ### Trigger workflow
 
 ```ts
 // core utility to trigger workflow, it will run until stopEvent is emitted
-import { finalize } from 'fluere'
+import { finalize } from "fluere";
 
-const { data } = await finalize(workflow)
+const { data } = await finalize(workflow);
 
 // you can also use any stream API, like node:stream to handle the workflow
-import { pipeline } from 'node:stream'
+import { pipeline } from "node:stream";
 
-const { stream, sendEvent } = workflow.createContext()
-sendEvent(startEvent())
-const result = await pipeline(
-  stream,
-  async function (source) {
-    for await (const event of source) {
-      if (stopEvent.include(event)) {
-        return 'stop received!'
-      }
+const { stream, sendEvent } = workflow.createContext();
+sendEvent(startEvent());
+const result = await pipeline(stream, async function (source) {
+  for await (const event of source) {
+    if (stopEvent.include(event)) {
+      return "stop received!";
     }
   }
-)
-console.log(result) // stop received!
+});
+console.log(result); // stop received!
 ```
 
 ## Concepts
