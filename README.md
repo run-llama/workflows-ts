@@ -77,25 +77,67 @@ By default, we provide a simple fan-out utility to run multiple workflows in par
 - `getContext().stream` will return a stream of events emitted by the sub-workflow
 
 ```ts
-import { until } from 'fluere/stream'
-let condition = false
+import { until } from "fluere/stream";
+
+let condition = false;
 workflow.handle([startEvent], (start) => {
-  const { sendEvent, stream } = getContext()
+  const { sendEvent, stream } = getContext();
   for (let i = 0; i < 10; i++) {
     sendEvent(convertEvent(i));
   }
   // You define the condition to stop the workflow
-  const results = until(stream, () => condition)
-    .filter(ev => convertStopEvent.includes(ev))
-  console.log(results.length) // 10
-  return stopEvent()
+  const results = until(stream, () => condition).filter((ev) =>
+    convertStopEvent.includes(ev),
+  );
+  console.log(results.length); // 10
+  return stopEvent();
 });
 
 workflow.handle([convertEvent], (convert) => {
-  if (/* ... */) {
-    condition = true
+  if (convert.data === 9) {
+    condition = true;
   }
   return convertStopEvent(/* ... */);
+});
+```
+
+### With RxJS, or any stream API
+
+Workflow is event-driven, you can use any stream API to handle the workflow like `rxjs`
+
+```ts
+import { from, pipe } from "rxjs";
+
+const { stream, sendEvent } = workflow.createContext();
+
+from(stream as unknown as AsyncIterable<WorkflowEventData<any>>)
+  .pipe(filter((ev) => eventSource(ev) === messageEvent))
+  .subscribe((ev) => {
+    console.log(ev.data);
+  });
+
+sendEvent(fileParseWorkflow.startEvent(directory));
+```
+
+### Connect with Server endpoint
+
+Workflow can be used as a middleware in any server framework, like `express`, `hono`, `fastify`, etc.
+
+```ts
+import { Hono } from "hono";
+import { serve } from "@hono/node-server";
+import { createHonoHandler } from "fluere/interrupter/hono";
+import { agentWorkflow } from "../workflows/tool-call-agent.js";
+
+const app = new Hono();
+
+app.post(
+  "/workflow",
+  createHonoHandler(agentWorkflow, async (ctx) => ctx.req.text()),
+);
+
+serve(app, ({ port }) => {
+  console.log(`Server started at http://localhost:${port}`);
 });
 ```
 
