@@ -1,26 +1,26 @@
-import { Suspense } from 'react'
-import reactLogo from './assets/react.svg'
-import llamaindexLogo from '/llamaindex.svg'
-import './App.css'
-import { createWorkflow, getContext, workflowEvent } from 'fluere'
-import { promiseHandler } from 'fluere/interrupter/promise'
+import { Suspense } from "react";
+import reactLogo from "./assets/react.svg";
+import llamaindexLogo from "/llamaindex.svg";
+import "./App.css";
+import { createWorkflow, getContext, workflowEvent } from "fluere";
+import { promiseHandler } from "fluere/interrupter/promise";
 
-const startEvent = workflowEvent()
-const stopEvent = workflowEvent<string>()
+const startEvent = workflowEvent();
+const stopEvent = workflowEvent<string>();
 
 const workflow = createWorkflow({
   startEvent,
-  stopEvent
-})
+  stopEvent,
+});
 
 workflow.handle([startEvent], () => {
-  const context = getContext()
+  const context = getContext();
   setTimeout(() => {
-    context.sendEvent(stopEvent('Hello, World!'))
-  }, 1000)
-})
+    context.sendEvent(stopEvent("Hello, World!"));
+  }, 1000);
+});
 
-const promise = promiseHandler(workflow)
+const promise = promiseHandler(workflow);
 
 function App() {
   return (
@@ -36,9 +36,7 @@ function App() {
       <h1>React + Llamaindex Flow</h1>
       <div className="card">
         <p>
-          <Suspense
-            fallback='Loading...'
-          >
+          <Suspense fallback="Loading...">
             {promise.then(({ data }) => data)}
           </Suspense>
         </p>
@@ -47,7 +45,7 @@ function App() {
         </p>
       </div>
     </>
-  )
+  );
 }
 
-export default App
+export default App;

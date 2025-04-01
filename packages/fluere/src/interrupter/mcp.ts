@@ -5,7 +5,8 @@ import { promiseHandler } from "./promise";
 import type { RequestHandlerExtra } from "@modelcontextprotocol/sdk/shared/protocol.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 
-const requestHandlerExtraAsyncLocalStorage = createAsyncContext<RequestHandlerExtra>();
+const requestHandlerExtraAsyncLocalStorage =
+  createAsyncContext<RequestHandlerExtra>();
 
 export const getReqHandlerExtra = () => {
   const extra = requestHandlerExtraAsyncLocalStorage.getStore();

@@ -10,11 +10,11 @@ import { finalize } from "../stream";
 export async function promiseHandler<Start extends void, Stop>(
   workflow: Workflow<Start, Stop>,
   start?: void | WorkflowEventData<Start>,
-): Promise<WorkflowEventData<Stop>>
+): Promise<WorkflowEventData<Stop>>;
 export async function promiseHandler<Start, Stop>(
   workflow: Workflow<Start, Stop>,
   start: Start | WorkflowEventData<Start>,
-): Promise<WorkflowEventData<Stop>>
+): Promise<WorkflowEventData<Stop>>;
 export async function promiseHandler(
   workflow: Workflow<any, any>,
   start?: any | WorkflowEventData<any>,
