@@ -3,6 +3,11 @@ import { readdir, stat } from "node:fs/promises";
 import { resolve } from "node:path";
 import { AsyncLocalStorage } from "node:async_hooks";
 import { until } from "fluere/stream";
+import { withStore } from "fluere/middleware/store";
+
+export const messageEvent = workflowEvent<string>({
+  debugLabel: "message",
+});
 
 const startEvent = workflowEvent<string>({
   debugLabel: "start",
@@ -20,10 +25,15 @@ const stopEvent = workflowEvent({
   debugLabel: "stop",
 });
 
-export const fileParseWorkflow = createWorkflow({
-  startEvent,
-  stopEvent,
-});
+export const fileParseWorkflow = withStore(
+  {
+    output: "",
+  },
+  createWorkflow({
+    startEvent,
+    stopEvent,
+  }),
+);
 
 const locks: {
   finish: boolean;
@@ -32,16 +42,18 @@ const locks: {
 fileParseWorkflow.handle([startEvent], async ({ data: dir }) => {
   const { stream, sendEvent } = getContext();
   sendEvent(readDirEvent([dir, 0]));
-  await until(stream, () => locks.every((l) => l.finish));
+  await until(stream, () => locks.length > 0 && locks.every((l) => l.finish));
+  return stopEvent();
 });
 
 const als = new AsyncLocalStorage<{
   finish: boolean;
 }>();
 fileParseWorkflow.handle([readDirEvent], async ({ data: [dir, tab] }) => {
+  getContext().sendEvent(messageEvent(dir));
   const { sendEvent } = getContext();
   const items = await readdir(dir);
-  console.log(" ".repeat(tab) + dir);
+  fileParseWorkflow.getStore().output += " ".repeat(tab) + dir + "\n";
   await Promise.all(
     items.map(async (item) => {
       const filePath = resolve(dir, item);
@@ -73,6 +85,7 @@ fileParseWorkflow.handle([readFileEvent], async ({ data: [filePath, tab] }) => {
   if (lock) {
     lock.finish = true;
   }
-  console.log(" ".repeat(tab) + filePath);
+  getContext().sendEvent(messageEvent(filePath));
+  fileParseWorkflow.getStore().output += " ".repeat(tab) + filePath + "\n";
   return readResultEvent();
 });

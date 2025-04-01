@@ -69,11 +69,35 @@ const result = await pipeline(stream, async function (source) {
 console.log(result); // stop received!
 ```
 
-## Concepts
+### Fan-out (Parallelism)
 
-- **Workflow**: A directed graph of event handlers.
-- **Event**: A named signal that can be emitted with data attached.
-- **Handler**: A function that processes events and can emit new events.
+By default, we provide a simple fan-out utility to run multiple workflows in parallel
+
+- `getContext().sendEvent` will emit a new event to current workflow
+- `getContext().stream` will return a stream of events emitted by the sub-workflow
+
+```ts
+import { until } from 'fluere/stream'
+let condition = false
+workflow.handle([startEvent], (start) => {
+  const { sendEvent, stream } = getContext()
+  for (let i = 0; i < 10; i++) {
+    sendEvent(convertEvent(i));
+  }
+  // You define the condition to stop the workflow
+  const results = until(stream, () => condition)
+    .filter(ev => convertStopEvent.includes(ev))
+  console.log(results.length) // 10
+  return stopEvent()
+});
+
+workflow.handle([convertEvent], (convert) => {
+  if (/* ... */) {
+    condition = true
+  }
+  return convertStopEvent(/* ... */);
+});
+```
 
 # LICENSE
 
