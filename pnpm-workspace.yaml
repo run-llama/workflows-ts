@@ -1,4 +1,5 @@
 packages:
   - "./demo"
   - "./demo/cloudflare"
+  - "./demo/browser"
   - "./packages/*"

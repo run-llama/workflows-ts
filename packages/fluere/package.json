@@ -28,7 +28,10 @@
       }
     },
     "./async-context": {
-      "development": "./src/async-context/index.ts",
+      "development": {
+        "browser": "./src/async-context/index.browser.ts",
+        "default": "./src/async-context/index.ts"
+      },
       "browser": {
         "types": "./async-context/index.d.ts",
         "default": "./async-context/index.browser.js"
