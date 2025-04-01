@@ -1,11 +1,12 @@
-import { AsyncLocalStorage } from "node:async_hooks";
+import { createAsyncContext } from "fluere/async-context";
 import { z, type ZodRawShape, type ZodTypeAny } from "zod";
 import type { Workflow } from "../core";
 import { promiseHandler } from "./promise";
 import type { RequestHandlerExtra } from "@modelcontextprotocol/sdk/shared/protocol.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 
-const requestHandlerExtraAsyncLocalStorage = new AsyncLocalStorage();
+const requestHandlerExtraAsyncLocalStorage =
+  createAsyncContext<RequestHandlerExtra>();
 
 export const getReqHandlerExtra = () => {
   const extra = requestHandlerExtraAsyncLocalStorage.getStore();
