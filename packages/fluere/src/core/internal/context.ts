@@ -1,4 +1,4 @@
-import { AsyncLocalStorage } from "node:async_hooks";
+import { createAsyncContext } from "fluere/async-context";
 import type { WorkflowEventData } from "../event";
 
 export type Context = {
@@ -6,7 +6,7 @@ export type Context = {
   sendEvent: (event: WorkflowEventData<any>) => void;
 };
 
-export const _executorAsyncLocalStorage = new AsyncLocalStorage<Context>();
+export const _executorAsyncLocalStorage = createAsyncContext<Context>();
 
 export function getContext(): Context {
   const context = _executorAsyncLocalStorage.getStore();

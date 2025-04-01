@@ -6,8 +6,10 @@
   "main": "dist/index.cjs",
   "types": "dist/index.d.ts",
   "module": "dist/index.js",
+  "browser": "dist/index.browser.js",
   "exports": {
     ".": {
+      "development": "./src/core/index.ts",
       "workerd": {
         "types": "./dist/index.d.ts",
         "default": "./dist/index.js"
@@ -25,6 +27,21 @@
         "default": "./dist/index.js"
       }
     },
+    "./async-context": {
+      "development": "./src/async-context/index.ts",
+      "browser": {
+        "types": "./async-context/index.d.ts",
+        "default": "./async-context/index.browser.js"
+      },
+      "require": {
+        "types": "./async-context/index.d.cts",
+        "default": "./async-context/index.cjs"
+      },
+      "default": {
+        "types": "./async-context/index.d.ts",
+        "default": "./async-context/index.js"
+      }
+    },
     "./interrupter/*": {
       "types": "./interrupter/*.d.ts",
       "default": "./interrupter/*.js"
@@ -39,6 +56,7 @@
     },
     "./stream": {
       "types": "./stream/index.d.ts",
+      "development": "./src/stream/index.ts",
       "default": "./stream/index.js"
     }
   },
@@ -50,7 +68,7 @@
     "stream"
   ],
   "scripts": {
-    "build": "rimraf dist interrupter middleware stream util && tsup",
+    "build": "rimraf dist interrupter middleware stream util async-context && tsup",
     "dev": "tsup --watch",
     "test": "vitest run",
     "prepublish": "cp ../../README.md ./README.md"
