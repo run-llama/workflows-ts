@@ -3,11 +3,10 @@ import {
   createWorkflow,
   eventSource,
   getContext,
-  finalize,
   workflowEvent,
   type WorkflowEventData,
-  until,
 } from "fluere";
+import { finalize, until } from "fluere/stream";
 
 describe("workflow context api", () => {
   const startEvent = workflowEvent({
