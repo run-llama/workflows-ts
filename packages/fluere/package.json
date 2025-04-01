@@ -25,24 +25,6 @@
         "default": "./dist/index.js"
       }
     },
-    "./shared": {
-      "workerd": {
-        "types": "./shared/index.d.ts",
-        "default": "./shared/index.js"
-      },
-      "edge-light": {
-        "types": "./shared/index.d.ts",
-        "default": "./shared/index.serverless.js"
-      },
-      "require": {
-        "types": "./shared/index.d.cts",
-        "default": "./shared/index.cjs"
-      },
-      "default": {
-        "types": "./shared/index.d.ts",
-        "default": "./shared/index.js"
-      }
-    },
     "./interrupter/*": {
       "types": "./interrupter/*.d.ts",
       "default": "./interrupter/*.js"
@@ -63,7 +45,6 @@
   "files": [
     "dist",
     "interrupter",
-    "shared",
     "util",
     "middleware",
     "stream"
