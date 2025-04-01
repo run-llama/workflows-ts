@@ -2,7 +2,7 @@ import type { WorkflowEvent, WorkflowEventData } from "../event";
 import { flattenEvents, isEventData, isPromiseLike } from "../utils";
 import type { Handler, HandlerRef } from "./handler";
 import { _executorAsyncLocalStorage, type Context } from "./context";
-import { createAsyncContext } from "./async-context";
+import { createAsyncContext } from "fluere/async-context";
 
 type HandlerContext = {
   handler: Handler<WorkflowEvent<any>[], any>;

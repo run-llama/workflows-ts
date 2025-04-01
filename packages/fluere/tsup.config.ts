@@ -6,6 +6,28 @@ export default defineConfig([
     entry: ["src/core/index.ts"],
     outDir: "dist",
     format: ["cjs", "esm"],
+    external: ["fluere/async-context"],
+    dts: true,
+    sourcemap: true,
+  },
+  // Core APIs - Browser ESM
+  {
+    entry: ["src/core/index.ts"],
+    outDir: "dist",
+    outExtension: () => ({
+      js: ".browser.js",
+    }),
+    tsconfig: "./tsconfig.browser.json",
+    platform: "browser",
+    format: ["esm"],
+    minify: true,
+    sourcemap: true,
+  },
+  // Async Context APIs
+  {
+    entry: ["src/async-context/*.ts"],
+    outDir: "async-context",
+    format: ["cjs", "esm"],
     dts: true,
     sourcemap: true,
   },

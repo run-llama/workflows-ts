@@ -2,10 +2,10 @@ export const createAsyncContext = <T>() => {
   let currentStore: T | null = null;
   return {
     getStore: () => currentStore,
-    run(store: T, fn: () => void) {
+    run<R>(store: T, fn: () => R) {
       currentStore = store;
       try {
-        fn();
+        return fn();
       } finally {
         currentStore = null;
       }

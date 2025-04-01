@@ -131,6 +131,7 @@ dist
 .pnp.*
 
 packages/fluere/core
+packages/fluere/async-context
 packages/fluere/interrupter
 packages/fluere/middleware
 packages/fluere/util
