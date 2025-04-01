@@ -88,9 +88,13 @@ describe("workflow context api", () => {
     workflow.handle([startEvent], async () => {
       const ev = parseEvent(2);
       getContext().sendEvent(ev);
-      // await getContext().requireEvent(parseResultEvent);
+      await until(getContext().stream, (e) =>
+        parseResultEvent.include(e) && e.data === 0,
+      );
       getContext().sendEvent(ev);
-      // await getContext().requireEvent(parseResultEvent);
+      await until(getContext().stream, (e) =>
+        parseResultEvent.include(e) && e.data === 0,
+      );
       return stopEvent(1);
     });
     workflow.handle([parseEvent], async ({ data }) => {
@@ -131,7 +135,6 @@ describe("workflow context api", () => {
     const fn = vi.fn(() => {
       const context = getContext();
       expect(context).toBeDefined();
-      // expect(context.requireEvent).toBeTypeOf("function");
       expect(context.sendEvent).toBeTypeOf("function");
       return stopEvent();
     });
@@ -159,7 +162,6 @@ describe("workflow context api", () => {
     const fn = vi.fn(async () => {
       const context = getContext();
       context.sendEvent(aEvent());
-      // await context.requireEvent(aResultEvent);
       return stopEvent();
     });
     const fn2 = vi.fn(async () => {
