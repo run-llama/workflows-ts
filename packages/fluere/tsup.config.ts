@@ -7,15 +7,6 @@ export default defineConfig([
     outDir: "dist",
     format: ["cjs", "esm"],
     dts: true,
-    external: ["fluere/shared"],
-    sourcemap: true,
-  },
-  // Shared APIs
-  {
-    entry: ["src/shared/index.ts"],
-    outDir: "shared",
-    format: ["cjs", "esm"],
-    dts: true,
     sourcemap: true,
   },
   // Interrupter APIs
@@ -23,7 +14,7 @@ export default defineConfig([
     entry: ["src/interrupter/*.ts"],
     outDir: "interrupter",
     format: ["esm"],
-    external: ["react", "next", "hono", "ai/rsc", "fluere/shared", "fluere"],
+    external: ["next", "hono"],
     dts: true,
     sourcemap: true,
   },
@@ -32,7 +23,6 @@ export default defineConfig([
     entry: ["src/middleware/*.ts"],
     outDir: "middleware",
     format: ["esm"],
-    external: ["fluere/shared", "fluere"],
     dts: true,
     sourcemap: true,
   },
@@ -41,7 +31,14 @@ export default defineConfig([
     entry: ["src/util/*.ts"],
     outDir: "util",
     format: ["esm"],
-    external: ["fluere/shared", "fluere"],
+    dts: true,
+    sourcemap: true,
+  },
+  // Stream APIs
+  {
+    entry: ["src/stream/index.ts"],
+    outDir: "stream",
+    format: ["esm"],
     dts: true,
     sourcemap: true,
   },

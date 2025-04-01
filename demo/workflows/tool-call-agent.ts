@@ -4,6 +4,7 @@ import type {
   ChatCompletionMessageToolCall,
   ChatCompletionTool,
 } from "openai/resources/chat/completions/completions";
+import { consume } from "fluere/stream";
 
 const llm = new OpenAI();
 const tools = [
@@ -60,7 +61,7 @@ toolCallWorkflow.handle([chatEvent], async ({ data }) => {
       },
     ],
   });
-  const context = getContext();
+  const { sendEvent, stream } = getContext();
   if (
     choices[0]?.message?.tool_calls?.length &&
     choices[0].message.tool_calls.length > 0
@@ -69,15 +70,15 @@ toolCallWorkflow.handle([chatEvent], async ({ data }) => {
     const result = (
       await Promise.all(
         choices[0].message.tool_calls.map(async (tool_call) => {
-          context.sendEvent(toolCallEvent(tool_call));
-          return context.requireEvent(toolCallResultEvent);
+          sendEvent(toolCallEvent(tool_call));
+          return consume(stream, toolCallResultEvent);
         }),
       )
     )
       .map(({ data }) => data)
       .join("\n");
     console.log("toolcall result", result);
-    context.sendEvent(chatEvent(result));
+    sendEvent(chatEvent(result));
   } else {
     console.log("no choices");
     return stopEvent(choices[0]!.message.content!);

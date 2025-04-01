@@ -1,4 +1,4 @@
-import type { Handler, WorkflowEvent } from "fluere";
+import type { Handler, WorkflowEvent } from "../core";
 import type { Options } from "p-retry";
 import pRetry from "p-retry";
 

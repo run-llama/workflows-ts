@@ -11,6 +11,7 @@
     "hono": "^4.7.4",
     "openai": "^4.87.3",
     "p-retry": "^6.2.1",
+    "rxjs": "^7.8.2",
     "zod": "^3.24.2"
   },
   "devDependencies": {

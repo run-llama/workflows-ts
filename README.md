@@ -8,7 +8,7 @@ by [LlamaIndex Workflow](https://docs.llamaindex.ai/en/stable/module_guides/work
 
 - Minimal core API (<=2kb)
 - 100% Type safe
-- Event-driven execution engine
+- Event-driven, stream oriented programming
 - Support multiple JS runtime/framework
 
 ## Usage
@@ -46,88 +46,100 @@ workflow.handle([convertEvent], (convert) => {
 });
 ```
 
-### Run workflow in multiple JS runtime/framework
-
-#### Node.js/Bun/Deno
+### Trigger workflow
 
 ```ts
-// One shot execution
-import { promiseHandler } from "fluere/interrupter/promise";
+// core utility to trigger workflow, it will run until stopEvent is emitted
+import { finalize } from "fluere";
 
-await promiseHandler(() => workflow.run("100"));
+const { data } = await finalize(workflow);
+
+// you can also use any stream API, like node:stream to handle the workflow
+import { pipeline } from "node:stream";
+
+const { stream, sendEvent } = workflow.createContext();
+sendEvent(startEvent());
+const result = await pipeline(stream, async function (source) {
+  for await (const event of source) {
+    if (stopEvent.include(event)) {
+      return "stop received!";
+    }
+  }
+});
+console.log(result); // stop received!
 ```
 
-### Hono.js
+### Fan-out (Parallelism)
+
+By default, we provide a simple fan-out utility to run multiple workflows in parallel
+
+- `getContext().sendEvent` will emit a new event to current workflow
+- `getContext().stream` will return a stream of events emitted by the sub-workflow
+
+```ts
+import { until } from "fluere/stream";
+
+let condition = false;
+workflow.handle([startEvent], (start) => {
+  const { sendEvent, stream } = getContext();
+  for (let i = 0; i < 10; i++) {
+    sendEvent(convertEvent(i));
+  }
+  // You define the condition to stop the workflow
+  const results = until(stream, () => condition).filter((ev) =>
+    convertStopEvent.includes(ev),
+  );
+  console.log(results.length); // 10
+  return stopEvent();
+});
+
+workflow.handle([convertEvent], (convert) => {
+  if (convert.data === 9) {
+    condition = true;
+  }
+  return convertStopEvent(/* ... */);
+});
+```
+
+### With RxJS, or any stream API
+
+Workflow is event-driven, you can use any stream API to handle the workflow like `rxjs`
+
+```ts
+import { from, pipe } from "rxjs";
+
+const { stream, sendEvent } = workflow.createContext();
+
+from(stream as unknown as AsyncIterable<WorkflowEventData<any>>)
+  .pipe(filter((ev) => eventSource(ev) === messageEvent))
+  .subscribe((ev) => {
+    console.log(ev.data);
+  });
+
+sendEvent(fileParseWorkflow.startEvent(directory));
+```
+
+### Connect with Server endpoint
+
+Workflow can be used as a middleware in any server framework, like `express`, `hono`, `fastify`, etc.
 
 ```ts
 import { Hono } from "hono";
+import { serve } from "@hono/node-server";
 import { createHonoHandler } from "fluere/interrupter/hono";
+import { agentWorkflow } from "../workflows/tool-call-agent.js";
 
 const app = new Hono();
 
 app.post(
   "/workflow",
-  createHonoHandler(async (ctx) => workflow.run(await ctx.req.text())),
+  createHonoHandler(agentWorkflow, async (ctx) => ctx.req.text()),
 );
+
+serve(app, ({ port }) => {
+  console.log(`Server started at http://localhost:${port}`);
+});
 ```
-
-## Todo list
-
-- [x] minimal API
-  - basic logic: `if`, `else if`, `loop` case
-- [x] context API
-  - [x] `sendEvent`, `requireEvent`
-  - [ ] detect cycle dependency
-  - [ ] `@fluere/ui` for visualizing workflow
-  - ...
-- [x] concept API
-  - [x] `interrupter/*` for interrupting the workflow
-    - [ ] promise
-    - [ ] timeout
-    - [ ] `next.js`
-    - [ ] `hono.js`
-    - ...
-  - [ ] `middleware/*` for processing the workflow
-    - [x] log
-    - [x] `zod` schema validation
-    - ...
-- [x] third party integration
-  - [x] hono.js
-  - [x] cloudflare worker
-    - [ ] `createWorkerHandler` for handling the workflow
-    - [ ] bundler plugin for [remote-procedure call](https://developers.cloudflare.com/workers/runtime-apis/rpc/)
-    - ...
-  - ...
-
-## Why not...
-
-### Event Emitter
-
-Node.js Event Emitter is a great tool for handling events, however:
-
-1. It's hard to maintain the event flow;
-   for the typesafety, it's hard to maintain the string name of the event.
-   Also, it's hard to control the event flow, like prohibit event `a` calling event `b`.
-   In `fluere`, event is checked by object reference, and the event flow is checked by the internal graph algorithm.
-2. It's hard to handle the async event, you have to handle the async event by yourself.
-
-   ```ts
-   import { EventEmitter } from "node:events";
-
-   const ee = new EventEmitter();
-   ee.on("start", (start) => {
-     ee.emit("convert:stop"); // <-- how to get the data from `convert:stop` event with correct one?
-   });
-   ee.once("convert", async (data) => {
-     const result = fetch("...").then((res) => res.json()); // <-- async fetch
-     ee.emit("convert:stop", result);
-   });
-   ee.on("stop", (stop) => {});
-   ```
-
-### RxJS
-
-It's too heavy, few people can understand the concept of RxJS, and maintaining the RxJS code is hard.
 
 # LICENSE
 

@@ -1,7 +1,13 @@
-import { createWorkflow, workflowEvent } from "fluere";
+import { createWorkflow, workflowEvent, getContext } from "fluere";
 import { readdir, stat } from "node:fs/promises";
 import { resolve } from "node:path";
-import { getContext } from "fluere";
+import { AsyncLocalStorage } from "node:async_hooks";
+import { until } from "fluere/stream";
+import { withStore } from "fluere/middleware/store";
+
+export const messageEvent = workflowEvent<string>({
+  debugLabel: "message",
+});
 
 const startEvent = workflowEvent<string>({
   debugLabel: "start",
@@ -12,52 +18,74 @@ const readDirEvent = workflowEvent<[string, number]>({
 const readFileEvent = workflowEvent<[string, number]>({
   debugLabel: "readFile",
 });
-const readResultEvent = workflowEvent<string>({
+const readResultEvent = workflowEvent({
   debugLabel: "readResult",
 });
-const stopEvent = workflowEvent<string>({
+const stopEvent = workflowEvent({
   debugLabel: "stop",
 });
 
-export const fileParseWorkflow = createWorkflow({
-  startEvent,
-  stopEvent,
-});
+export const fileParseWorkflow = withStore(
+  {
+    output: "",
+  },
+  createWorkflow({
+    startEvent,
+    stopEvent,
+  }),
+);
+
+const locks: {
+  finish: boolean;
+}[] = [];
 
 fileParseWorkflow.handle([startEvent], async ({ data: dir }) => {
-  const context = getContext();
-  context.sendEvent(readDirEvent([dir, 0]));
-  const { data } = await context.requireEvent(readResultEvent);
-  return stopEvent(data);
+  const { stream, sendEvent } = getContext();
+  sendEvent(readDirEvent([dir, 0]));
+  await until(stream, () => locks.length > 0 && locks.every((l) => l.finish));
+  return stopEvent();
 });
 
+const als = new AsyncLocalStorage<{
+  finish: boolean;
+}>();
 fileParseWorkflow.handle([readDirEvent], async ({ data: [dir, tab] }) => {
-  const context = getContext();
+  getContext().sendEvent(messageEvent(dir));
+  const { sendEvent } = getContext();
   const items = await readdir(dir);
-  const results = await Promise.all(
+  fileParseWorkflow.getStore().output += " ".repeat(tab) + dir + "\n";
+  await Promise.all(
     items.map(async (item) => {
       const filePath = resolve(dir, item);
       if (filePath.includes("node_modules")) {
         return;
       }
       const s = await stat(filePath);
+      let lock = {
+        finish: false,
+      };
       if (s.isFile()) {
-        context.sendEvent(readFileEvent([filePath, tab + 2]));
-        return context.requireEvent(readResultEvent);
+        als.run(lock, () => sendEvent(readFileEvent([filePath, tab + 2])));
+        locks.push(lock);
       } else if (s.isDirectory()) {
-        context.sendEvent(readDirEvent([filePath, tab + 2]));
-        return context.requireEvent(readResultEvent);
+        als.run(lock, () => sendEvent(readDirEvent([filePath, tab + 2])));
+        locks.push(lock);
       }
     }),
   );
-  return readResultEvent(
-    `${dir}\n${results
-      .filter(Boolean)
-      .map((r) => r!.data)
-      .join("\n")}`,
-  );
+  const lock = als.getStore();
+  if (lock) {
+    lock.finish = true;
+  }
+  return readResultEvent();
 });
 
 fileParseWorkflow.handle([readFileEvent], async ({ data: [filePath, tab] }) => {
-  return readResultEvent(`${" ".repeat(tab)}${filePath}`);
+  const lock = als.getStore();
+  if (lock) {
+    lock.finish = true;
+  }
+  getContext().sendEvent(messageEvent(filePath));
+  fileParseWorkflow.getStore().output += " ".repeat(tab) + filePath + "\n";
+  return readResultEvent();
 });

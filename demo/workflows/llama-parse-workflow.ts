@@ -1,4 +1,5 @@
 import { workflowEvent, createWorkflow } from "fluere";
+import { consume } from "fluere/stream";
 import { z } from "zod";
 import { zodEvent } from "fluere/util/zod";
 import { getContext } from "fluere";
@@ -32,7 +33,8 @@ export const llamaParseWorkflow = withStore(
 llamaParseWorkflow.handle(
   [startEvent],
   async ({ data: { inputFile, apiKey } }) => {
-    llamaParseWorkflow.getContext().apiKey = apiKey;
+    llamaParseWorkflow.getStore().apiKey = apiKey;
+    const { stream, sendEvent } = getContext();
     const { openAsBlob } = await import("node:fs");
     const blob = await openAsBlob(inputFile);
     const formData = new FormData();
@@ -47,8 +49,8 @@ llamaParseWorkflow.handle(
         body: formData,
       },
     ).then((res) => res.json());
-    getContext().sendEvent(checkStatusEvent(id));
-    await getContext().requireEvent(checkStatusSuccessEvent);
+    sendEvent(checkStatusEvent(id));
+    await consume(stream, checkStatusSuccessEvent);
     return fetch(
       `https://api.cloud.llamaindex.ai/api/v1/parsing/job/${id}/result/markdown`,
       {
@@ -70,7 +72,7 @@ llamaParseWorkflow.handle(
         {
           method: "GET",
           headers: {
-            Authorization: `Bearer ${llamaParseWorkflow.getContext().apiKey}`,
+            Authorization: `Bearer ${llamaParseWorkflow.getStore().apiKey}`,
           },
         },
       ).then((res) => res.json());

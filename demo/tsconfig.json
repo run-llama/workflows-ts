@@ -4,6 +4,7 @@
     "module": "commonjs",
     "esModuleInterop": true,
     "moduleResolution": "node16",
+    "types": ["DOM", "DOM.AsyncIterable", "DOM.Iterable", "esnext"],
     "forceConsistentCasingInFileNames": true,
     "strict": true,
     "skipLibCheck": true
