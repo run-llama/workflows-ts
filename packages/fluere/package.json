@@ -1,7 +1,16 @@
 {
-  "name": "fluere",
+  "name": "@llamaindex/flow",
   "version": "0.2.0",
-  "description": "event-based workflow engine",
+  "description": "event-based, stream oriented workflow engine",
+  "keywords": [
+    "workflow",
+    "event",
+    "stream",
+    "rxjs",
+    "event-driven",
+    "llamaindex",
+    "flow"
+  ],
   "type": "module",
   "main": "dist/index.cjs",
   "types": "dist/index.d.ts",

@@ -1,4 +1,4 @@
-import { promiseHandler } from "fluere/interrupter/promise";
+import { promiseHandler } from "@llamaindex/flow/interrupter/promise";
 import { toolCallWorkflow } from "../workflows/tool-call-agent.js";
 
 promiseHandler(

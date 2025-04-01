@@ -1,9 +1,9 @@
-import { createWorkflow, workflowEvent, getContext } from "fluere";
+import { createWorkflow, workflowEvent, getContext } from "@llamaindex/flow";
 import { readdir, stat } from "node:fs/promises";
 import { resolve } from "node:path";
 import { AsyncLocalStorage } from "node:async_hooks";
-import { until } from "fluere/stream";
-import { withStore } from "fluere/middleware/store";
+import { until } from "@llamaindex/flow/stream";
+import { withStore } from "@llamaindex/flow/middleware/store";
 
 export const messageEvent = workflowEvent<string>({
   debugLabel: "message",

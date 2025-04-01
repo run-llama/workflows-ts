@@ -1,4 +1,4 @@
-import { promiseHandler } from "fluere/interrupter/promise";
+import { promiseHandler } from "@llamaindex/flow/interrupter/promise";
 import { fileParseWorkflow } from "../workflows/file-parse-agent.js";
 
 const directory = "..";

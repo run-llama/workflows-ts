@@ -3,8 +3,8 @@ import {
   messageEvent,
 } from "../workflows/file-parse-agent.js";
 import { from, filter } from "rxjs";
-import { eventSource } from "fluere";
-import type { WorkflowEventData } from "fluere";
+import { eventSource } from "@llamaindex/flow";
+import type { WorkflowEventData } from "@llamaindex/flow";
 
 const directory = "..";
 

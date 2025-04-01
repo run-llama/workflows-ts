@@ -5,8 +5,8 @@ import {
   getContext,
   workflowEvent,
   type WorkflowEventData,
-} from "fluere";
-import { finalize, until } from "fluere/stream";
+} from "@llamaindex/flow";
+import { finalize, until } from "@llamaindex/flow/stream";
 
 describe("workflow context api", () => {
   const startEvent = workflowEvent({

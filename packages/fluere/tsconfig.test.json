@@ -2,8 +2,8 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "paths": {
-      "fluere": ["./src/core/index.ts"],
-      "fluere/stream": ["./src/stream/index.ts"]
+      "@llamaindex/flow": ["./src/core/index.ts"],
+      "@llamaindex/flow/stream": ["./src/stream/index.ts"]
     }
   },
   "include": ["./tests", "./vitest.config.ts"]

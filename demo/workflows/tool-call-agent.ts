@@ -1,10 +1,10 @@
 import { OpenAI } from "openai";
-import { createWorkflow, getContext, workflowEvent } from "fluere";
+import { createWorkflow, getContext, workflowEvent } from "@llamaindex/flow";
 import type {
   ChatCompletionMessageToolCall,
   ChatCompletionTool,
 } from "openai/resources/chat/completions/completions";
-import { consume } from "fluere/stream";
+import { consume } from "@llamaindex/flow/stream";
 
 const llm = new OpenAI();
 const tools = [

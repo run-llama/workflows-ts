@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 import { pipeline } from "node:stream/promises";
-import { workflowEvent, createWorkflow } from "fluere";
+import { workflowEvent, createWorkflow } from "@llamaindex/flow";
 
 describe("node:stream", () => {
   test("basic usage", async () => {

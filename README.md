@@ -1,10 +1,10 @@
-# fluere
+# `@llamaindex/flow`
 
-fluere 🌊 is a simple, lightweight workflow engine, inspired
+flow 🌊 is a simple, lightweight workflow engine, inspired
 by [LlamaIndex Workflow](https://docs.llamaindex.ai/en/stable/module_guides/workflow/)
 
-[![Bundle Size](https://img.shields.io/bundlephobia/min/fluere)](https://bundlephobia.com/result?p=fluere)
-[![Bundle Size](https://img.shields.io/bundlephobia/minzip/fluere)](https://bundlephobia.com/result?p=fluere)
+[![Bundle Size](https://img.shields.io/bundlephobia/min/@llamaindex/flow)](https://bundlephobia.com/result?p=@llamaindex/flow)
+[![Bundle Size](https://img.shields.io/bundlephobia/minzip/@llamaindex/flow)](https://bundlephobia.com/result?p=@llamaindex/flow)
 
 - Minimal core API (<=2kb)
 - 100% Type safe
@@ -14,13 +14,13 @@ by [LlamaIndex Workflow](https://docs.llamaindex.ai/en/stable/module_guides/work
 ## Usage
 
 ```shell
-npm i fluere
+npm i @llamaindex/flow
 ```
 
 ### First, define events
 
 ```ts
-import { workflowEvent } from "fluere";
+import { workflowEvent } from "@llamaindex/flow";
 
 const startEvent = workflowEvent<string>();
 const stopEvent = workflowEvent<1 | -1>();
@@ -29,7 +29,7 @@ const stopEvent = workflowEvent<1 | -1>();
 ### Connect events with workflow
 
 ```ts
-import { createWorkflow } from "fluere";
+import { createWorkflow } from "@llamaindex/flow";
 
 const convertEvent = workflowEvent();
 
@@ -50,7 +50,7 @@ workflow.handle([convertEvent], (convert) => {
 
 ```ts
 // core utility to trigger workflow, it will run until stopEvent is emitted
-import { finalize } from "fluere";
+import { finalize } from "@llamaindex/flow";
 
 const { data } = await finalize(workflow);
 
@@ -77,7 +77,7 @@ By default, we provide a simple fan-out utility to run multiple workflows in par
 - `getContext().stream` will return a stream of events emitted by the sub-workflow
 
 ```ts
-import { until } from "fluere/stream";
+import { until } from "@llamaindex/flow/stream";
 
 let condition = false;
 workflow.handle([startEvent], (start) => {
@@ -126,7 +126,7 @@ Workflow can be used as a middleware in any server framework, like `express`, `h
 ```ts
 import { Hono } from "hono";
 import { serve } from "@hono/node-server";
-import { createHonoHandler } from "fluere/interrupter/hono";
+import { createHonoHandler } from "@llamaindex/flow/interrupter/hono";
 import { agentWorkflow } from "../workflows/tool-call-agent.js";
 
 const app = new Hono();

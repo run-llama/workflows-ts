@@ -3,11 +3,11 @@
   "type": "module",
   "repository": {
     "type": "git",
-    "url": "https://github.com/run-llama/fluere.git"
+    "url": "https://github.com/run-llama/@llamaindex/flow.git"
   },
   "dependencies": {
     "@hono/node-server": "^1.13.8",
-    "fluere": "workspace:*",
+    "@llamaindex/flow": "workspace:*",
     "hono": "^4.7.4",
     "openai": "^4.87.3",
     "p-retry": "^6.2.1",

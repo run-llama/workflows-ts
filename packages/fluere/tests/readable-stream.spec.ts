@@ -1,8 +1,12 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
-import { getContext } from "fluere";
-import { createWorkflow } from "fluere";
-import { eventSource, workflowEvent, type WorkflowEventData } from "fluere";
-import { finalize } from "fluere/stream";
+import { getContext } from "@llamaindex/flow";
+import { createWorkflow } from "@llamaindex/flow";
+import {
+  eventSource,
+  workflowEvent,
+  type WorkflowEventData,
+} from "@llamaindex/flow";
+import { finalize } from "@llamaindex/flow/stream";
 
 describe("workflow basic", () => {
   const startEvent = workflowEvent<string>({

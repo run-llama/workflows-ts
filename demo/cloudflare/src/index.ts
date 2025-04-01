@@ -1,6 +1,6 @@
 import { Hono } from "hono";
-import { createWorkflow, workflowEvent } from "fluere";
-import { createHonoHandler } from "fluere/interrupter/hono";
+import { createWorkflow, workflowEvent } from "@llamaindex/flow";
+import { createHonoHandler } from "@llamaindex/flow/interrupter/hono";
 import { html } from "hono/html";
 
 const app = new Hono();
