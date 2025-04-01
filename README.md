@@ -110,7 +110,7 @@ import { from, pipe } from "rxjs";
 
 const { stream, sendEvent } = workflow.createContext();
 
-from(stream as unknown as AsyncIterable<WorkflowEventData<any>>)
+from(stream)
   .pipe(filter((ev) => eventSource(ev) === messageEvent))
   .subscribe((ev) => {
     console.log(ev.data);
