@@ -16,22 +16,25 @@ export function readableStream<Start, Stop>(
   workflow: Workflow<Start, Stop>,
   start: Start | WorkflowEventData<Start>,
 ) {
-  return new ReadableStream({
-    start: async (controller) => {
-      const { run, context, updateCallbacks } = workflow.executor;
-      updateCallbacks.push((event) => {
-        controller.enqueue(event);
-      });
-      if (eventSource(start)) {
-        controller.enqueue(start);
-        run([start as WorkflowEventData<Start>]);
-      } else {
-        const event = workflow.startEvent(start as Start);
-        controller.enqueue(event);
-        run([event]);
-      }
-      await context.requireEvent(workflow.stopEvent);
-      controller.close();
-    },
-  });
+  const { run, context } = workflow.executor;
+  const stream = context.stream;
+  if (eventSource(start)) {
+    run([start as WorkflowEventData<Start>]);
+  } else {
+    const event = workflow.startEvent(start as Start);
+    run([event]);
+  }
+  return stream.pipeThrough(
+    new TransformStream({
+      start(controller) {
+        controller.enqueue(start as WorkflowEventData<Start>);
+      },
+      transform(chunk, controller) {
+        controller.enqueue(chunk);
+        if (workflow.stopEvent.include(chunk)) {
+          controller.terminate();
+        }
+      },
+    }),
+  );
 }

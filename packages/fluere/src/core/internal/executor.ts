@@ -1,4 +1,4 @@
-import type { WorkflowEvent, WorkflowEventData } from "fluere";
+import { type WorkflowEvent, type WorkflowEventData } from "fluere";
 import { AsyncLocalStorage } from "node:async_hooks";
 import { flattenEvents, isEventData, isPromiseLike } from "../utils";
 import type { Handler, HandlerRef } from "./handler";
@@ -80,52 +80,34 @@ export const createExecutor = ({ listeners }: ExecutorParams) => {
         }
       });
   };
-  const updateCallbacks: ((event: WorkflowEventData<any>) => void)[] = [];
+  const outputCallbacks: ((event: WorkflowEventData<any>) => void)[] = [];
   const context: Context = {
+    get stream() {
+      return new ReadableStream({
+        start: async (controller) => {
+          outputCallbacks.push((event) => {
+            const context =
+              handlerContextAsyncLocalStorage.getStore() ?? handlerRootContext;
+            let currentEventContext = eventContextWeakMap.get(event);
+            while (currentEventContext) {
+              if (currentEventContext === context) {
+                controller.enqueue(event);
+                break;
+              }
+              currentEventContext = currentEventContext.prev;
+            }
+          });
+        },
+      });
+    },
     sendEvent: (event) => {
       const context =
         handlerContextAsyncLocalStorage.getStore() ?? handlerRootContext;
       eventContextWeakMap.set(event, context);
       context.outputs.push(event);
       queue.push(event);
-      updateCallbacks.forEach((cb) => cb(event));
+      outputCallbacks.forEach((cb) => cb(event));
       queueUpdateCallback();
-      return {
-        wait: async (conditionOrWhenOrRef: any) => {
-          if (typeof conditionOrWhenOrRef === "function") {
-            // when
-            return new Promise<WorkflowEventData<any>>((resolve) => {
-              const cb = () => {
-                const event = queue.find(conditionOrWhenOrRef);
-                if (event) {
-                  resolve(event);
-                }
-                updateCallbacks.splice(updateCallbacks.indexOf(cb), 1);
-              };
-              updateCallbacks.push(cb);
-            });
-          } else if ("handler" in conditionOrWhenOrRef) {
-            // ref
-            const ref = conditionOrWhenOrRef as HandlerRef<
-              WorkflowEvent<any>[],
-              any
-            >;
-            return new Promise<WorkflowEventData<any>>((resolve) => {
-              const cb = () => {
-                const event = queue.find(
-                  (q) => eventContextWeakMap.get(q)?.handler === ref.handler,
-                );
-                if (event) {
-                  resolve(event);
-                }
-                updateCallbacks.splice(updateCallbacks.indexOf(cb), 1);
-              };
-              updateCallbacks.push(cb);
-            });
-          }
-          throw new Error("Invalid argument for wait");
-        },
-      };
     },
   };
 
@@ -150,7 +132,7 @@ export const createExecutor = ({ listeners }: ExecutorParams) => {
 
   return {
     run,
-    updateCallbacks,
+    updateCallbacks: outputCallbacks,
     context,
     handlerRootContext,
   };
