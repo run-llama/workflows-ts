@@ -1,5 +1,5 @@
-import type { WorkflowEventData } from "../event";
-import type { Workflow } from "../workflow";
+import type { WorkflowEventData } from "../core/event";
+import type { Workflow } from "../core/workflow";
 
 export function finalize<Start, Stop>(
   workflow: Workflow<Start, Stop>,

@@ -1,4 +1,4 @@
-import type { WorkflowEvent, WorkflowEventData } from "../event";
+import type { WorkflowEvent, WorkflowEventData } from "../core/event";
 
 /**
  * Consume a stream of events with a given event and time.

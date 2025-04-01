@@ -31,7 +31,14 @@ export default defineConfig([
     entry: ["src/util/*.ts"],
     outDir: "util",
     format: ["esm"],
-    external: ["fluere"],
+    dts: true,
+    sourcemap: true,
+  },
+  // Stream APIs
+  {
+    entry: ["src/stream/index.ts"],
+    outDir: "stream",
+    format: ["esm"],
     dts: true,
     sourcemap: true,
   },

@@ -54,6 +54,10 @@
     "./util/*": {
       "types": "./util/*.d.ts",
       "default": "./util/*.js"
+    },
+    "./stream": {
+      "types": "./stream/index.d.ts",
+      "default": "./stream/index.js"
     }
   },
   "files": [
@@ -61,10 +65,11 @@
     "interrupter",
     "shared",
     "util",
-    "middleware"
+    "middleware",
+    "stream"
   ],
   "scripts": {
-    "build": "rimraf dist interrupter middleware util && tsup",
+    "build": "rimraf dist interrupter middleware stream util && tsup",
     "dev": "tsup --watch",
     "test": "vitest run",
     "prepublish": "cp ../../README.md ./README.md"
