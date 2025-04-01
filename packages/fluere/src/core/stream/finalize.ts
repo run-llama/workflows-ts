@@ -17,7 +17,7 @@ export function finalize<Start, Stop>(
   workflow: Workflow<Start, Stop>,
   start: Start | WorkflowEventData<Start>,
 ) {
-  const { context } = workflow.executor;
+  const context = workflow.createContext();
   const stream = context.stream;
   if (workflow.startEvent.include(start)) {
     context.sendEvent(start);

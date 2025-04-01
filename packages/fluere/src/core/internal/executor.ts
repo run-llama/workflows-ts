@@ -26,13 +26,7 @@ export type ExecutorParams = {
   >;
 };
 
-export type Executor = {
-  updateCallbacks: ((event: WorkflowEventData<any>) => void)[];
-  context: Context;
-  handlerRootContext: HandlerContext;
-};
-
-export const createExecutor = ({ listeners }: ExecutorParams) => {
+export const createContext = ({ listeners }: ExecutorParams): Context => {
   const queue: WorkflowEventData<any>[] = [];
   const runHandler = (
     handler: Handler<WorkflowEvent<any>[], any>,
@@ -118,9 +112,5 @@ export const createExecutor = ({ listeners }: ExecutorParams) => {
     next: new Set(),
   };
 
-  return {
-    updateCallbacks: outputCallbacks,
-    context,
-    handlerRootContext,
-  };
+  return context
 };

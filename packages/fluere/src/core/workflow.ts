@@ -1,6 +1,7 @@
 import { type WorkflowEvent } from "./event";
-import { createExecutor, type Executor } from "./internal/executor";
+import { createContext } from "./internal/executor";
 import { type Handler, type HandlerRef } from "./internal/handler";
+import type { Context } from './internal/context'
 
 export type Workflow<Start, Stop> = {
   handle<
@@ -13,7 +14,7 @@ export type Workflow<Start, Stop> = {
 
   get startEvent(): WorkflowEvent<Start>;
   get stopEvent(): WorkflowEvent<Stop>;
-  get executor(): Executor;
+  createContext(): Context;
 };
 
 export function createWorkflow<Start, Stop>(params: {
@@ -80,8 +81,8 @@ export function createWorkflow<Start, Stop>(params: {
         return ref;
       }
     },
-    get executor() {
-      return createExecutor({
+    createContext() {
+      return createContext({
         listeners: config.steps,
       });
     },
