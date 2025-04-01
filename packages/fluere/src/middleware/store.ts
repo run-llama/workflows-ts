@@ -1,16 +1,16 @@
 import { AsyncLocalStorage } from "node:async_hooks";
-import { type Workflow, type WorkflowEventData } from "fluere";
+import type { Workflow, WorkflowEventData, Context } from "../core";
 
 export function withStore<T, Start, Stop>(
   store: T,
   workflow: Workflow<Start, Stop>,
 ): Workflow<Start, Stop> & {
-  getContext: () => T;
+  getStore: () => T;
 } {
   const contextDataStorage = new AsyncLocalStorage<T>();
   return {
     ...workflow,
-    getContext: (): T => {
+    getStore: (): T => {
       const store = contextDataStorage.getStore();
       if (!store) {
         throw new Error(
@@ -19,13 +19,14 @@ export function withStore<T, Start, Stop>(
       }
       return store;
     },
-    get executor() {
-      const executor = workflow.executor;
+    createContext(): Context {
+      const context = workflow.createContext();
       return {
-        ...executor,
-        run: (inputs: WorkflowEventData<any>[]) => {
-          contextDataStorage.run(store, () => executor.run(inputs));
+        get stream() {
+          return context.stream;
         },
+        sendEvent: (event: WorkflowEventData<any>) =>
+          contextDataStorage.run(store, () => context.sendEvent(event)),
       };
     },
     get startEvent() {

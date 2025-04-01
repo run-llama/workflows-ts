@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import type { Workflow, WorkflowEventData } from "fluere";
+import type { Workflow, WorkflowEventData } from "../core";
 import { promiseHandler } from "./promise";
 
 type WorkflowAPI = {

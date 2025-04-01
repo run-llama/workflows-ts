@@ -1,5 +1,5 @@
 import type { Context, Handler } from "hono";
-import type { Workflow, WorkflowEventData } from "fluere";
+import type { Workflow, WorkflowEventData } from "../core";
 import { promiseHandler } from "./promise";
 
 export const createHonoHandler = <Start, Stop>(

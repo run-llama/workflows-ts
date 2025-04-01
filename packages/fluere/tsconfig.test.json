@@ -5,5 +5,5 @@
       "fluere": ["./src/core/index.ts"]
     }
   },
-  "include": ["./tests"]
+  "include": ["./tests", "./vitest.config.ts"]
 }

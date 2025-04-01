@@ -64,7 +64,7 @@
     "middleware"
   ],
   "scripts": {
-    "build": "tsup",
+    "build": "rimraf dist interrupter middleware util && tsup",
     "dev": "tsup --watch",
     "test": "vitest run",
     "prepublish": "cp ../../README.md ./README.md"
@@ -74,6 +74,7 @@
     "hono": "^4.7.4",
     "next": "^15.2.2",
     "p-retry": "^6.2.1",
+    "rimraf": "^6.0.1",
     "tsup": "^8.4.0",
     "typescript": "^5.8.2",
     "vitest": "^3.0.8",

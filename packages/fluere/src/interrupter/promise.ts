@@ -1,4 +1,4 @@
-import { finalize, type Workflow, type WorkflowEventData } from "fluere";
+import { finalize, type Workflow, type WorkflowEventData } from "../core";
 
 /**
  * Interrupter that wraps a workflow in a promise.
