@@ -1,8 +1,8 @@
 import type { WorkflowEvent, WorkflowEventData } from "../event";
-import { AsyncLocalStorage } from "node:async_hooks";
 import { flattenEvents, isEventData, isPromiseLike } from "../utils";
 import type { Handler, HandlerRef } from "./handler";
 import { _executorAsyncLocalStorage, type Context } from "./context";
+import { createAsyncContext } from "./async-context";
 
 type HandlerContext = {
   handler: Handler<WorkflowEvent<any>[], any>;
@@ -12,7 +12,7 @@ type HandlerContext = {
   next: Set<HandlerContext>;
 };
 
-const handlerContextAsyncLocalStorage = new AsyncLocalStorage<HandlerContext>();
+const handlerContextAsyncLocalStorage = createAsyncContext<HandlerContext>();
 
 const eventContextWeakMap = new WeakMap<
   WorkflowEventData<any>,
