@@ -23,7 +23,6 @@ workflow.handle([startEvent], () => {
 const promise = promiseHandler(workflow)
 
 function App() {
-
   return (
     <>
       <div>
