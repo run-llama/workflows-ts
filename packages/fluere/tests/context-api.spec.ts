@@ -3,12 +3,13 @@ import {
   createWorkflow,
   eventSource,
   getContext,
-  readableStream,
+  finalize,
   workflowEvent,
   type WorkflowEventData,
+  until,
 } from "fluere";
 
-describe.skip("workflow context api", () => {
+describe("workflow context api", () => {
   const startEvent = workflowEvent({
     debugLabel: "startEvent",
   });
@@ -36,7 +37,10 @@ describe.skip("workflow context api", () => {
     workflow.handle([startEvent], async () => {
       const ev = parseEvent(2);
       getContext().sendEvent(ev);
-      // await getContext().requireEvent(parseResultEvent);
+      await until(
+        getContext().stream,
+        (e) => parseResultEvent.include(e) && e.data === 0,
+      );
       return stopEvent(1);
     });
     workflow.handle([parseEvent], async ({ data }) => {
@@ -47,7 +51,7 @@ describe.skip("workflow context api", () => {
         return parseResultEvent(0);
       }
     });
-    const stream = readableStream(workflow, "100");
+    const stream = finalize(workflow, "100");
     const events: WorkflowEventData<any>[] = [];
     for await (const ev of stream) {
       events.push(ev);
@@ -98,7 +102,7 @@ describe.skip("workflow context api", () => {
       }
     });
 
-    const stream = readableStream(workflow, "100");
+    const stream = finalize(workflow, "100");
     const events: WorkflowEventData<any>[] = [];
     for await (const ev of stream) {
       events.push(ev);
@@ -132,7 +136,7 @@ describe.skip("workflow context api", () => {
       return stopEvent();
     });
     workflow.handle([startEvent], fn);
-    const stream = readableStream(workflow);
+    const stream = finalize(workflow);
     const events: WorkflowEventData<any>[] = [];
     for await (const ev of stream) {
       events.push(ev);
@@ -163,7 +167,7 @@ describe.skip("workflow context api", () => {
     });
     workflow.handle([startEvent], fn);
     workflow.handle([aEvent], fn2);
-    const stream = readableStream(workflow);
+    const stream = finalize(workflow);
     const events: WorkflowEventData<any>[] = [];
     for await (const ev of stream) {
       events.push(ev);

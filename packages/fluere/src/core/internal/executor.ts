@@ -1,4 +1,4 @@
-import { type WorkflowEvent, type WorkflowEventData } from "fluere";
+import type { WorkflowEvent, WorkflowEventData } from "../event";
 import { AsyncLocalStorage } from "node:async_hooks";
 import { flattenEvents, isEventData, isPromiseLike } from "../utils";
 import type { Handler, HandlerRef } from "./handler";
@@ -27,7 +27,6 @@ export type ExecutorParams = {
 };
 
 export type Executor = {
-  run: (inputs: WorkflowEventData<any>[]) => void;
   updateCallbacks: ((event: WorkflowEventData<any>) => void)[];
   context: Context;
   handlerRootContext: HandlerContext;
@@ -119,19 +118,7 @@ export const createExecutor = ({ listeners }: ExecutorParams) => {
     next: new Set(),
   };
 
-  function run(inputs: WorkflowEventData<any>[]) {
-    const refs = [...listeners].find(([events]) => {
-      return events.every((event, i) => {
-        return event.include(inputs[i]!);
-      });
-    })![1];
-    for (const ref of refs) {
-      runHandler(ref.handler, inputs);
-    }
-  }
-
   return {
-    run,
     updateCallbacks: outputCallbacks,
     context,
     handlerRootContext,

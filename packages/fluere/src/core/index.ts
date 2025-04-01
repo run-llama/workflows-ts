@@ -7,4 +7,5 @@ export {
   type WorkflowEventData,
   type WorkflowEventConfig,
 } from "./event";
-export { readableStream } from "./internal/readable-stream";
+export { finalize } from "./stream/finalize";
+export { until } from "./stream/until";

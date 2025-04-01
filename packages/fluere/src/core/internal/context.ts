@@ -1,5 +1,5 @@
-import type { WorkflowEventData } from "fluere";
 import { AsyncLocalStorage } from "node:async_hooks";
+import type { WorkflowEventData } from "../event";
 
 export type Context = {
   get stream(): ReadableStream<WorkflowEventData<any>>;

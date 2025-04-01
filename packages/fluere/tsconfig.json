@@ -14,11 +14,12 @@
     "skipLibCheck": true,
     "outDir": "./lib",
     "tsBuildInfoFile": "./lib/.tsbuildinfo",
-    "lib": ["ES2022", "DOM", "DOM.Iterable", "DOM.AsyncIterable"],
-    "paths": {
-      "fluere": ["./src/core/index.ts"],
-      "fluere/shared": ["./src/shared/index.ts"]
-    }
+    "lib": ["ES2022", "DOM", "DOM.Iterable", "DOM.AsyncIterable"]
   },
-  "include": ["./src", "./tests"]
+  "include": ["./src"],
+  "references": [
+    {
+      "path": "./tsconfig.test.json"
+    }
+  ]
 }

@@ -1,0 +1,9 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "paths": {
+      "fluere": ["./src/core/index.ts"]
+    }
+  },
+  "include": ["./tests"]
+}

@@ -1,4 +1,4 @@
-import type { WorkflowEvent, WorkflowEventData } from "fluere";
+import type { WorkflowEvent, WorkflowEventData } from "../event";
 
 export type Handler<
   AcceptEvents extends WorkflowEvent<any>[],

@@ -1,4 +1,4 @@
-import { readableStream, type Workflow, type WorkflowEventData } from "fluere";
+import { finalize, type Workflow, type WorkflowEventData } from "fluere";
 
 /**
  * Interrupter that wraps a workflow in a promise.
@@ -10,7 +10,7 @@ export async function promiseHandler<Start, Stop>(
   workflow: Workflow<Start, Stop>,
   start: Start | WorkflowEventData<Start>,
 ): Promise<WorkflowEventData<Stop>> {
-  const stream = readableStream(workflow, start);
+  const stream = finalize(workflow, start);
   for await (const event of stream) {
     if (workflow.stopEvent.include(event)) {
       return event;
