@@ -15,6 +15,7 @@ export async function until(
     }
     events.push(value);
     if (await cond(value)) {
+      reader.releaseLock();
       break;
     }
   }

@@ -14,3 +14,4 @@ export {
 // stream utils
 export { finalize } from "./stream/finalize";
 export { until } from "./stream/until";
+export { consume } from "./stream/consume";
