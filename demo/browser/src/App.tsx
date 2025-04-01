@@ -27,7 +27,7 @@ function App() {
   return (
     <>
       <div>
-        <a href="https://vite.dev" target="_blank">
+        <a href="https://llamaindex.ai" target="_blank">
           <img src={llamaindexLogo} className="logo" alt="Vite logo" />
         </a>
         <a href="https://react.dev" target="_blank">
