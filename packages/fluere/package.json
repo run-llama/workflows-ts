@@ -71,7 +71,7 @@
     "build": "rimraf dist interrupter middleware stream util async-context && tsup",
     "dev": "tsup --watch",
     "test": "vitest run",
-    "prepublish": "cp ../../README.md ./README.md"
+    "prepublishOnly": "cp ../../README.md ./README.md"
   },
   "devDependencies": {
     "@modelcontextprotocol/sdk": "^1.7.0",
