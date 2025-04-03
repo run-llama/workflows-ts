@@ -1,6 +1,6 @@
 {
   "name": "fluere",
-  "version": "0.3.0-alpha.2",
+  "version": "0.3.0-alpha.3",
   "description": "event-based workflow engine",
   "type": "module",
   "main": "dist/index.cjs",
