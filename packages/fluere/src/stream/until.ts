@@ -1,9 +1,21 @@
-import type { WorkflowEventData } from "../core/event";
+import type { WorkflowEvent, WorkflowEventData } from "../core/event";
 
 export async function until(
   stream: ReadableStream<WorkflowEventData<any>>,
   cond: (event: WorkflowEventData<any>) => boolean | Promise<boolean>,
-) {
+): Promise<WorkflowEventData<any>[]>;
+export async function until<Stop>(
+  stream: ReadableStream<WorkflowEventData<any>>,
+  cond: WorkflowEvent<Stop>,
+): Promise<
+  [...events: Array<WorkflowEventData<any>>, event: WorkflowEvent<Stop>]
+>;
+export async function until(
+  stream: ReadableStream<WorkflowEventData<any>>,
+  cond:
+    | ((event: WorkflowEventData<any>) => boolean | Promise<boolean>)
+    | WorkflowEvent<any>,
+): Promise<any> {
   const reader = stream.getReader();
   const events: WorkflowEventData<any>[] = [];
   let done = false;
@@ -14,7 +26,7 @@ export async function until(
       break;
     }
     events.push(value);
-    if (await cond(value)) {
+    if (("include" in cond && cond.include(value)) || (await cond(value))) {
       reader.releaseLock();
       break;
     }

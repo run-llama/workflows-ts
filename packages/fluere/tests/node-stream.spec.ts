@@ -10,10 +10,7 @@ describe("node:stream", () => {
     const stopEvent = workflowEvent({
       debugLabel: "stop",
     });
-    const workflow = createWorkflow({
-      startEvent,
-      stopEvent,
-    });
+    const workflow = createWorkflow();
     workflow.handle([startEvent], () => stopEvent());
     const context = workflow.createContext();
     const { stream, sendEvent } = context;
