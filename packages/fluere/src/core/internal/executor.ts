@@ -1,7 +1,7 @@
 import type { WorkflowEvent, WorkflowEventData } from "fluere";
 import { flattenEvents, isEventData, isPromiseLike } from "../utils";
 import type { Handler, HandlerRef } from "fluere";
-import { _executorAsyncLocalStorage, type Context } from "./context";
+import { _executorAsyncLocalStorage, type WorkflowContext } from "./context";
 import { createAsyncContext } from "fluere/async-context";
 
 type HandlerContext = {
@@ -27,7 +27,9 @@ export type ExecutorParams = {
   >;
 };
 
-export const createContext = ({ listeners }: ExecutorParams): Context => {
+export const createContext = ({
+  listeners,
+}: ExecutorParams): WorkflowContext => {
   const queue: WorkflowEventData<any>[] = [];
   const runHandler = (
     handler: Handler<WorkflowEvent<any>[], any>,
@@ -106,7 +108,7 @@ export const createContext = ({ listeners }: ExecutorParams): Context => {
       });
   };
   const outputCallbacks: ((event: WorkflowEventData<any>) => void)[] = [];
-  const context: Context = {
+  const context: WorkflowContext = {
     get stream() {
       return new ReadableStream({
         start: async (controller) => {

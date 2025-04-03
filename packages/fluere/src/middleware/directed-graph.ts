@@ -1,12 +1,12 @@
-import type {
-  Context,
-  Handler,
-  HandlerRef,
-  Workflow,
-  WorkflowEvent,
-  WorkflowEventData,
+import {
+  type WorkflowContext,
+  getContext,
+  type Handler,
+  type HandlerRef,
+  type Workflow,
+  type WorkflowEvent,
+  type WorkflowEventData,
 } from "fluere";
-import { createAsyncContext } from "fluere/async-context";
 
 export type DirectedGraphHandler<
   DirectedGraph extends [
@@ -45,7 +45,7 @@ export type WithDirectedGraphWorkflow<
     accept: AcceptEvents,
     handler: DirectedGraphHandler<DirectedGraph, AcceptEvents, Result>,
   ): HandlerRef<AcceptEvents, Result>;
-  createContext(): Context;
+  createContext(): WorkflowContext;
 };
 
 export function directedGraph<
@@ -57,32 +57,54 @@ export function directedGraph<
   workflow: Workflow,
   directedGraph: DirectedGraph,
 ): WithDirectedGraphWorkflow<DirectedGraph> {
-  const directedGraphAsyncContext = createAsyncContext<Context>();
+  const createSafeSendEvent = (...events: WorkflowEventData<any>[]) => {
+    const outputs = directedGraph
+      .filter(([inputs]) =>
+        inputs.every((input, idx) => input.include(events[idx])),
+      )
+      .map(([_, outputs]) => outputs);
+    const store = getContext();
+    const originalSendEvent = store.sendEvent;
+    return (...inputs: WorkflowEventData<any>[]) => {
+      let matched = false;
+      for (let i = 0; i < outputs.length; i++) {
+        const output = outputs[i]!;
+        if (output.length === inputs.length) {
+          if (output.every((e, idx) => e.include(inputs[idx]))) {
+            matched = true;
+            break;
+          }
+        }
+      }
+      if (matched) {
+        console.warn(
+          "Invalid input detected [%s]",
+          inputs.map((i) => i.data).join(", "),
+        );
+      }
+      return originalSendEvent(...inputs);
+    };
+  };
   return {
     ...workflow,
     handle: (accept, handler) => {
       const wrappedHandler: Handler<WorkflowEvent<any>[], any> = (
         ...events
       ) => {
-        const store = directedGraphAsyncContext.getStore();
-        if (!store) {
-          throw new Error("cannot find context");
-        }
-        // todo: check sendEvent inputs
+        const context = getContext();
         return handler(
-          store.sendEvent as any,
+          (context as any).safeSendEvent,
           // @ts-expect-error
           ...events,
         );
       };
       return workflow.handle(accept, wrappedHandler);
     },
-    createContext(): Context {
+    createContext(): WorkflowContext {
       const context = workflow.createContext();
-      context.__internal__call_context.add((context, _, next) => {
-        directedGraphAsyncContext.run(context, () => {
-          next();
-        });
+      context.__internal__call_context.add((context, inputs, next) => {
+        (context as any).safeSendEvent = createSafeSendEvent(...inputs);
+        next();
       });
       return context;
     },
