@@ -58,6 +58,7 @@
     }
   },
   "files": [
+    "async-context",
     "dist",
     "interrupter",
     "util",
