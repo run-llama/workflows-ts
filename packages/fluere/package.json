@@ -72,8 +72,10 @@
     "prepublishOnly": "cp ../../README.md ./README.md"
   },
   "devDependencies": {
+    "@edge-runtime/vm": "^5.0.0",
     "@modelcontextprotocol/sdk": "^1.7.0",
     "@types/node": "^22.13.10",
+    "happy-dom": "^17.4.4",
     "hono": "^4.7.4",
     "next": "^15.2.2",
     "p-retry": "^6.2.1",
