@@ -11,31 +11,18 @@ export type Workflow<Start, Stop> = {
     accept: AcceptEvents,
     handler: Handler<AcceptEvents, Result>,
   ): void;
-
-  get startEvent(): WorkflowEvent<Start>;
-  get stopEvent(): WorkflowEvent<Stop>;
   createContext(): Context;
 };
 
-export function createWorkflow<Start, Stop>(params: {
-  startEvent: WorkflowEvent<Start>;
-  stopEvent: WorkflowEvent<Stop>;
-}): Workflow<Start, Stop> {
+export function createWorkflow<Start, Stop>(): Workflow<Start, Stop> {
   const config = {
     steps: new Map<
       WorkflowEvent<any>[],
       Set<HandlerRef<WorkflowEvent<any>[], any>>
     >(),
   };
-  const { startEvent, stopEvent } = params;
 
   return {
-    get stopEvent() {
-      return stopEvent;
-    },
-    get startEvent() {
-      return startEvent;
-    },
     handle: <
       const AcceptEvents extends WorkflowEvent<any>[],
       Result extends ReturnType<WorkflowEvent<any>> | void,
