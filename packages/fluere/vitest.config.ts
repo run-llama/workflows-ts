@@ -4,7 +4,7 @@ import tsconfigPaths from "vite-tsconfig-paths";
 export default defineConfig({
   plugins: [
     tsconfigPaths({
-      projects: ["./tsconfig.test.json"],
+      projects: ["./tsconfig.json"],
     }),
   ],
 });

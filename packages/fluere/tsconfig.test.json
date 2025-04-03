@@ -1,11 +1,4 @@
 {
   "extends": "./tsconfig.json",
-  "compilerOptions": {
-    "paths": {
-      "fluere": ["./src/core/index.ts"],
-      "fluere/stream": ["./src/stream/index.ts"],
-      "fluere/async-context": ["./src/async-context/index.ts"]
-    }
-  },
   "include": ["./tests", "./vitest.config.ts"]
 }
