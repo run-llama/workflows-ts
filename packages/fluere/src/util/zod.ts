@@ -16,5 +16,5 @@ export const zodEvent = <T>(
       schema.parse(data);
       return event.with(data);
     },
-  };
+  } as unknown as WorkflowEvent<T>;
 };

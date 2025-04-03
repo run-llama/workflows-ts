@@ -21,9 +21,10 @@ export const stopEvent = zodEvent(
 );
 
 export const llamaParseWorkflow = withStore(
-  {} as {
-    apiKey: string;
-  },
+  () =>
+    ({}) as {
+      apiKey: string;
+    },
   createWorkflow(),
 );
 

@@ -1,7 +1,7 @@
 import type { WorkflowEvent, WorkflowEventData } from "fluere";
 import { flattenEvents, isEventData, isPromiseLike } from "../utils";
 import type { Handler, HandlerRef } from "fluere";
-import { _executorAsyncLocalStorage, type Context } from "./context";
+import { _executorAsyncLocalStorage, type WorkflowContext } from "./context";
 import { createAsyncContext } from "fluere/async-context";
 
 type HandlerContext = {
@@ -27,7 +27,9 @@ export type ExecutorParams = {
   >;
 };
 
-export const createContext = ({ listeners }: ExecutorParams): Context => {
+export const createContext = ({
+  listeners,
+}: ExecutorParams): WorkflowContext => {
   const queue: WorkflowEventData<any>[] = [];
   const runHandler = (
     handler: Handler<WorkflowEvent<any>[], any>,
@@ -49,28 +51,43 @@ export const createContext = ({ listeners }: ExecutorParams): Context => {
     };
     handlerContext.prev.next.add(handlerContext);
     handlerContextAsyncLocalStorage.run(handlerContext, () => {
-      const result = _executorAsyncLocalStorage.run(context, () => {
-        try {
-          return handler(...inputs);
-        } catch (error) {
-          if (handlerAbortController ?? rootAbortController) {
-            (handlerAbortController ?? rootAbortController).abort(error);
-          } else {
-            console.error("unhandled error in handler", error);
-            throw error;
+      const cbs = [...context.__internal__call_context];
+      _executorAsyncLocalStorage.run(context, () => {
+        //#region middleware
+        let i = 0;
+        const next = () => {
+          if (i === cbs.length) {
+            let result: any;
+            try {
+              result = handler(...inputs);
+            } catch (error) {
+              if (handlerAbortController ?? rootAbortController) {
+                (handlerAbortController ?? rootAbortController).abort(error);
+              } else {
+                console.error("unhandled error in handler", error);
+                throw error;
+              }
+            }
+            // return value is a special event
+            if (isPromiseLike(result)) {
+              result.then((event) => {
+                if (isEventData(event)) {
+                  context.sendEvent(event);
+                }
+              });
+            } else if (isEventData(result)) {
+              context.sendEvent(result);
+            }
           }
-        }
+          const cb = cbs[i];
+          if (cb) {
+            i++;
+            cb(context, inputs, next);
+          }
+        };
+        next();
+        //#endregion
       });
-      // return value is a special event
-      if (isPromiseLike(result)) {
-        result.then((event) => {
-          if (isEventData(event)) {
-            context.sendEvent(event);
-          }
-        });
-      } else if (isEventData(result)) {
-        context.sendEvent(result);
-      }
     });
   };
   const queueUpdateCallback = () => {
@@ -91,7 +108,7 @@ export const createContext = ({ listeners }: ExecutorParams): Context => {
       });
   };
   const outputCallbacks: ((event: WorkflowEventData<any>) => void)[] = [];
-  const context: Context = {
+  const context: WorkflowContext = {
     get stream() {
       return new ReadableStream({
         start: async (controller) => {
@@ -126,6 +143,7 @@ export const createContext = ({ listeners }: ExecutorParams): Context => {
         queueUpdateCallback();
       });
     },
+    __internal__call_context: new Set(),
   };
 
   let rootAbortController = new AbortController();

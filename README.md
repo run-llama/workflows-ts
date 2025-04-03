@@ -175,6 +175,63 @@ workflow.handle([startEvent], async () => {
 Due to missing API of `async_hooks` in browser, we are looking
 for [Async Context](https://github.com/tc39/proposal-async-context) to solve this problem in the future.
 
+## Middleware
+
+### `withStore`
+
+```ts
+const workflow = withStore(
+  () => ({
+    pendingTasks: new Set<Promise<unknown>>(),
+  }),
+  createWorkflow(),
+);
+
+workflow.handle([startEvent], () => {
+  workflow.getStore().pendingTasks.add(
+    new Promise((resolve) => {
+      setTimeout(() => {
+        resolve();
+      }, 100);
+    }),
+  );
+});
+
+const { getStore } = workflow.createContext();
+```
+
+### `withDirectedGraph`
+
+make first parameter of `handler` to be `sendEvent` and its type safe and runtime safe when you create a workflow with `directedGraph`.
+
+```ts
+// before:
+workflow.handle([startEvent], (start) => {});
+// after:
+workflow.handle([startEvent], (sendEvent, start) => {});
+```
+
+```ts
+const startEvent = workflowEvent<void, "start">();
+const disallowedEvent = workflowEvent<void, "disallowed">({
+  debugLabel: "disallowed",
+});
+const parseEvent = workflowEvent<string, "parse">();
+const stopEvent = workflowEvent<number, "stop">();
+const workflow = directedGraph(createWorkflow(), [
+  [[startEvent], [stopEvent]],
+  [[startEvent], [parseEvent]],
+]);
+
+workflow.handle([startEvent], (sendEvent, start) => {
+  sendEvent(
+    disallowedEvent.with(), // <-- ❌ Type Check Failed, Runtime Error
+  );
+  sendEvent(parseEvent.with("")); // <-- ✅
+  sendEvent(stopEvent.with(1)); // <-- ✅
+});
+```
+
 # LICENSE
 
 MIT

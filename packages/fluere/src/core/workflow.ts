@@ -1,7 +1,7 @@
 import { type WorkflowEvent } from "./event";
 import { createContext } from "./internal/executor";
 import { type Handler, type HandlerRef } from "./internal/handler";
-import type { Context } from "./internal/context";
+import type { WorkflowContext } from "./internal/context";
 
 export type Workflow = {
   handle<
@@ -11,7 +11,7 @@ export type Workflow = {
     accept: AcceptEvents,
     handler: Handler<AcceptEvents, Result>,
   ): HandlerRef<AcceptEvents, Result>;
-  createContext(): Context;
+  createContext(): WorkflowContext;
 };
 
 export function createWorkflow(): Workflow {
