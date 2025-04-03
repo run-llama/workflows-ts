@@ -50,7 +50,7 @@ export const createContext = ({ listeners }: ExecutorParams): Context => {
     handlerContext.prev.next.add(handlerContext);
     handlerContextAsyncLocalStorage.run(handlerContext, () => {
       const cbs = [...context.__internal__call_context];
-      const result = _executorAsyncLocalStorage.run(context, () => {
+      _executorAsyncLocalStorage.run(context, () => {
         //#region middleware
         let i = 0;
         const next = () => {
