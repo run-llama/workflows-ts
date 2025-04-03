@@ -48,7 +48,7 @@ export type WithDirectedGraphWorkflow<
   createContext(): Context;
 };
 
-export function withDirectedGraph<
+export function directedGraph<
   const DirectedGraph extends [
     inputs: WorkflowEvent<any>[],
     outputs: WorkflowEvent<any>[],

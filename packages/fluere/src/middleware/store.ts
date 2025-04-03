@@ -5,6 +5,9 @@ export function withStore<T>(
   createStore: () => T,
   workflow: Workflow,
 ): Workflow & {
+  createContext(): Context & {
+    getStore(): T;
+  };
   getStore(): T;
 } {
   const storeAsyncContext = createAsyncContext<T>();
