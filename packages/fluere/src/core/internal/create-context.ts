@@ -1,8 +1,22 @@
 import type { WorkflowEvent, WorkflowEventData } from "../event";
 import { flattenEvents, isEventData, isPromiseLike } from "../utils";
 import type { Handler, HandlerRef } from "./handler";
-import { _executorAsyncLocalStorage, type Context } from "./context";
 import { createAsyncContext } from "fluere/async-context";
+
+export type Context = {
+  get stream(): ReadableStream<WorkflowEventData<any>>;
+  sendEvent: (event: WorkflowEventData<any>) => void;
+};
+
+export const _executorAsyncLocalStorage = createAsyncContext<Context>();
+
+export function getContext(): Context {
+  const context = _executorAsyncLocalStorage.getStore();
+  if (!context) {
+    throw new Error("No context found");
+  }
+  return context;
+}
 
 type HandlerContext = {
   handler: Handler<WorkflowEvent<any>[], any>;
@@ -24,9 +38,23 @@ export type ExecutorParams = {
     WorkflowEvent<any>[],
     Set<HandlerRef<WorkflowEvent<any>[], any>>
   >;
+
+  __internal__call_handler?: <
+    AcceptEvents extends WorkflowEvent<any>[],
+    Result extends WorkflowEventData<any> | void,
+  >(
+    handler: Handler<AcceptEvents, Result>,
+    inputs: {
+      [K in keyof AcceptEvents]: ReturnType<AcceptEvents[K]>;
+    },
+    handlerContext: Readonly<HandlerContext>,
+  ) => Result | Promise<Result>;
 };
 
-export const createContext = ({ listeners }: ExecutorParams): Context => {
+export const createContext = ({
+  listeners,
+  __internal__call_handler = (handler, inputs) => handler(...inputs),
+}: ExecutorParams): Context => {
   const queue: WorkflowEventData<any>[] = [];
   const runHandler = (
     handler: Handler<WorkflowEvent<any>[], any>,
@@ -42,7 +70,7 @@ export const createContext = ({ listeners }: ExecutorParams): Context => {
     handlerContext.prev.next.add(handlerContext);
     handlerContextAsyncLocalStorage.run(handlerContext, () => {
       const result = _executorAsyncLocalStorage.run(context, () =>
-        handler(...inputs),
+        __internal__call_handler(handler, inputs, handlerContext),
       );
       // return value is a special event
       if (isPromiseLike(result)) {

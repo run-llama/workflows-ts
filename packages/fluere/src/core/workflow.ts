@@ -1,7 +1,6 @@
 import { type WorkflowEvent } from "./event";
-import { createContext } from "./internal/executor";
+import { createContext, type Context } from "./internal/create-context";
 import { type Handler, type HandlerRef } from "./internal/handler";
-import type { Context } from "./internal/context";
 
 export type Workflow<Start, Stop> = {
   handle<
