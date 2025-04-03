@@ -1,6 +1,7 @@
 import {
   fileParseWorkflow,
   messageEvent,
+  startEvent,
 } from "../workflows/file-parse-agent.js";
 import { from, filter } from "rxjs";
 import { eventSource } from "fluere";
@@ -16,4 +17,4 @@ from(stream as unknown as AsyncIterable<WorkflowEventData<any>>)
     console.log(ev.data);
   });
 
-sendEvent(fileParseWorkflow.startEvent(directory));
+sendEvent(startEvent.with(directory));

@@ -33,32 +33,23 @@ import { createWorkflow } from "fluere";
 
 const convertEvent = workflowEvent();
 
-const workflow = createWorkflow({
-  startEvent,
-  stopEvent,
-});
+const workflow = createWorkflow();
 
 workflow.handle([startEvent], (start) => {
-  return convertEvent(Number.parseInt(start.data, 10));
+  return convertEvent.with(Number.parseInt(start.data, 10));
 });
 workflow.handle([convertEvent], (convert) => {
-  return stopEvent(convert.data > 0 ? 1 : -1);
+  return stopEvent.with(convert.data > 0 ? 1 : -1);
 });
 ```
 
 ### Trigger workflow
 
 ```ts
-// core utility to trigger workflow, it will run until stopEvent is emitted
-import { finalize } from "fluere";
-
-const { data } = await finalize(workflow);
-
-// you can also use any stream API, like node:stream to handle the workflow
-import { pipeline } from "node:stream";
+import { pipeline } from "node:stream/promises";
 
 const { stream, sendEvent } = workflow.createContext();
-sendEvent(startEvent());
+sendEvent(startEvent.with());
 const result = await pipeline(stream, async function (source) {
   for await (const event of source) {
     if (stopEvent.include(event)) {
@@ -83,21 +74,21 @@ let condition = false;
 workflow.handle([startEvent], (start) => {
   const { sendEvent, stream } = getContext();
   for (let i = 0; i < 10; i++) {
-    sendEvent(convertEvent(i));
+    sendEvent(convertEvent.with(i));
   }
   // You define the condition to stop the workflow
   const results = until(stream, () => condition).filter((ev) =>
     convertStopEvent.includes(ev),
   );
   console.log(results.length); // 10
-  return stopEvent();
+  return stopEvent.with();
 });
 
 workflow.handle([convertEvent], (convert) => {
   if (convert.data === 9) {
     condition = true;
   }
-  return convertStopEvent(/* ... */);
+  return convertStopEvent.with(/* ... */);
 });
 ```
 
@@ -127,13 +118,21 @@ Workflow can be used as a middleware in any server framework, like `express`, `h
 import { Hono } from "hono";
 import { serve } from "@hono/node-server";
 import { createHonoHandler } from "fluere/interrupter/hono";
-import { agentWorkflow } from "../workflows/tool-call-agent.js";
+import {
+  agentWorkflow,
+  startEvent,
+  stopEvent,
+} from "../workflows/tool-call-agent.js";
 
 const app = new Hono();
 
 app.post(
   "/workflow",
-  createHonoHandler(agentWorkflow, async (ctx) => ctx.req.text()),
+  createHonoHandler(
+    agentWorkflow,
+    async (ctx) => startEvent(await ctx.req.text()),
+    stopEvent,
+  ),
 );
 
 serve(app, ({ port }) => {

@@ -11,23 +11,20 @@ const server = new McpServer({
   version: "1.0.0",
 });
 
-const startEvent = workflowEvent<{
+export const startEvent = workflowEvent<{
   filePath: string;
 }>();
-const stopEvent = workflowEvent<{
+export const stopEvent = workflowEvent<{
   content: { type: "text"; text: string }[];
 }>();
 
-const wrappedWorkflow = createWorkflow({
-  startEvent,
-  stopEvent,
-});
+const wrappedWorkflow = createWorkflow();
 
 wrappedWorkflow.handle([startEvent], async ({ data: { filePath } }) => {
   const { stream, sendEvent } = fileParseWorkflow.createContext();
-  sendEvent(fileParseWorkflow.startEvent(filePath));
-  await consume(stream, fileParseWorkflow.stopEvent);
-  return stopEvent({
+  sendEvent(startEvent.with({ filePath }));
+  await consume(stream, stopEvent);
+  return stopEvent.with({
     content: [
       {
         type: "text",
@@ -42,7 +39,7 @@ server.tool(
   {
     filePath: z.string(),
   },
-  mcpTool(wrappedWorkflow),
+  mcpTool(wrappedWorkflow, startEvent, stopEvent),
 );
 
 const transport = new StdioServerTransport();

@@ -7,4 +7,26 @@ export default defineConfig({
       projects: ["./tsconfig.test.json"],
     }),
   ],
+  test: {
+    workspace: [
+      {
+        extends: true,
+        test: {
+          environment: "happy-dom",
+        },
+      },
+      {
+        extends: true,
+        test: {
+          environment: "node",
+        },
+      },
+      {
+        extends: true,
+        test: {
+          environment: "edge-runtime",
+        },
+      },
+    ],
+  },
 });

@@ -10,14 +10,11 @@ describe("node:stream", () => {
     const stopEvent = workflowEvent({
       debugLabel: "stop",
     });
-    const workflow = createWorkflow({
-      startEvent,
-      stopEvent,
-    });
-    workflow.handle([startEvent], () => stopEvent());
+    const workflow = createWorkflow();
+    workflow.handle([startEvent], () => stopEvent.with());
     const context = workflow.createContext();
     const { stream, sendEvent } = context;
-    sendEvent(startEvent());
+    sendEvent(startEvent.with());
     const result = await pipeline(stream, async function (source) {
       for await (const event of source) {
         if (stopEvent.include(event)) {

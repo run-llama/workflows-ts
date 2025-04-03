@@ -7,18 +7,19 @@ const app = new Hono();
 
 const startEvent = workflowEvent<string>();
 const stopEvent = workflowEvent<string>();
-const workflow = createWorkflow({
-  startEvent,
-  stopEvent,
-});
+const workflow = createWorkflow();
 
 workflow.handle([startEvent], ({ data }) => {
-  return stopEvent(`hello, ${data}!`);
+  return stopEvent.with(`hello, ${data}!`);
 });
 
 app.post(
   "/workflow",
-  createHonoHandler(workflow, async (ctx) => ctx.req.text()),
+  createHonoHandler(
+    workflow,
+    async (ctx) => startEvent.with(await ctx.req.text()),
+    stopEvent,
+  ),
 );
 
 app.get("/", (c) => {

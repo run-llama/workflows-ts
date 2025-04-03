@@ -1,15 +1,13 @@
 import type { Context, Handler } from "hono";
-import type { Workflow, WorkflowEventData } from "../core";
+import type { Workflow, WorkflowEvent, WorkflowEventData } from "fluere";
 import { promiseHandler } from "./promise";
 
 export const createHonoHandler = <Start, Stop>(
-  workflow: Workflow<Start, Stop>,
+  workflow: Workflow,
   getStart: (
     c: Context,
-  ) =>
-    | Start
-    | WorkflowEventData<Start>
-    | Promise<Start | WorkflowEventData<Start>>,
+  ) => WorkflowEventData<Start> | Promise<WorkflowEventData<Start>>,
+  stopEvent: WorkflowEvent<Stop>,
   wrapStopEvent?: (c: Context, stop: Stop) => Response,
 ): Handler => {
   if (!wrapStopEvent) {
@@ -18,7 +16,7 @@ export const createHonoHandler = <Start, Stop>(
     };
   }
   return async (c) => {
-    const stop = await promiseHandler(workflow, await getStart(c));
+    const stop = await promiseHandler(workflow, await getStart(c), stopEvent);
     return wrapStopEvent(c, stop.data);
   };
 };

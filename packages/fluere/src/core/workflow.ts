@@ -3,42 +3,29 @@ import { createContext } from "./internal/executor";
 import { type Handler, type HandlerRef } from "./internal/handler";
 import type { Context } from "./internal/context";
 
-export type Workflow<Start, Stop> = {
+export type Workflow = {
   handle<
     const AcceptEvents extends WorkflowEvent<any>[],
-    Result extends ReturnType<WorkflowEvent<any>> | void,
+    Result extends ReturnType<WorkflowEvent<any>["with"]> | void,
   >(
     accept: AcceptEvents,
     handler: Handler<AcceptEvents, Result>,
   ): HandlerRef<AcceptEvents, Result>;
-
-  get startEvent(): WorkflowEvent<Start>;
-  get stopEvent(): WorkflowEvent<Stop>;
   createContext(): Context;
 };
 
-export function createWorkflow<Start, Stop>(params: {
-  startEvent: WorkflowEvent<Start>;
-  stopEvent: WorkflowEvent<Stop>;
-}): Workflow<Start, Stop> {
+export function createWorkflow(): Workflow {
   const config = {
     steps: new Map<
       WorkflowEvent<any>[],
       Set<HandlerRef<WorkflowEvent<any>[], any>>
     >(),
   };
-  const { startEvent, stopEvent } = params;
 
   return {
-    get stopEvent() {
-      return stopEvent;
-    },
-    get startEvent() {
-      return startEvent;
-    },
     handle: <
       const AcceptEvents extends WorkflowEvent<any>[],
-      Result extends ReturnType<WorkflowEvent<any>> | void,
+      Result extends ReturnType<WorkflowEvent<any>["with"]> | void,
     >(
       accept: AcceptEvents,
       handler: Handler<AcceptEvents, Result>,

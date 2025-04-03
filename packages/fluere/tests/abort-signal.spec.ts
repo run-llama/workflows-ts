@@ -4,11 +4,7 @@ import { createWorkflow, getContext, workflowEvent } from "fluere";
 describe("abort signal", () => {
   test("basic", () => {
     const startEvent = workflowEvent();
-    const stopEvent = workflowEvent();
-    const workflow = createWorkflow({
-      startEvent,
-      stopEvent,
-    });
+    const workflow = createWorkflow();
 
     const err = new Error("1");
     workflow.handle([startEvent], () => {
@@ -19,7 +15,7 @@ describe("abort signal", () => {
       signal.onabort = vi.fn(() => {
         expect(signal.reason).toBe(err);
       });
-      sendEvent(startEvent());
+      sendEvent(startEvent.with());
       expect(signal.onabort).toBeCalled();
     }
     {
@@ -27,18 +23,14 @@ describe("abort signal", () => {
       signal.onabort = vi.fn(() => {
         expect(signal.reason).toBe(err);
       });
-      sendEvent(startEvent());
+      sendEvent(startEvent.with());
       expect(signal.onabort).toBeCalled();
     }
   });
 
   test("only inner signal called", () => {
     const startEvent = workflowEvent();
-    const stopEvent = workflowEvent();
-    const workflow = createWorkflow({
-      startEvent,
-      stopEvent,
-    });
+    const workflow = createWorkflow();
 
     const err = new Error("1");
     let handlerSignal: AbortSignal;
@@ -55,7 +47,7 @@ describe("abort signal", () => {
     signal.onabort = vi.fn(() => {
       expect(signal.reason).toBe(err);
     });
-    sendEvent(startEvent());
+    sendEvent(startEvent.with());
     expect(signal.onabort).not.toBeCalled();
     expect(handlerSignal!.onabort).toBeCalled();
   });

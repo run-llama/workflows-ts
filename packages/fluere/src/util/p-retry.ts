@@ -1,10 +1,10 @@
-import type { Handler, WorkflowEvent } from "../core";
+import type { Handler, WorkflowEvent } from "fluere";
 import type { Options } from "p-retry";
 import pRetry from "p-retry";
 
 export function pRetryHandler<
   const AcceptEvents extends WorkflowEvent<any>[],
-  Result extends ReturnType<WorkflowEvent<any>> | void,
+  Result extends ReturnType<WorkflowEvent<any>["with"]> | void,
 >(
   handler: Handler<AcceptEvents, Result>,
   options: Options,

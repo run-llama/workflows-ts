@@ -1,6 +1,6 @@
-import type { WorkflowEvent, WorkflowEventData } from "../event";
+import type { WorkflowEvent, WorkflowEventData } from "fluere";
 import { flattenEvents, isEventData, isPromiseLike } from "../utils";
-import type { Handler, HandlerRef } from "./handler";
+import type { Handler, HandlerRef } from "fluere";
 import { _executorAsyncLocalStorage, type Context } from "./context";
 import { createAsyncContext } from "fluere/async-context";
 
@@ -115,14 +115,16 @@ export const createContext = ({ listeners }: ExecutorParams): Context => {
         handlerContextAsyncLocalStorage.getStore() ?? handlerRootContext;
       return context.abortController.signal;
     },
-    sendEvent: (event) => {
-      const context =
-        handlerContextAsyncLocalStorage.getStore() ?? handlerRootContext;
-      eventContextWeakMap.set(event, context);
-      context.outputs.push(event);
-      queue.push(event);
-      outputCallbacks.forEach((cb) => cb(event));
-      queueUpdateCallback();
+    sendEvent: (...events) => {
+      events.forEach((event) => {
+        const context =
+          handlerContextAsyncLocalStorage.getStore() ?? handlerRootContext;
+        eventContextWeakMap.set(event, context);
+        context.outputs.push(event);
+        queue.push(event);
+        outputCallbacks.forEach((cb) => cb(event));
+        queueUpdateCallback();
+      });
     },
   };
 
