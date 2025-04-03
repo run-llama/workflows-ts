@@ -9,7 +9,6 @@
   "browser": "dist/index.browser.js",
   "exports": {
     ".": {
-      "development": "./src/core/index.ts",
       "workerd": {
         "types": "./dist/index.d.ts",
         "default": "./dist/index.js"
@@ -28,10 +27,6 @@
       }
     },
     "./async-context": {
-      "development": {
-        "browser": "./src/async-context/index.browser.ts",
-        "default": "./src/async-context/index.ts"
-      },
       "browser": {
         "types": "./async-context/index.d.ts",
         "default": "./async-context/index.browser.js"
@@ -59,7 +54,6 @@
     },
     "./stream": {
       "types": "./stream/index.d.ts",
-      "development": "./src/stream/index.ts",
       "default": "./stream/index.js"
     }
   },
