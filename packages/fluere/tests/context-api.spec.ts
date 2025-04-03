@@ -23,7 +23,7 @@ describe("workflow context api", () => {
     const stopEvent = workflowEvent<1 | -1>({
       debugLabel: "stopEvent",
     });
-    const workflow = createWorkflow<string, 1 | -1>();
+    const workflow = createWorkflow();
     const parseEvent = workflowEvent<number>({
       debugLabel: "parseEvent",
     });
@@ -75,7 +75,7 @@ describe("workflow context api", () => {
     const stopEvent = workflowEvent<1 | -1>({
       debugLabel: "stopEvent",
     });
-    const workflow = createWorkflow<string, 1 | -1>();
+    const workflow = createWorkflow();
     const parseEvent = workflowEvent<number>({
       debugLabel: "parseEvent",
     });

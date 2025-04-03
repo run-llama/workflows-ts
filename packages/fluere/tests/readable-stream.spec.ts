@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
-import { getContext } from "fluere";
+import { getContext, type Workflow } from "fluere";
 import { createWorkflow } from "fluere";
 import { eventSource, workflowEvent, type WorkflowEventData } from "fluere";
 
@@ -13,7 +13,7 @@ describe("workflow basic", () => {
   const stopEvent = workflowEvent<number>({
     debugLabel: "stopEvent",
   });
-  let workflow: ReturnType<typeof createWorkflow<string, number>>;
+  let workflow: Workflow;
   beforeEach(() => {
     // refresh workflow
     workflow = createWorkflow();
@@ -240,7 +240,7 @@ describe("workflow simple logic", () => {
     const stopEvent = workflowEvent<1 | -1>({
       debugLabel: "stopEvent",
     });
-    const workflow = createWorkflow<string, 1 | -1>();
+    const workflow = createWorkflow();
     workflow.handle([startEvent], (start) => {
       return start.data === "100" ? stopEvent.with(1) : stopEvent.with(-1);
     });
@@ -340,7 +340,7 @@ describe("workflow simple logic", () => {
     const stopEvent = workflowEvent<1 | -1>({
       debugLabel: "stopEvent",
     });
-    const workflow = createWorkflow<string, 1 | -1>();
+    const workflow = createWorkflow();
 
     workflow.handle([startEvent], (start) => {
       const ev1 = convertEvent.with(Number.parseInt(start.data, 10));
@@ -381,7 +381,7 @@ describe("workflow simple logic", () => {
     const stopEvent = workflowEvent<1 | -1>({
       debugLabel: "stopEvent",
     });
-    const workflow = createWorkflow<string, 1 | -1>();
+    const workflow = createWorkflow();
 
     workflow.handle([startEvent], (start) => {
       for (let i = 0; i < 100; i++) {
@@ -425,7 +425,7 @@ describe("workflow simple logic", () => {
     const stopEvent = workflowEvent<1 | -1>({
       debugLabel: "stopEvent",
     });
-    const workflow = createWorkflow<string, 1 | -1>();
+    const workflow = createWorkflow();
 
     workflow.handle([startEvent], async (start) => {
       setTimeout(() => {
@@ -469,7 +469,7 @@ describe("workflow simple logic", () => {
     const stopEvent = workflowEvent<1 | -1>({
       debugLabel: "stopEvent",
     });
-    const workflow = createWorkflow<string, 1 | -1>();
+    const workflow = createWorkflow();
 
     workflow.handle([startEvent], async (start) => {
       setTimeout(() => {
@@ -511,7 +511,7 @@ describe("workflow simple logic", () => {
     const stopEvent = workflowEvent<1 | -1>({
       debugLabel: "stopEvent",
     });
-    const workflow = createWorkflow<string, 1 | -1>();
+    const workflow = createWorkflow();
     workflow.handle([startEvent], async () => {
       setTimeout(() => {
         getContext().sendEvent(convertEvent.with(1));
