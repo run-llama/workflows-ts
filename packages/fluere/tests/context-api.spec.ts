@@ -31,24 +31,24 @@ describe("workflow context api", () => {
       debugLabel: "parseResult",
     });
     workflow.handle([startEvent], async () => {
-      const ev = parseEvent(2);
+      const ev = parseEvent.with(2);
       getContext().sendEvent(ev);
       await until(
         getContext().stream,
         (e) => parseResultEvent.include(e) && e.data === 0,
       );
-      return stopEvent(1);
+      return stopEvent.with(1);
     });
     workflow.handle([parseEvent], async ({ data }) => {
       if (data > 0) {
-        const ev = parseEvent(data - 1);
+        const ev = parseEvent.with(data - 1);
         getContext().sendEvent(ev);
       } else {
-        return parseResultEvent(0);
+        return parseResultEvent.with(0);
       }
     });
     const { stream, sendEvent } = workflow.createContext();
-    sendEvent(startEvent("100"));
+    sendEvent(startEvent.with("100"));
     const events: WorkflowEventData<any>[] = [];
     for await (const ev of stream) {
       events.push(ev);
@@ -83,7 +83,7 @@ describe("workflow context api", () => {
       debugLabel: "parseResult",
     });
     workflow.handle([startEvent], async () => {
-      const ev = parseEvent(2);
+      const ev = parseEvent.with(2);
       getContext().sendEvent(ev);
       await until(
         getContext().stream,
@@ -94,19 +94,19 @@ describe("workflow context api", () => {
         getContext().stream,
         (e) => parseResultEvent.include(e) && e.data === 0,
       );
-      return stopEvent(1);
+      return stopEvent.with(1);
     });
     workflow.handle([parseEvent], async ({ data }) => {
       if (data > 0) {
-        const ev = parseEvent(data - 1);
+        const ev = parseEvent.with(data - 1);
         getContext().sendEvent(ev);
       } else {
-        return parseResultEvent(0);
+        return parseResultEvent.with(0);
       }
     });
 
     const { stream, sendEvent } = workflow.createContext();
-    sendEvent(startEvent("100"));
+    sendEvent(startEvent.with("100"));
     const events: WorkflowEventData<any>[] = [];
     for await (const ev of stream) {
       events.push(ev);
@@ -136,11 +136,11 @@ describe("workflow context api", () => {
       const context = getContext();
       expect(context).toBeDefined();
       expect(context.sendEvent).toBeTypeOf("function");
-      return stopEvent();
+      return stopEvent.with();
     });
     workflow.handle([startEvent], fn);
     const { stream, sendEvent } = workflow.createContext();
-    sendEvent(startEvent());
+    sendEvent(startEvent.with());
     const events: WorkflowEventData<any>[] = [];
     for await (const ev of stream) {
       events.push(ev);
@@ -162,16 +162,16 @@ describe("workflow context api", () => {
     const workflow = createWorkflow();
     const fn = vi.fn(async () => {
       const context = getContext();
-      context.sendEvent(aEvent());
-      return stopEvent();
+      context.sendEvent(aEvent.with());
+      return stopEvent.with();
     });
     const fn2 = vi.fn(async () => {
-      return aResultEvent();
+      return aResultEvent.with();
     });
     workflow.handle([startEvent], fn);
     workflow.handle([aEvent], fn2);
     const { stream, sendEvent } = workflow.createContext();
-    sendEvent(startEvent());
+    sendEvent(startEvent.with());
     const events: WorkflowEventData<any>[] = [];
     for await (const ev of stream) {
       events.push(ev);

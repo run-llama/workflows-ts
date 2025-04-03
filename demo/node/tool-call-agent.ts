@@ -7,7 +7,7 @@ import {
 
 promiseHandler(
   toolCallWorkflow,
-  startEvent("what is weather today, im in san francisco"),
+  startEvent.with("what is weather today, im in san francisco"),
   stopEvent,
 ).then(({ data }) => {
   console.log("AI response", data);

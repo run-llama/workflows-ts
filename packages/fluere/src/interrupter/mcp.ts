@@ -21,7 +21,7 @@ export function mcpTool<
   Start extends z.objectOutputType<Args, ZodTypeAny>,
   Stop extends CallToolResult,
 >(
-  workflow: Workflow<Start, Stop>,
+  workflow: Workflow,
   start: WorkflowEvent<Start>,
   stop: WorkflowEvent<Stop>,
 ): (
@@ -30,7 +30,7 @@ export function mcpTool<
 ) => CallToolResult | Promise<CallToolResult> {
   return async (args, extra) =>
     requestHandlerExtraAsyncLocalStorage.run(extra, async () => {
-      const { data } = await promiseHandler(workflow, start(args), stop);
+      const { data } = await promiseHandler(workflow, start.with(args), stop);
       return data;
     });
 }

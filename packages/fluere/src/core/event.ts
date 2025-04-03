@@ -8,7 +8,7 @@ export type WorkflowEventData<Data> = {
 };
 
 export type WorkflowEvent<Data> = {
-  (data: Data): WorkflowEventData<Data>;
+  with(data: Data): WorkflowEventData<Data>;
   include(event: unknown): event is WorkflowEventData<Data>;
 };
 
@@ -20,28 +20,34 @@ export const workflowEvent = <Data = void>(
   config?: WorkflowEventConfig,
 ): WorkflowEvent<Data> => {
   const l1 = `${i++}`;
-  const event = (data: Data) => {
-    const l2 = `${j++}`;
-    const ref = {
-      [Symbol.toStringTag]: config?.debugLabel ?? `WorkflowEvent(${l1}.${l2})`,
-      toString: () =>
-        config?.debugLabel
-          ? `${config.debugLabel}(${l2})`
-          : `WorkflowEvent(${l1}.${l2})`,
-      toJSON: () => {
-        return {
-          event: l1,
-          data,
-        };
-      },
-      get data() {
-        return data;
-      },
-    };
-    s.add(ref);
-    Object.freeze(ref);
-    refMap.set(ref, event);
-    return ref;
+  const event: WorkflowEvent<Data> = {
+    include: (
+      instance: WorkflowEventData<any>,
+    ): instance is WorkflowEventData<Data> => s.has(instance),
+    with: (data: Data) => {
+      const l2 = `${j++}`;
+      const ref = {
+        [Symbol.toStringTag]:
+          config?.debugLabel ?? `WorkflowEvent(${l1}.${l2})`,
+        toString: () =>
+          config?.debugLabel
+            ? `${config.debugLabel}(${l2})`
+            : `WorkflowEvent(${l1}.${l2})`,
+        toJSON: () => {
+          return {
+            event: l1,
+            data,
+          };
+        },
+        get data() {
+          return data;
+        },
+      };
+      s.add(ref);
+      Object.freeze(ref);
+      refMap.set(ref, event);
+      return ref;
+    },
   };
 
   const s = new WeakSet();
@@ -56,9 +62,6 @@ export const workflowEvent = <Data = void>(
   });
 
   event.toString = () => config?.debugLabel ?? `WorkflowEvent<${l1}>`;
-  event.include = (
-    instance: WorkflowEventData<any>,
-  ): instance is WorkflowEventData<Data> => s.has(instance);
   Object.freeze(event);
 
   return event;

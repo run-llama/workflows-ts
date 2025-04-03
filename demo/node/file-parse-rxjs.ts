@@ -17,4 +17,4 @@ from(stream as unknown as AsyncIterable<WorkflowEventData<any>>)
     console.log(ev.data);
   });
 
-sendEvent(startEvent(directory));
+sendEvent(startEvent.with(directory));

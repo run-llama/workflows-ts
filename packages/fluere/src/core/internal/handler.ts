@@ -5,7 +5,7 @@ export type Handler<
   Result extends WorkflowEventData<any> | void,
 > = (
   ...event: {
-    [K in keyof AcceptEvents]: ReturnType<AcceptEvents[K]>;
+    [K in keyof AcceptEvents]: ReturnType<AcceptEvents[K]["with"]>;
   }
 ) => Result | Promise<Result>;
 

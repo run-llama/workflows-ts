@@ -10,14 +10,14 @@ const stopEvent = workflowEvent<string>();
 const workflow = createWorkflow();
 
 workflow.handle([startEvent], ({ data }) => {
-  return stopEvent(`hello, ${data}!`);
+  return stopEvent.with(`hello, ${data}!`);
 });
 
 app.post(
   "/workflow",
   createHonoHandler(
     workflow,
-    async (ctx) => startEvent(await ctx.req.text()),
+    async (ctx) => startEvent.with(await ctx.req.text()),
     stopEvent,
   ),
 );

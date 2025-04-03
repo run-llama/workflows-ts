@@ -7,7 +7,7 @@ import { promiseHandler } from "fluere/interrupter/promise";
 
 promiseHandler(
   llamaParseWorkflow,
-  startEvent({
+  startEvent.with({
     inputFile: process.argv[2],
     apiKey: process.env.LLAMA_CLOUD_API!,
   }),

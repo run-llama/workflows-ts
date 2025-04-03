@@ -3,7 +3,7 @@ import type { Workflow, WorkflowEvent, WorkflowEventData } from "fluere";
 import { promiseHandler } from "./promise";
 
 export const createHonoHandler = <Start, Stop>(
-  workflow: Workflow<Start, Stop>,
+  workflow: Workflow,
   getStart: (
     c: Context,
   ) => WorkflowEventData<Start> | Promise<WorkflowEventData<Start>>,

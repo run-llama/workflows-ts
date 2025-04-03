@@ -36,11 +36,11 @@ export const toolCallWorkflow = createWorkflow();
 toolCallWorkflow.handle([startEvent], async ({ data }) => {
   console.log("start event");
   const context = getContext();
-  context.sendEvent(chatEvent(data));
+  context.sendEvent(chatEvent.with(data));
 });
 toolCallWorkflow.handle([toolCallEvent], async () => {
   console.log("tool call event");
-  return toolCallResultEvent("Today is sunny.");
+  return toolCallResultEvent.with("Today is sunny.");
 });
 toolCallWorkflow.handle([chatEvent], async ({ data }) => {
   console.log("chat event");
@@ -67,7 +67,7 @@ toolCallWorkflow.handle([chatEvent], async ({ data }) => {
     const result = (
       await Promise.all(
         choices[0].message.tool_calls.map(async (tool_call) => {
-          sendEvent(toolCallEvent(tool_call));
+          sendEvent(toolCallEvent.with(tool_call));
           return consume(stream, toolCallResultEvent);
         }),
       )
@@ -75,9 +75,9 @@ toolCallWorkflow.handle([chatEvent], async ({ data }) => {
       .map(({ data }) => data)
       .join("\n");
     console.log("toolcall result", result);
-    sendEvent(chatEvent(result));
+    sendEvent(chatEvent.with(result));
   } else {
     console.log("no choices");
-    return stopEvent(choices[0]!.message.content!);
+    return stopEvent.with(choices[0]!.message.content!);
   }
 });

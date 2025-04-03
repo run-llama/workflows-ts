@@ -46,7 +46,7 @@ llamaParseWorkflow.handle(
         body: formData,
       },
     ).then((res) => res.json());
-    sendEvent(checkStatusEvent(id));
+    sendEvent(checkStatusEvent.with(id));
     await consume(stream, checkStatusSuccessEvent);
     return fetch(
       `https://api.cloud.llamaindex.ai/api/v1/parsing/job/${id}/result/markdown`,
@@ -56,7 +56,7 @@ llamaParseWorkflow.handle(
           Authorization: `Bearer ${apiKey}`,
         },
       },
-    ).then(async (res) => stopEvent(await res.json()));
+    ).then(async (res) => stopEvent.with(await res.json()));
   },
 );
 
@@ -74,7 +74,7 @@ llamaParseWorkflow.handle(
         },
       ).then((res) => res.json());
       if (status === "SUCCESS") {
-        return checkStatusSuccessEvent();
+        return checkStatusSuccessEvent.with();
       }
       throw new Error(`LLamaParse status: ${status}`);
     },

@@ -7,7 +7,7 @@ type WorkflowAPI = {
 };
 
 export const createNextHandler = <Start, Stop>(
-  workflow: Workflow<Start, Stop>,
+  workflow: Workflow,
   getStart: (
     request: NextRequest,
   ) => WorkflowEventData<Start> | Promise<WorkflowEventData<Start>>,

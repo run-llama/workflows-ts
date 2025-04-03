@@ -38,16 +38,16 @@ const locks: {
 
 fileParseWorkflow.handle([startEvent], async ({ data: dir }) => {
   const { stream, sendEvent } = getContext();
-  sendEvent(readDirEvent([dir, 0]));
+  sendEvent(readDirEvent.with([dir, 0]));
   await until(stream, () => locks.length > 0 && locks.every((l) => l.finish));
-  return stopEvent();
+  return stopEvent.with();
 });
 
 const als = new AsyncLocalStorage<{
   finish: boolean;
 }>();
 fileParseWorkflow.handle([readDirEvent], async ({ data: [dir, tab] }) => {
-  getContext().sendEvent(messageEvent(dir));
+  getContext().sendEvent(messageEvent.with(dir));
   const { sendEvent } = getContext();
   const items = await readdir(dir);
   fileParseWorkflow.getStore().output += " ".repeat(tab) + dir + "\n";
@@ -62,10 +62,10 @@ fileParseWorkflow.handle([readDirEvent], async ({ data: [dir, tab] }) => {
         finish: false,
       };
       if (s.isFile()) {
-        als.run(lock, () => sendEvent(readFileEvent([filePath, tab + 2])));
+        als.run(lock, () => sendEvent(readFileEvent.with([filePath, tab + 2])));
         locks.push(lock);
       } else if (s.isDirectory()) {
-        als.run(lock, () => sendEvent(readDirEvent([filePath, tab + 2])));
+        als.run(lock, () => sendEvent(readDirEvent.with([filePath, tab + 2])));
         locks.push(lock);
       }
     }),
@@ -74,7 +74,7 @@ fileParseWorkflow.handle([readDirEvent], async ({ data: [dir, tab] }) => {
   if (lock) {
     lock.finish = true;
   }
-  return readResultEvent();
+  return readResultEvent.with();
 });
 
 fileParseWorkflow.handle([readFileEvent], async ({ data: [filePath, tab] }) => {
@@ -82,7 +82,7 @@ fileParseWorkflow.handle([readFileEvent], async ({ data: [filePath, tab] }) => {
   if (lock) {
     lock.finish = true;
   }
-  getContext().sendEvent(messageEvent(filePath));
+  getContext().sendEvent(messageEvent.with(filePath));
   fileParseWorkflow.getStore().output += " ".repeat(tab) + filePath + "\n";
-  return readResultEvent();
+  return readResultEvent.with();
 });

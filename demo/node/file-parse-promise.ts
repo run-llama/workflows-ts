@@ -7,6 +7,8 @@ import {
 
 const directory = "..";
 
-promiseHandler(fileParseWorkflow, startEvent(directory), stopEvent).then(() => {
-  console.log("r", fileParseWorkflow.getStore().output);
-});
+promiseHandler(fileParseWorkflow, startEvent.with(directory), stopEvent).then(
+  () => {
+    console.log("r", fileParseWorkflow.getStore().output);
+  },
+);

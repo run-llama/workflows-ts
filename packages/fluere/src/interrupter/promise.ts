@@ -7,7 +7,7 @@ import type { Workflow, WorkflowEvent, WorkflowEventData } from "fluere";
  *  reject if the workflow throws an error or times out.
  */
 export async function promiseHandler<Start, Stop>(
-  workflow: Workflow<Start, Stop>,
+  workflow: Workflow,
   start: WorkflowEventData<Start>,
   stop: WorkflowEvent<Stop>,
 ): Promise<WorkflowEventData<Stop>> {
@@ -15,7 +15,7 @@ export async function promiseHandler<Start, Stop>(
   sendEvent(start);
   for await (const event of stream) {
     if (stop.include(event)) {
-      return event;
+      return event as any;
     }
   }
   throw new Error("Workflow did not return a stop event");

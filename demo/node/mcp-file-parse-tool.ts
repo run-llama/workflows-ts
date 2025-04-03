@@ -22,9 +22,9 @@ const wrappedWorkflow = createWorkflow();
 
 wrappedWorkflow.handle([startEvent], async ({ data: { filePath } }) => {
   const { stream, sendEvent } = fileParseWorkflow.createContext();
-  sendEvent(fileParseWorkflow.startEvent(filePath));
-  await consume(stream, fileParseWorkflow.stopEvent);
-  return stopEvent({
+  sendEvent(startEvent.with({ filePath }));
+  await consume(stream, stopEvent);
+  return stopEvent.with({
     content: [
       {
         type: "text",

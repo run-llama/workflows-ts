@@ -1,5 +1,11 @@
 import type { WorkflowEvent, WorkflowEventData } from "fluere";
 
+const isWorkflowEvent = (value: unknown): value is WorkflowEvent<any> =>
+  value != null &&
+  typeof value === "object" &&
+  "with" in value &&
+  "include" in value;
+
 export async function until(
   stream: ReadableStream<WorkflowEventData<any>>,
   cond: (event: WorkflowEventData<any>) => boolean | Promise<boolean>,
@@ -26,9 +32,14 @@ export async function until(
       break;
     }
     events.push(value);
-    if (("include" in cond && cond.include(value)) || (await cond(value))) {
+    if (isWorkflowEvent(cond) && cond.include(value)) {
       reader.releaseLock();
       break;
+    } else if (typeof cond === "function" && (await cond(value))) {
+      reader.releaseLock();
+      break;
+    } else {
+      throw new Error("unknown cond type");
     }
   }
   return events;

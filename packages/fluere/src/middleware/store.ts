@@ -1,9 +1,9 @@
 import type { Workflow } from "fluere";
 
-export function withStore<T, Start, Stop>(
+export function withStore<T>(
   store: T,
-  workflow: Workflow<Start, Stop>,
-): Workflow<Start, Stop> & {
+  workflow: Workflow,
+): Workflow & {
   getStore: () => T;
 } {
   return {

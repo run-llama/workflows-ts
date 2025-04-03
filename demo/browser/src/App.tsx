@@ -13,11 +13,11 @@ const workflow = createWorkflow();
 workflow.handle([startEvent], () => {
   const context = getContext();
   setTimeout(() => {
-    context.sendEvent(stopEvent("Hello, World!"));
+    context.sendEvent(stopEvent.with("Hello, World!"));
   }, 1000);
 });
 
-const promise = promiseHandler(workflow, startEvent(), stopEvent);
+const promise = promiseHandler(workflow, startEvent.with(), stopEvent);
 
 function App() {
   return (

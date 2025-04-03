@@ -13,7 +13,7 @@ app.post(
   "/workflow",
   createHonoHandler(
     toolCallWorkflow,
-    async (ctx) => startEvent(await ctx.req.text()),
+    async (ctx) => startEvent.with(await ctx.req.text()),
     stopEvent,
   ),
 );
