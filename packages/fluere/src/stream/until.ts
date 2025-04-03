@@ -1,4 +1,4 @@
-import type { WorkflowEvent, WorkflowEventData } from "../core/event";
+import type { WorkflowEvent, WorkflowEventData } from "fluere";
 
 export async function until(
   stream: ReadableStream<WorkflowEventData<any>>,

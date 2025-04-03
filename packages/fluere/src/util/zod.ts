@@ -3,7 +3,7 @@ import {
   workflowEvent,
   type WorkflowEvent,
   type WorkflowEventConfig,
-} from "../core";
+} from "fluere";
 
 export const zodEvent = <T>(
   schema: z.ZodType<T>,

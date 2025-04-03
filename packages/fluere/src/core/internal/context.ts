@@ -3,7 +3,7 @@ import type { WorkflowEventData } from "../event";
 
 export type Context = {
   get stream(): ReadableStream<WorkflowEventData<any>>;
-  sendEvent: (event: WorkflowEventData<any>) => void;
+  sendEvent: (...events: WorkflowEventData<any>[]) => void;
 };
 
 export const _executorAsyncLocalStorage = createAsyncContext<Context>();
