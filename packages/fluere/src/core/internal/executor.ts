@@ -49,28 +49,43 @@ export const createContext = ({ listeners }: ExecutorParams): Context => {
     };
     handlerContext.prev.next.add(handlerContext);
     handlerContextAsyncLocalStorage.run(handlerContext, () => {
+      const cbs = [...context.__internal__call_context];
       const result = _executorAsyncLocalStorage.run(context, () => {
-        try {
-          return handler(...inputs);
-        } catch (error) {
-          if (handlerAbortController ?? rootAbortController) {
-            (handlerAbortController ?? rootAbortController).abort(error);
-          } else {
-            console.error("unhandled error in handler", error);
-            throw error;
+        //#region middleware
+        let i = 0;
+        const next = () => {
+          if (i === cbs.length) {
+            let result: any;
+            try {
+              result = handler(...inputs);
+            } catch (error) {
+              if (handlerAbortController ?? rootAbortController) {
+                (handlerAbortController ?? rootAbortController).abort(error);
+              } else {
+                console.error("unhandled error in handler", error);
+                throw error;
+              }
+            }
+            // return value is a special event
+            if (isPromiseLike(result)) {
+              result.then((event) => {
+                if (isEventData(event)) {
+                  context.sendEvent(event);
+                }
+              });
+            } else if (isEventData(result)) {
+              context.sendEvent(result);
+            }
           }
-        }
+          const cb = cbs[i];
+          if (cb) {
+            i++;
+            cb(context, inputs, next);
+          }
+        };
+        next();
+        //#endregion
       });
-      // return value is a special event
-      if (isPromiseLike(result)) {
-        result.then((event) => {
-          if (isEventData(event)) {
-            context.sendEvent(event);
-          }
-        });
-      } else if (isEventData(result)) {
-        context.sendEvent(result);
-      }
     });
   };
   const queueUpdateCallback = () => {
@@ -126,6 +141,7 @@ export const createContext = ({ listeners }: ExecutorParams): Context => {
         queueUpdateCallback();
       });
     },
+    __internal__call_context: new Set(),
   };
 
   let rootAbortController = new AbortController();

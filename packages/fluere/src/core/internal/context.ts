@@ -1,11 +1,19 @@
 import { createAsyncContext } from "fluere/async-context";
 import type { WorkflowEventData } from "../event";
 
-export type Context = {
+export interface Context {
   get stream(): ReadableStream<WorkflowEventData<any>>;
   get signal(): AbortSignal;
   sendEvent: (...events: WorkflowEventData<any>[]) => void;
-};
+
+  __internal__call_context: Set<
+    (
+      context: Context,
+      inputs: WorkflowEventData<any>[],
+      next: () => void,
+    ) => WorkflowEventData<any>
+  >;
+}
 
 export const _executorAsyncLocalStorage = createAsyncContext<Context>();
 

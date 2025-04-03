@@ -1,13 +1,31 @@
-import type { Workflow } from "fluere";
+import type { Context, Workflow } from "fluere";
+import { createAsyncContext } from "fluere/async-context";
 
 export function withStore<T>(
-  store: T,
+  createStore: () => T,
   workflow: Workflow,
 ): Workflow & {
-  getStore: () => T;
+  getStore(): T;
 } {
+  const storeAsyncContext = createAsyncContext<T>();
   return {
     ...workflow,
-    getStore: (): T => store,
+    getStore(): T {
+      const store = storeAsyncContext.getStore();
+      if (!store) {
+        throw new Error();
+      }
+      return store;
+    },
+    createContext(): Context & {
+      getStore: () => T;
+    } {
+      const store = createStore();
+      const context = workflow.createContext() as Context & {
+        getStore: () => T;
+      };
+      context.getStore = () => store;
+      return context;
+    },
   };
 }
