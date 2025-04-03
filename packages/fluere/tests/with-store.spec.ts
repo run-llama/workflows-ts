@@ -1,6 +1,6 @@
 import { describe, test } from "vitest";
 import { createWorkflow } from "fluere";
-import { withStore } from "../middleware/store";
+import { withStore } from "fluere/middleware/store";
 
 describe("with store", () => {
   test("no input", () => {
