@@ -33,10 +33,7 @@ import { createWorkflow } from "fluere";
 
 const convertEvent = workflowEvent();
 
-const workflow = createWorkflow({
-  startEvent,
-  stopEvent,
-});
+const workflow = createWorkflow();
 
 workflow.handle([startEvent], (start) => {
   return convertEvent(Number.parseInt(start.data, 10));
