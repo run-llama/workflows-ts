@@ -10,7 +10,7 @@ export type Workflow<Start, Stop> = {
   >(
     accept: AcceptEvents,
     handler: Handler<AcceptEvents, Result>,
-  ): void;
+  ): HandlerRef<AcceptEvents, Result>;
 
   get startEvent(): WorkflowEvent<Start>;
   get stopEvent(): WorkflowEvent<Stop>;
