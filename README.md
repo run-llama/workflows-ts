@@ -218,7 +218,7 @@ const disallowedEvent = workflowEvent<void, "disallowed">({
 });
 const parseEvent = workflowEvent<string, "parse">();
 const stopEvent = workflowEvent<number, "stop">();
-const workflow = directedGraph(createWorkflow(), [
+const workflow = withDirectedGraph(createWorkflow(), [
   [[startEvent], [stopEvent]],
   [[startEvent], [parseEvent]],
 ]);

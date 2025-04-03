@@ -1,6 +1,6 @@
 import { describe, expect, test, vi, afterEach } from "vitest";
 import { createWorkflow, workflowEvent } from "fluere";
-import { directedGraph } from "../src/middleware/directed-graph";
+import { withDirectedGraph } from "../src/middleware/directed-graph";
 import { consume } from "fluere/stream";
 
 describe("with directed graph", () => {
@@ -18,7 +18,7 @@ describe("with directed graph", () => {
     });
     const parseEvent = workflowEvent<string, "parse">();
     const stopEvent = workflowEvent<number, "stop">();
-    const workflow = directedGraph(createWorkflow(), [
+    const workflow = withDirectedGraph(createWorkflow(), [
       [[startEvent], [stopEvent]],
       [[startEvent], [parseEvent, parseEvent]],
     ]);
