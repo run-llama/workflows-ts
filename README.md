@@ -112,7 +112,7 @@ sendEvent(fileParseWorkflow.startEvent(directory));
 
 ### Connect with Server endpoint
 
-Workflow can be used as a middleware in any server framework, like `express`, `hono`, `fastify`, etc.
+Workflow can be used as middleware in any server framework, like `express`, `hono`, `fastify`, etc.
 
 ```ts
 import { Hono } from "hono";
@@ -180,6 +180,7 @@ for [Async Context](https://github.com/tc39/proposal-async-context) to solve thi
 ### `withStore`
 
 ```ts
+import { withStore } from "fluere/middleware/store";
 const workflow = withStore(
   () => ({
     pendingTasks: new Set<Promise<unknown>>(),
@@ -212,13 +213,15 @@ workflow.handle([startEvent], (sendEvent, start) => {});
 ```
 
 ```ts
+import { withValidation } from "fluere/middleware/validation";
+
 const startEvent = workflowEvent<void, "start">();
 const disallowedEvent = workflowEvent<void, "disallowed">({
   debugLabel: "disallowed",
 });
 const parseEvent = workflowEvent<string, "parse">();
 const stopEvent = workflowEvent<number, "stop">();
-const workflow = withDirectedGraph(createWorkflow(), [
+const workflow = withValidation(createWorkflow(), [
   [[startEvent], [stopEvent]],
   [[startEvent], [parseEvent]],
 ]);
