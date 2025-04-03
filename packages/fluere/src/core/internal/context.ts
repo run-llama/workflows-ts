@@ -3,6 +3,7 @@ import type { WorkflowEventData } from "../event";
 
 export type Context = {
   get stream(): ReadableStream<WorkflowEventData<any>>;
+  get signal(): AbortSignal;
   sendEvent: (...events: WorkflowEventData<any>[]) => void;
 };
 

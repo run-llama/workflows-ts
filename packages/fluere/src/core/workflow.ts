@@ -10,7 +10,7 @@ export type Workflow = {
   >(
     accept: AcceptEvents,
     handler: Handler<AcceptEvents, Result>,
-  ): void;
+  ): HandlerRef<AcceptEvents, Result>;
   createContext(): Context;
 };
 

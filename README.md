@@ -138,6 +138,41 @@ serve(app, ({ port }) => {
 });
 ```
 
+### Error Handling
+
+You can use `signal` in `getContext` to handle error
+
+```ts
+workflow.handle([convertEvent], () => {
+  const { signal } = getContext();
+
+  signal.onabort = () => {
+    console.error("error in convert event:", abort.reason);
+  };
+});
+```
+
+### Pitfall in **browser**
+
+You must call `getContext()` in the top level of the workflow, otherwise we will lose the async context of the workflow.
+
+```ts
+workflow.handle([startEvent], async () => {
+  const { stream } = getContext(); // ✅ this is ok
+  await fetchData();
+});
+
+workflow.handle([startEvent], async () => {
+  await fetchData();
+  const { stream } = getContext(); // ❌ this is not ok
+  // we have no way to know this code was originally part of the workflow
+  // w/o AsyncContext
+});
+```
+
+Due to missing API of `async_hooks` in browser, we are looking
+for [Async Context](https://github.com/tc39/proposal-async-context) to solve this problem in the future.
+
 # LICENSE
 
 MIT

@@ -5,6 +5,7 @@ import { _executorAsyncLocalStorage, type Context } from "./context";
 import { createAsyncContext } from "fluere/async-context";
 
 type HandlerContext = {
+  abortController: AbortController;
   handler: Handler<WorkflowEvent<any>[], any>;
   inputs: WorkflowEventData<any>[];
   outputs: WorkflowEventData<any>[];
@@ -32,7 +33,14 @@ export const createContext = ({ listeners }: ExecutorParams): Context => {
     handler: Handler<WorkflowEvent<any>[], any>,
     inputs: WorkflowEventData<any>[],
   ) => {
+    let handlerAbortController: AbortController;
     const handlerContext: HandlerContext = {
+      get abortController() {
+        if (!handlerAbortController) {
+          handlerAbortController = new AbortController();
+        }
+        return handlerAbortController;
+      },
       handler,
       inputs,
       outputs: [],
@@ -41,9 +49,18 @@ export const createContext = ({ listeners }: ExecutorParams): Context => {
     };
     handlerContext.prev.next.add(handlerContext);
     handlerContextAsyncLocalStorage.run(handlerContext, () => {
-      const result = _executorAsyncLocalStorage.run(context, () =>
-        handler(...inputs),
-      );
+      const result = _executorAsyncLocalStorage.run(context, () => {
+        try {
+          return handler(...inputs);
+        } catch (error) {
+          if (handlerAbortController ?? rootAbortController) {
+            (handlerAbortController ?? rootAbortController).abort(error);
+          } else {
+            console.error("unhandled error in handler", error);
+            throw error;
+          }
+        }
+      });
       // return value is a special event
       if (isPromiseLike(result)) {
         result.then((event) => {
@@ -93,6 +110,11 @@ export const createContext = ({ listeners }: ExecutorParams): Context => {
         },
       });
     },
+    get signal() {
+      const context =
+        handlerContextAsyncLocalStorage.getStore() ?? handlerRootContext;
+      return context.abortController.signal;
+    },
     sendEvent: (...events) => {
       events.forEach((event) => {
         const context =
@@ -106,7 +128,14 @@ export const createContext = ({ listeners }: ExecutorParams): Context => {
     },
   };
 
+  let rootAbortController = new AbortController();
   const handlerRootContext: HandlerContext = {
+    get abortController() {
+      if (!rootAbortController) {
+        rootAbortController = new AbortController();
+      }
+      return rootAbortController;
+    },
     inputs: [],
     outputs: [],
     handler: null!,
