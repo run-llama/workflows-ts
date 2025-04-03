@@ -8,8 +8,8 @@ import {
   type WorkflowEventData,
 } from "fluere";
 
-export type DirectedGraphHandler<
-  DirectedGraph extends [
+export type ValidationHandler<
+  Validation extends [
     inputs: WorkflowEvent<any>[],
     output: WorkflowEvent<any>[],
   ][],
@@ -18,7 +18,7 @@ export type DirectedGraphHandler<
 > = (
   sendEvent: (
     ...inputs: Array<
-      DirectedGraph[number] extends infer Tuple
+      Validation[number] extends infer Tuple
         ? Tuple extends [AcceptEvents, infer Outputs]
           ? Outputs extends WorkflowEvent<any>[]
             ? ReturnType<Outputs[number]["with"]>
@@ -32,8 +32,8 @@ export type DirectedGraphHandler<
   }
 ) => Result | Promise<Result>;
 
-export type WithDirectedGraphWorkflow<
-  DirectedGraph extends [
+export type WithValidationWorkflow<
+  Validation extends [
     inputs: WorkflowEvent<any>[],
     output: WorkflowEvent<any>[],
   ][],
@@ -43,22 +43,22 @@ export type WithDirectedGraphWorkflow<
     Result extends ReturnType<WorkflowEvent<any>["with"]> | void,
   >(
     accept: AcceptEvents,
-    handler: DirectedGraphHandler<DirectedGraph, AcceptEvents, Result>,
+    handler: ValidationHandler<Validation, AcceptEvents, Result>,
   ): HandlerRef<AcceptEvents, Result>;
   createContext(): WorkflowContext;
 };
 
-export function withDirectedGraph<
-  const DirectedGraph extends [
+export function withValidation<
+  const Validation extends [
     inputs: WorkflowEvent<any>[],
     outputs: WorkflowEvent<any>[],
   ][],
 >(
   workflow: Workflow,
-  directedGraph: DirectedGraph,
-): WithDirectedGraphWorkflow<DirectedGraph> {
+  validation: Validation,
+): WithValidationWorkflow<Validation> {
   const createSafeSendEvent = (...events: WorkflowEventData<any>[]) => {
-    const outputs = directedGraph
+    const outputs = validation
       .filter(([inputs]) =>
         inputs.every((input, idx) => input.include(events[idx])),
       )
