@@ -1,5 +1,5 @@
-import { describe, test } from "vitest";
-import { createWorkflow } from "fluere";
+import { describe, expect, test, vi } from "vitest";
+import { createWorkflow, workflowEvent } from "fluere";
 import { withStore } from "fluere/middleware/store";
 
 describe("with store", () => {
@@ -18,5 +18,20 @@ describe("with store", () => {
     workflow.createContext({
       id: "1",
     });
+  });
+
+  test("runtime call getStore", async () => {
+    const obj = {};
+    const startEvent = workflowEvent();
+    const workflow = withStore(() => obj, createWorkflow());
+    const fn = vi.fn();
+    workflow.handle([startEvent], () => {
+      fn();
+      expect(workflow.getStore()).toBe(obj);
+    });
+    const { sendEvent, getStore } = workflow.createContext();
+    expect(getStore()).toBe(obj);
+    sendEvent(startEvent.with());
+    expect(fn).toBeCalled();
   });
 });
