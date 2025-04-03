@@ -201,9 +201,10 @@ workflow.handle([startEvent], () => {
 const { getStore } = workflow.createContext();
 ```
 
-### `withDirectedGraph`
+### `withValidation`
 
-make first parameter of `handler` to be `sendEvent` and its type safe and runtime safe when you create a workflow with `directedGraph`.
+make first parameter of `handler` to be `sendEvent` and its type safe and runtime safe
+when you create a workflow using `withValidation`.
 
 ```ts
 // before:
