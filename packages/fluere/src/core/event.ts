@@ -1,26 +1,28 @@
+declare const opaqueSymbol: unique symbol;
+
 const eventMap = new WeakMap<WorkflowEvent<any>, WeakSet<object>>();
 const refMap = new WeakMap<WorkflowEventData<any>, WorkflowEvent<any>>();
 let i = 0;
 let j = 0;
 
-export type WorkflowEventData<Data> = {
+export type WorkflowEventData<Data, DebugLabel extends string = string> = {
   get data(): Data;
+} & { readonly [opaqueSymbol]: DebugLabel };
+
+export type WorkflowEvent<Data, DebugLabel extends string = string> = {
+  with(data: Data): WorkflowEventData<Data, DebugLabel>;
+  include(event: unknown): event is WorkflowEventData<Data, DebugLabel>;
+} & { readonly [opaqueSymbol]: DebugLabel };
+
+export type WorkflowEventConfig<DebugLabel extends string = string> = {
+  debugLabel?: DebugLabel;
 };
 
-export type WorkflowEvent<Data> = {
-  with(data: Data): WorkflowEventData<Data>;
-  include(event: unknown): event is WorkflowEventData<Data>;
-};
-
-export type WorkflowEventConfig = {
-  debugLabel?: string;
-};
-
-export const workflowEvent = <Data = void>(
-  config?: WorkflowEventConfig,
-): WorkflowEvent<Data> => {
+export const workflowEvent = <Data = void, DebugLabel extends string = string>(
+  config?: WorkflowEventConfig<DebugLabel>,
+): WorkflowEvent<Data, DebugLabel> => {
   const l1 = `${i++}`;
-  const event: WorkflowEvent<Data> = {
+  const event = {
     include: (
       instance: WorkflowEventData<any>,
     ): instance is WorkflowEventData<Data> => s.has(instance),
@@ -42,13 +44,13 @@ export const workflowEvent = <Data = void>(
         get data() {
           return data;
         },
-      };
+      } as unknown as WorkflowEventData<Data, DebugLabel>;
       s.add(ref);
       Object.freeze(ref);
       refMap.set(ref, event);
       return ref;
     },
-  };
+  } as unknown as WorkflowEvent<Data, DebugLabel>;
 
   const s = new WeakSet();
   eventMap.set(event, s);

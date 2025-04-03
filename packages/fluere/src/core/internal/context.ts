@@ -6,12 +6,15 @@ export interface Context {
   get signal(): AbortSignal;
   sendEvent: (...events: WorkflowEventData<any>[]) => void;
 
+  /**
+   * @internal
+   */
   __internal__call_context: Set<
     (
       context: Context,
       inputs: WorkflowEventData<any>[],
       next: () => void,
-    ) => WorkflowEventData<any>
+    ) => void
   >;
 }
 
