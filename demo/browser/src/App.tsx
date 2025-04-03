@@ -8,10 +8,7 @@ import { promiseHandler } from "fluere/interrupter/promise";
 const startEvent = workflowEvent();
 const stopEvent = workflowEvent<string>();
 
-const workflow = createWorkflow({
-  startEvent,
-  stopEvent,
-});
+const workflow = createWorkflow();
 
 workflow.handle([startEvent], () => {
   const context = getContext();
@@ -20,7 +17,7 @@ workflow.handle([startEvent], () => {
   }, 1000);
 });
 
-const promise = promiseHandler(workflow);
+const promise = promiseHandler(workflow, startEvent(), stopEvent);
 
 function App() {
   return (

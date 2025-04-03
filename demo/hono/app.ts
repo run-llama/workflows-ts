@@ -1,13 +1,21 @@
 import { Hono } from "hono";
 import { serve } from "@hono/node-server";
 import { createHonoHandler } from "fluere/interrupter/hono";
-import { toolCallWorkflow } from "../workflows/tool-call-agent.js";
+import {
+  toolCallWorkflow,
+  startEvent,
+  stopEvent,
+} from "../workflows/tool-call-agent.js";
 
 const app = new Hono();
 
 app.post(
   "/workflow",
-  createHonoHandler(toolCallWorkflow, async (ctx) => ctx.req.text()),
+  createHonoHandler(
+    toolCallWorkflow,
+    async (ctx) => startEvent(await ctx.req.text()),
+    stopEvent,
+  ),
 );
 
 serve(app, ({ port }) => {

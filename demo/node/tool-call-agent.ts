@@ -1,9 +1,14 @@
 import { promiseHandler } from "fluere/interrupter/promise";
-import { toolCallWorkflow } from "../workflows/tool-call-agent.js";
+import {
+  toolCallWorkflow,
+  startEvent,
+  stopEvent,
+} from "../workflows/tool-call-agent.js";
 
 promiseHandler(
   toolCallWorkflow,
-  "what is weather today, im in san francisco",
+  startEvent("what is weather today, im in san francisco"),
+  stopEvent,
 ).then(({ data }) => {
   console.log("AI response", data);
 });

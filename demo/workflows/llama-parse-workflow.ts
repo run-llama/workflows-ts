@@ -6,7 +6,7 @@ import { getContext } from "fluere";
 import { withStore } from "fluere/middleware/store";
 import { pRetryHandler } from "fluere/util/p-retry";
 
-const startEvent = zodEvent(
+export const startEvent = zodEvent(
   z.object({
     inputFile: z.string().describe("input"),
     apiKey: z.string().describe("apiKey"),
@@ -14,7 +14,7 @@ const startEvent = zodEvent(
 );
 const checkStatusEvent = workflowEvent<string>();
 const checkStatusSuccessEvent = workflowEvent();
-const stopEvent = zodEvent(
+export const stopEvent = zodEvent(
   z.object({
     markdown: z.string().describe("markdown"),
   }),
@@ -24,10 +24,7 @@ export const llamaParseWorkflow = withStore(
   {} as {
     apiKey: string;
   },
-  createWorkflow({
-    startEvent,
-    stopEvent,
-  }),
+  createWorkflow(),
 );
 
 llamaParseWorkflow.handle(

@@ -27,15 +27,12 @@ const tools = [
   },
 ] satisfies ChatCompletionTool[];
 
-const startEvent = workflowEvent<string>();
+export const startEvent = workflowEvent<string>();
 const chatEvent = workflowEvent<string>();
 const toolCallEvent = workflowEvent<ChatCompletionMessageToolCall>();
 const toolCallResultEvent = workflowEvent<string>();
-const stopEvent = workflowEvent<string>();
-export const toolCallWorkflow = createWorkflow({
-  startEvent,
-  stopEvent,
-});
+export const stopEvent = workflowEvent<string>();
+export const toolCallWorkflow = createWorkflow();
 toolCallWorkflow.handle([startEvent], async ({ data }) => {
   console.log("start event");
   const context = getContext();

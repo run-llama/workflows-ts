@@ -9,7 +9,7 @@ export const messageEvent = workflowEvent<string>({
   debugLabel: "message",
 });
 
-const startEvent = workflowEvent<string>({
+export const startEvent = workflowEvent<string>({
   debugLabel: "start",
 });
 const readDirEvent = workflowEvent<[string, number]>({
@@ -21,7 +21,7 @@ const readFileEvent = workflowEvent<[string, number]>({
 const readResultEvent = workflowEvent({
   debugLabel: "readResult",
 });
-const stopEvent = workflowEvent({
+export const stopEvent = workflowEvent({
   debugLabel: "stop",
 });
 
@@ -29,10 +29,7 @@ export const fileParseWorkflow = withStore(
   {
     output: "",
   },
-  createWorkflow({
-    startEvent,
-    stopEvent,
-  }),
+  createWorkflow(),
 );
 
 const locks: {

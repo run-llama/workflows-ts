@@ -1,4 +1,4 @@
-import type { Workflow } from "../core";
+import type { Workflow } from "fluere";
 
 export function withStore<T, Start, Stop>(
   store: T,
@@ -9,11 +9,5 @@ export function withStore<T, Start, Stop>(
   return {
     ...workflow,
     getStore: (): T => store,
-    get startEvent() {
-      return workflow.startEvent;
-    },
-    get stopEvent() {
-      return workflow.stopEvent;
-    },
   };
 }
