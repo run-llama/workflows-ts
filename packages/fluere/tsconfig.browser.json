@@ -5,7 +5,7 @@
     "paths": {
       "fluere": ["./src/core/index.ts"],
       "fluere/stream": ["./src/stream/index.ts"],
-      "fluere/async-context": ["./src/async-context/index.ts"]
+      "fluere/async-context": ["./src/async-context/index.browser.ts"]
     }
   },
   "include": ["./src"]
