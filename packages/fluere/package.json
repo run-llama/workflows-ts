@@ -69,6 +69,7 @@
     "build": "rimraf dist interrupter middleware stream util async-context && tsup",
     "dev": "tsup --watch",
     "test": "vitest run",
+    "test:ui": "vitest --ui",
     "prepublishOnly": "cp ../../README.md ./README.md"
   },
   "devDependencies": {

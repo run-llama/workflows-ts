@@ -1,7 +1,7 @@
 import { describe, expect, test, vi, afterEach } from "vitest";
 import { createWorkflow, workflowEvent } from "fluere";
 import { withValidation } from "fluere/middleware/validation";
-import { consume } from "fluere/stream";
+import { find } from "fluere/stream";
 
 describe("with directed graph", () => {
   const consoleWarnMock = vi
@@ -36,7 +36,7 @@ describe("with directed graph", () => {
 
     const { sendEvent, stream } = workflow.createContext();
     sendEvent(startEvent.with());
-    await consume(stream, stopEvent);
+    await find(stream, stopEvent);
     expect(fn).toBeCalled();
     expect(consoleWarnMock).toHaveBeenCalledOnce();
     expect(consoleWarnMock).toHaveBeenLastCalledWith(
