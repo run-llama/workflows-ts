@@ -116,6 +116,41 @@ describe("workflow basic", () => {
     expect(events).toHaveLength(3);
     expect(events.at(-1)!.data).toBe(1);
   });
+
+  test("stream.tee()", async () => {
+    workflow.handle([startEvent], async (start) => {
+      return convertEvent.with(Number.parseInt(start.data, 10));
+    });
+    workflow.handle([convertEvent], async (convert) => {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      return stopEvent.with(convert.data > 0 ? 1 : -1);
+    });
+
+    const { stream, sendEvent } = workflow.createContext();
+    const newStream = stream.pipeThrough(
+      new TransformStream({
+        transform: (event, controller) => {
+          controller.enqueue(event);
+          if (stopEvent.include(event)) {
+            controller.terminate();
+          }
+        },
+      }),
+    );
+    sendEvent(startEvent.with("100"));
+    const [l, r] = newStream.tee();
+    expect(newStream.locked).toBe(true);
+    for await (const ev of l) {
+      if (stopEvent.include(ev)) {
+        break;
+      }
+    }
+    for await (const ev of r) {
+      if (stopEvent.include(ev)) {
+        break;
+      }
+    }
+  });
 });
 
 describe("workflow simple logic", () => {
