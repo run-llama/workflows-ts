@@ -1,2 +1,3 @@
 export { until } from "./until";
-export { consume } from "./consume";
+export { find } from "./find";
+export { filter } from "./filter";

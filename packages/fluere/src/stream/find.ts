@@ -3,7 +3,7 @@ import type { WorkflowEvent, WorkflowEventData } from "fluere";
 /**
  * Consume a stream of events with a given event and time.
  */
-export async function consume<T>(
+export async function find<T>(
   stream: ReadableStream<WorkflowEventData<any>>,
   event: WorkflowEvent<T>,
 ): Promise<WorkflowEventData<T>> {

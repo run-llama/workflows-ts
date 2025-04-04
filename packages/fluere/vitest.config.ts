@@ -12,18 +12,21 @@ export default defineConfig({
       {
         extends: true,
         test: {
+          name: "DOM",
           environment: "happy-dom",
         },
       },
       {
         extends: true,
         test: {
+          name: "Node.js",
           environment: "node",
         },
       },
       {
         extends: true,
         test: {
+          name: "Edge Runtime",
           environment: "edge-runtime",
         },
       },
