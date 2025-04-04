@@ -2,7 +2,7 @@ import { describe, expect, test, vi, afterEach } from "vitest";
 import { createWorkflow, workflowEvent } from "fluere";
 import { withValidation } from "fluere/middleware/validation";
 import { find } from "fluere/stream";
-import { promiseHandler } from 'fluere/interrupter/promise'
+import { promiseHandler } from "fluere/interrupter/promise";
 
 describe("with directed graph", () => {
   const consoleWarnMock = vi
@@ -49,13 +49,15 @@ describe("with directed graph", () => {
   test("promise", async () => {
     const startEvent = workflowEvent<void, "start">();
     const stopEvent = workflowEvent<number, "stop">();
-    const workflow = withValidation(createWorkflow(), [[[startEvent], [stopEvent]]]);
+    const workflow = withValidation(createWorkflow(), [
+      [[startEvent], [stopEvent]],
+    ]);
 
     workflow.handle([startEvent], (sendEvent) => {
       sendEvent(stopEvent.with(1));
     });
 
-    const result = await promiseHandler(workflow, startEvent.with(), stopEvent)
-    expect(result.data).toBe(1)
+    const result = await promiseHandler(workflow, startEvent.with(), stopEvent);
+    expect(result.data).toBe(1);
   });
 });
