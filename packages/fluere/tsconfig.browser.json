@@ -1,6 +1,7 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
+    "composite": true,
     "target": "es2015",
     "paths": {
       "fluere": ["./src/core/index.ts"],
