@@ -2,7 +2,6 @@ import {
   type WorkflowContext,
   getContext,
   type Handler,
-  type HandlerRef,
   type Workflow,
   type WorkflowEvent,
   type WorkflowEventData,
@@ -44,7 +43,7 @@ export type WithValidationWorkflow<
   >(
     accept: AcceptEvents,
     handler: ValidationHandler<Validation, AcceptEvents, Result>,
-  ): HandlerRef<AcceptEvents, Result>;
+  ): void;
   createContext(): WorkflowContext;
 };
 
@@ -102,9 +101,11 @@ export function withValidation<
     },
     createContext(): WorkflowContext {
       const context = workflow.createContext();
-      context.__internal__call_context.add((context, inputs, next) => {
-        (context as any).safeSendEvent = createSafeSendEvent(...inputs);
-        next();
+      context.__internal__call_context.add((context, next) => {
+        (getContext() as any).safeSendEvent = createSafeSendEvent(
+          ...context.inputs,
+        );
+        next(context);
       });
       return context;
     },

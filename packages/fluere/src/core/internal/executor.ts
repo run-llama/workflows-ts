@@ -1,21 +1,11 @@
-import type {
-  Handler,
-  HandlerRef,
-  WorkflowEvent,
-  WorkflowEventData,
-} from "fluere";
+import type { Handler, WorkflowEvent, WorkflowEventData } from "fluere";
 import { flattenEvents, isEventData, isPromiseLike } from "../utils";
-import { _executorAsyncLocalStorage, type WorkflowContext } from "./context";
+import {
+  _executorAsyncLocalStorage,
+  type HandlerContext,
+  type WorkflowContext,
+} from "./context";
 import { createAsyncContext } from "fluere/async-context";
-
-type HandlerContext = {
-  abortController: AbortController;
-  handler: Handler<WorkflowEvent<any>[], any>;
-  inputs: WorkflowEventData<any>[];
-  outputs: WorkflowEventData<any>[];
-  prev: HandlerContext;
-  next: Set<HandlerContext>;
-};
 
 const handlerContextAsyncLocalStorage = createAsyncContext<HandlerContext>();
 
@@ -27,7 +17,7 @@ const eventContextWeakMap = new WeakMap<
 export type ExecutorParams = {
   listeners: ReadonlyMap<
     WorkflowEvent<any>[],
-    Set<HandlerRef<WorkflowEvent<any>[], any>>
+    Set<Handler<WorkflowEvent<any>[], WorkflowEventData<any> | void>>
   >;
 };
 
@@ -37,9 +27,10 @@ export const createContext = ({
   const queue: WorkflowEventData<any>[] = [];
   const runHandler = (
     handler: Handler<WorkflowEvent<any>[], any>,
+    inputEvents: WorkflowEvent<any>[],
     inputs: WorkflowEventData<any>[],
     parentContext: HandlerContext,
-  ) => {
+  ): void => {
     let handlerAbortController: AbortController;
     const handlerContext: HandlerContext = {
       get abortController() {
@@ -48,11 +39,20 @@ export const createContext = ({
         }
         return handlerAbortController;
       },
+      async:
+        "constructor" in handler
+          ? handler.constructor.name === "AsyncFunction"
+          : false,
+      pending: null,
       handler,
+      inputEvents,
       inputs,
       outputs: [],
       prev: parentContext,
       next: new Set(),
+      get root() {
+        return handlerRootContext;
+      },
     };
     handlerContext.prev.next.add(handlerContext);
     const workflowContext = createWorkflowContext(handlerContext);
@@ -66,11 +66,11 @@ export const createContext = ({
       _executorAsyncLocalStorage.run(workflowContext, () => {
         //#region middleware
         let i = 0;
-        const next = () => {
+        const next = (context: HandlerContext) => {
           if (i === cbs.length) {
             let result: any;
             try {
-              result = handler(...inputs);
+              result = context.handler(...context.inputs);
             } catch (error) {
               if (handlerAbortController ?? rootAbortController) {
                 (handlerAbortController ?? rootAbortController).abort(error);
@@ -81,6 +81,8 @@ export const createContext = ({
             }
             // return value is a special event
             if (isPromiseLike(result)) {
+              (handlerContext as any).async = true;
+              (handlerContext as any).pending = result;
               result.then((event) => {
                 if (isEventData(event)) {
                   workflowContext.sendEvent(event);
@@ -93,10 +95,10 @@ export const createContext = ({
           const cb = cbs[i];
           if (cb) {
             i++;
-            cb(workflowContext, inputs, next);
+            cb(context, next);
           }
         };
-        next();
+        next(handlerContext);
         //#endregion
       });
     });
@@ -108,13 +110,13 @@ export const createContext = ({
         const inputs = flattenEvents(events, queueSnapshot);
         return inputs.length === events.length;
       })
-      .map(([events, refs]) => {
+      .map(([events, handlers]) => {
         const inputs = flattenEvents(events, queueSnapshot);
         inputs.forEach((input) => {
           queue.splice(queue.indexOf(input), 1);
         });
-        for (const ref of refs) {
-          runHandler(ref.handler, inputs, handlerContext);
+        for (const handler of handlers) {
+          runHandler(handler, events, inputs, handlerContext);
         }
       });
   };
@@ -163,11 +165,17 @@ export const createContext = ({
       }
       return rootAbortController;
     },
+    async: false,
+    pending: null,
+    inputEvents: [],
     inputs: [],
     outputs: [],
     handler: null!,
     prev: null!,
     next: new Set(),
+    get root() {
+      return handlerRootContext;
+    },
   };
 
   const rootWorkflowContext = createWorkflowContext(handlerRootContext);

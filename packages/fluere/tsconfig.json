@@ -22,7 +22,7 @@
       "fluere/interrupter/*": ["./src/interrupter/*.ts"],
       "fluere/middleware/*": ["./src/middleware/*.ts"],
       "fluere/util": ["./src/util/index.ts"],
-      "fluere/stream": ["./src/stream/index.ts"],
+      "fluere/stream": ["./src/stream/index.ts"]
     }
   },
   "include": ["./src"],

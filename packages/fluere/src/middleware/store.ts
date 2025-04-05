@@ -40,9 +40,9 @@ export function withStore<T, Input>(
       const context = workflow.createContext() as WorkflowContext & {
         getStore: () => T;
       };
-      context.__internal__call_context.add((context, _, next) => {
-        (context as any).getStore = () => currentStore;
-        next();
+      context.__internal__call_context.add((_, next) => {
+        (getContext() as any).getStore = () => currentStore;
+        next(_);
       });
       (context as any).getStore = () => currentStore;
       return context;
