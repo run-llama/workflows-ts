@@ -21,7 +21,7 @@
       "fluere/async-context": ["./src/async-context/index.ts"],
       "fluere/interrupter/*": ["./src/interrupter/*.ts"],
       "fluere/middleware/*": ["./src/middleware/*.ts"],
-      "fluere/util": ["./src/util/index.ts"],
+      "fluere/util/*": ["./src/util/*.ts"],
       "fluere/stream": ["./src/stream/index.ts"]
     }
   },

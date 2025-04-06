@@ -33,10 +33,20 @@ export type HandlerRef<
   get handler(): Fn;
 };
 
-export function withTraceEvents(workflow: Workflow): Omit<
-  Workflow,
-  "handle"
-> & {
+export function withTraceEvents<
+  WorkflowLike extends {
+    handle<
+      const AcceptEvents extends WorkflowEvent<any>[],
+      Result extends ReturnType<WorkflowEvent<any>["with"]> | void,
+    >(
+      accept: AcceptEvents,
+      handler: Handler<AcceptEvents, Result>,
+    ): void;
+    createContext(): WorkflowContext;
+  },
+>(
+  workflow: WorkflowLike,
+): Omit<WorkflowLike, "handle"> & {
   handle<
     const AcceptEvents extends WorkflowEvent<any>[],
     Result extends ReturnType<WorkflowEvent<any>["with"]> | void,

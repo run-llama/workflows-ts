@@ -75,7 +75,7 @@ export function withValidation<
           }
         }
       }
-      if (matched) {
+      if (!matched) {
         console.warn(
           "Invalid input detected [%s]",
           inputs.map((i) => i.data).join(", "),
