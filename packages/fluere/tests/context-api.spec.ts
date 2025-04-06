@@ -31,12 +31,10 @@ describe("workflow context api", () => {
       debugLabel: "parseResult",
     });
     workflow.handle([startEvent], async () => {
+      const { sendEvent, stream } = getContext();
       const ev = parseEvent.with(2);
-      getContext().sendEvent(ev);
-      await until(
-        getContext().stream,
-        (e) => parseResultEvent.include(e) && e.data === 0,
-      );
+      sendEvent(ev);
+      await until(stream, (e) => parseResultEvent.include(e) && e.data === 0);
       return stopEvent.with(1);
     });
     workflow.handle([parseEvent], async ({ data }) => {
@@ -83,23 +81,19 @@ describe("workflow context api", () => {
       debugLabel: "parseResult",
     });
     workflow.handle([startEvent], async () => {
+      const { sendEvent, stream } = getContext();
       const ev = parseEvent.with(2);
-      getContext().sendEvent(ev);
-      await until(
-        getContext().stream,
-        (e) => parseResultEvent.include(e) && e.data === 0,
-      );
-      getContext().sendEvent(ev);
-      await until(
-        getContext().stream,
-        (e) => parseResultEvent.include(e) && e.data === 0,
-      );
+      sendEvent(ev);
+      await until(stream, (e) => parseResultEvent.include(e) && e.data === 0);
+      sendEvent(ev);
+      await until(stream, (e) => parseResultEvent.include(e) && e.data === 0);
       return stopEvent.with(1);
     });
     workflow.handle([parseEvent], async ({ data }) => {
+      const { sendEvent } = getContext();
       if (data > 0) {
         const ev = parseEvent.with(data - 1);
-        getContext().sendEvent(ev);
+        sendEvent(ev);
       } else {
         return parseResultEvent.with(0);
       }
