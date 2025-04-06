@@ -5,6 +5,7 @@ import { withTraceEvents } from "fluere/middleware/trace-events";
 import { withValidation } from "fluere/middleware/validation";
 import { zodEvent } from "fluere/util/zod";
 import { z } from "zod";
+import { webcrypto } from "node:crypto";
 
 describe("full workflow middleware", () => {
   const createFullWorkflow = <
@@ -62,7 +63,7 @@ describe("full workflow middleware", () => {
       sendEvent(stopEvent.with(workflow.getStore().id));
     });
 
-    const id = crypto.randomUUID();
+    const id = webcrypto.randomUUID();
     const { sendEvent, stream } = workflow.createContext(id);
     const events = [];
     sendEvent(startEvent.with("start"));
