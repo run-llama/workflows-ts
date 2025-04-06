@@ -330,7 +330,7 @@ type AsyncHandlerContext = BaseHandlerContext & {
 type HandlerContext = AsyncHandlerContext | SyncHandlerContext;
 ```
 
-For example, when you send two `startEvent` events, and send `messageEvent` only once,
+For example, when you send two `startEvent` events, and send `messageEvent` twice (once in the handler and once in the global),
 the `HandlerContext` from root to leaf is:
 
 ```ts
