@@ -38,8 +38,6 @@ export async function until(
     } else if (typeof cond === "function" && (await cond(value))) {
       reader.releaseLock();
       break;
-    } else {
-      throw new Error("unknown cond type");
     }
   }
   return events;

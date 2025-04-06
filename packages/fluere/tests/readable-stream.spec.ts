@@ -467,10 +467,9 @@ describe("workflow simple logic", () => {
     const workflow = createWorkflow();
 
     workflow.handle([startEvent], async (start) => {
+      const { sendEvent } = getContext();
       setTimeout(() => {
-        getContext().sendEvent(
-          convertEvent.with(Number.parseInt(start.data, 10)),
-        );
+        sendEvent(convertEvent.with(Number.parseInt(start.data, 10)));
       }, 10);
     });
 
@@ -511,8 +510,8 @@ describe("workflow simple logic", () => {
     const workflow = createWorkflow();
 
     workflow.handle([startEvent], async (start) => {
+      const context = getContext();
       setTimeout(() => {
-        const context = getContext();
         for (let i = 0; i < 100; i++) {
           context.sendEvent(convertEvent.with(Number.parseInt(start.data, 10)));
         }
@@ -552,8 +551,9 @@ describe("workflow simple logic", () => {
     });
     const workflow = createWorkflow();
     workflow.handle([startEvent], async () => {
+      const { sendEvent } = getContext();
       setTimeout(() => {
-        getContext().sendEvent(convertEvent.with(1));
+        sendEvent(convertEvent.with(1));
       }, 100);
       return convertEvent.with(2);
     });
