@@ -2,7 +2,6 @@ import {
   type WorkflowContext,
   getContext,
   type Handler,
-  type HandlerRef,
   type Workflow,
   type WorkflowEvent,
   type WorkflowEventData,
@@ -44,7 +43,7 @@ export type WithValidationWorkflow<
   >(
     accept: AcceptEvents,
     handler: ValidationHandler<Validation, AcceptEvents, Result>,
-  ): HandlerRef<AcceptEvents, Result>;
+  ): void;
   createContext(): WorkflowContext;
 };
 
@@ -66,22 +65,18 @@ export function withValidation<
     const store = getContext();
     const originalSendEvent = store.sendEvent;
     return (...inputs: WorkflowEventData<any>[]) => {
-      let matched = false;
       for (let i = 0; i < outputs.length; i++) {
         const output = outputs[i]!;
         if (output.length === inputs.length) {
           if (output.every((e, idx) => e.include(inputs[idx]))) {
-            matched = true;
-            break;
+            return originalSendEvent(...inputs);
           }
         }
       }
-      if (matched) {
-        console.warn(
-          "Invalid input detected [%s]",
-          inputs.map((i) => i.data).join(", "),
-        );
-      }
+      console.warn(
+        "Invalid input detected [%s]",
+        inputs.map((i) => i.data).join(", "),
+      );
       return originalSendEvent(...inputs);
     };
   };
@@ -102,9 +97,11 @@ export function withValidation<
     },
     createContext(): WorkflowContext {
       const context = workflow.createContext();
-      context.__internal__call_context.add((context, inputs, next) => {
-        (context as any).safeSendEvent = createSafeSendEvent(...inputs);
-        next();
+      context.__internal__call_context.add((context, next) => {
+        (getContext() as any).safeSendEvent = createSafeSendEvent(
+          ...context.inputs,
+        );
+        next(context);
       });
       return context;
     },

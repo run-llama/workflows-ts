@@ -5,16 +5,15 @@ import {
   type WorkflowEventConfig,
 } from "fluere";
 
-export const zodEvent = <T>(
+export const zodEvent = <T, DebugLabel extends string>(
   schema: z.ZodType<T>,
-  config?: WorkflowEventConfig,
-): WorkflowEvent<T> => {
-  const event = workflowEvent<T>(config);
-  return {
-    include: event.include,
-    with(data: T) {
-      schema.parse(data);
-      return event.with(data);
-    },
-  } as unknown as WorkflowEvent<T>;
+  config?: WorkflowEventConfig<DebugLabel>,
+): WorkflowEvent<T, DebugLabel> => {
+  const event = workflowEvent<T, DebugLabel>(config);
+  const originalWith = event.with;
+  event.with = (data: T) => {
+    schema.parse(data);
+    return originalWith(data);
+  };
+  return event;
 };

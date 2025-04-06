@@ -1,27 +1,51 @@
 import { type WorkflowContext, type Workflow, getContext } from "fluere";
 
-export function withStore<T, Input extends void>(
+export function withStore<
+  T,
+  Input extends void,
+  WorkflowLike extends {
+    createContext(): WorkflowContext;
+  } = {
+    createContext(): WorkflowContext;
+  },
+>(
   createStore: () => T,
-  workflow: Workflow,
-): Omit<Workflow, "createContext"> & {
+  workflow: WorkflowLike,
+): Omit<WorkflowLike, "createContext"> & {
   createContext(): WorkflowContext & {
     getStore(): T;
   };
   getStore(): T;
 };
-export function withStore<T, Input>(
+export function withStore<
+  T,
+  Input,
+  WorkflowLike extends {
+    createContext(): WorkflowContext;
+  } = {
+    createContext(): WorkflowContext;
+  },
+>(
   createStore: (input: Input) => T,
-  workflow: Workflow,
-): Omit<Workflow, "createContext"> & {
+  workflow: WorkflowLike,
+): Omit<WorkflowLike, "createContext"> & {
   createContext(input: Input): WorkflowContext & {
     getStore(): T;
   };
   getStore(): T;
 };
-export function withStore<T, Input>(
+export function withStore<
+  T,
+  Input,
+  WorkflowLike extends {
+    createContext(): WorkflowContext;
+  } = {
+    createContext(): WorkflowContext;
+  },
+>(
   createStore: (input: Input) => T,
-  workflow: Workflow,
-): Omit<Workflow, "createContext"> & {
+  workflow: WorkflowLike,
+): Omit<WorkflowLike, "createContext"> & {
   createContext(input: Input): WorkflowContext & {
     getStore(): T;
   };
@@ -40,9 +64,9 @@ export function withStore<T, Input>(
       const context = workflow.createContext() as WorkflowContext & {
         getStore: () => T;
       };
-      context.__internal__call_context.add((context, _, next) => {
-        (context as any).getStore = () => currentStore;
-        next();
+      context.__internal__call_context.add((_, next) => {
+        (getContext() as any).getStore = () => currentStore;
+        next(_);
       });
       (context as any).getStore = () => currentStore;
       return context;

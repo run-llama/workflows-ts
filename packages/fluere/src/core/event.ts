@@ -64,8 +64,6 @@ export const workflowEvent = <Data = void, DebugLabel extends string = string>(
   });
 
   event.toString = () => config?.debugLabel ?? `WorkflowEvent<${l1}>`;
-  Object.freeze(event);
-
   return event;
 };
 

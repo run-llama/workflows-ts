@@ -1,7 +1,7 @@
-import { type WorkflowEvent } from "./event";
+import { type WorkflowEvent, type WorkflowEventData } from "./event";
 import { createContext } from "./internal/executor";
-import { type Handler, type HandlerRef } from "./internal/handler";
-import type { WorkflowContext } from "./internal/context";
+import { type Handler } from "./internal/handler";
+import { getContext, type WorkflowContext } from "./internal/context";
 
 export type Workflow = {
   handle<
@@ -10,7 +10,7 @@ export type Workflow = {
   >(
     accept: AcceptEvents,
     handler: Handler<AcceptEvents, Result>,
-  ): HandlerRef<AcceptEvents, Result>;
+  ): void;
   createContext(): WorkflowContext;
 };
 
@@ -18,7 +18,7 @@ export function createWorkflow(): Workflow {
   const config = {
     steps: new Map<
       WorkflowEvent<any>[],
-      Set<HandlerRef<WorkflowEvent<any>[], any>>
+      Set<Handler<WorkflowEvent<any>[], WorkflowEventData<any> | void>>
     >(),
   };
 
@@ -29,43 +29,31 @@ export function createWorkflow(): Workflow {
     >(
       accept: AcceptEvents,
       handler: Handler<AcceptEvents, Result>,
-    ): HandlerRef<AcceptEvents, Result> => {
+    ): void => {
+      // smoke test to check if we are outside the context
+      let success = false;
+      try {
+        getContext();
+        console.error("Calling handle inside of context is not allowed.");
+        success = true;
+      } catch {}
+      if (success) {
+        throw new Error("Calling handle inside of context is not allowed.");
+      }
       if (config.steps.has(accept)) {
         const set = config.steps.get(accept) as Set<
-          HandlerRef<AcceptEvents, Result>
+          Handler<AcceptEvents, Result>
         >;
-        const ref: HandlerRef<AcceptEvents, Result> = {
-          get handler() {
-            return handler;
-          },
-          unsubscribe: () => {
-            set.delete(ref);
-            if (set.size === 0) {
-              config.steps.delete(accept);
-            }
-          },
-        };
-        set.add(ref);
-        return ref;
+        set.add(handler);
       } else {
-        const set = new Set<HandlerRef<AcceptEvents, Result>>();
-        const ref: HandlerRef<AcceptEvents, Result> = {
-          get handler() {
-            return handler;
-          },
-          unsubscribe: () => {
-            set.delete(ref);
-            if (set.size === 0) {
-              config.steps.delete(accept);
-            }
-          },
-        };
-        set.add(ref);
+        const set = new Set<Handler<AcceptEvents, Result>>();
+        set.add(handler);
         config.steps.set(
           accept,
-          set as Set<HandlerRef<WorkflowEvent<any>[], any>>,
+          set as Set<
+            Handler<WorkflowEvent<any>[], WorkflowEventData<any> | void>
+          >,
         );
-        return ref;
       }
     },
     createContext() {
