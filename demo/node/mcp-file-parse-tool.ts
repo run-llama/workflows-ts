@@ -3,7 +3,8 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { fileParseWorkflow } from "../workflows/file-parse-agent.js";
 import { createWorkflow, workflowEvent } from "fluere";
-import { consume } from "fluere/stream";
+import { until } from "fluere/stream/until";
+import { nothing } from "fluere/stream/consumer";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 
 const server = new McpServer({
@@ -23,7 +24,7 @@ const wrappedWorkflow = createWorkflow();
 wrappedWorkflow.handle([startEvent], async ({ data: { filePath } }) => {
   const { stream, sendEvent } = fileParseWorkflow.createContext();
   sendEvent(startEvent.with({ filePath }));
-  await consume(stream, stopEvent);
+  await nothing(until(stream, stopEvent));
   return stopEvent.with({
     content: [
       {

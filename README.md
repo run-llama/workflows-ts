@@ -72,7 +72,7 @@ By default, we provide a simple fan-out utility to run multiple workflows in par
 - `getContext().stream` will return a stream of events emitted by the sub-workflow
 
 ```ts
-import { until } from "fluere/stream";
+import { until } from "fluere/stream/until";
 import { collect } from "fluere/stream/consumer";
 
 let condition = false;

@@ -12,7 +12,7 @@ import { zodEvent } from "fluere/util/zod";
 import { z } from "zod";
 import { webcrypto } from "node:crypto";
 import { collect } from "../src/stream/consumer";
-import { until } from "fluere/stream";
+import { until } from "fluere/stream/until";
 
 describe("full workflow middleware", () => {
   const createFullWorkflow = <

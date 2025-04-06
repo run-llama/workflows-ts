@@ -4,7 +4,8 @@ import type {
   ChatCompletionMessageToolCall,
   ChatCompletionTool,
 } from "openai/resources/chat/completions/completions";
-import { consume } from "fluere/stream";
+import { until } from "fluere/stream/until";
+import { collect } from "fluere/stream/consumer";
 
 const llm = new OpenAI();
 const tools = [
@@ -68,10 +69,11 @@ toolCallWorkflow.handle([chatEvent], async ({ data }) => {
       await Promise.all(
         choices[0].message.tool_calls.map(async (tool_call) => {
           sendEvent(toolCallEvent.with(tool_call));
-          return consume(stream, toolCallResultEvent);
+          return collect(until(stream, toolCallResultEvent));
         }),
       )
     )
+      .map((list) => list.at(-1)!)
       .map(({ data }) => data)
       .join("\n");
     console.log("toolcall result", result);
