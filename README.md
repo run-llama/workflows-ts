@@ -264,10 +264,19 @@ workflow.handle([startEvent], () => {
   getContext().sendEvent(messageEvent.with());
 });
 
-const { sendEvent } = workflow.createContext();
-sendEvent(startEvent.with());
-sendEvent(messageEvent.with());
-// This message handler will only run once!
+{
+  const { sendEvent } = workflow.createContext();
+  sendEvent(startEvent.with());
+  sendEvent(messageEvent.with());
+  // This message handler will only run once!
+}
+{
+  const { sendEvent } = workflow.createContext();
+  // For each new context, the hook is isolated.
+  sendEvent(startEvent.with());
+  sendEvent(messageEvent.with());
+  // This message handler will only run once!
+}
 ```
 
 #### `createHandlerDecorator`
