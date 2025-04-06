@@ -7,7 +7,7 @@ import {
 } from "fluere/middleware/trace-events";
 
 describe("with tracking", () => {
-  test("once", () => {
+  test("runOnce", () => {
     const workflow = withTraceEvents(createWorkflow());
     const startEvent = workflowEvent();
     const ref = workflow.handle([startEvent], vi.fn(runOnce(() => {})));
