@@ -81,6 +81,7 @@
     "next": "^15.2.2",
     "p-retry": "^6.2.1",
     "rimraf": "^6.0.1",
+    "stream-chain": "^3.4.0",
     "tsup": "^8.4.0",
     "typescript": "^5.8.2",
     "vitest": "^3.0.8",
