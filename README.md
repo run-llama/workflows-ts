@@ -272,7 +272,7 @@ workflow.handle([startEvent], () => {
 }
 {
   const { sendEvent } = workflow.createContext();
-  // For each new context, the hook is isolated.
+  // For each new context, the decorator is isolated.
   sendEvent(startEvent.with());
   sendEvent(messageEvent.with());
   // This message handler will only run once!
