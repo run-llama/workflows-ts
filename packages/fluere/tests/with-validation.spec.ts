@@ -1,7 +1,7 @@
 import { describe, expect, test, vi, afterEach } from "vitest";
 import { createWorkflow, workflowEvent } from "fluere";
 import { withValidation } from "fluere/middleware/validation";
-import { find } from "fluere/stream";
+import { find } from "fluere/stream/find";
 import { promiseHandler } from "fluere/interrupter/promise";
 
 describe("with directed graph", () => {

@@ -6,7 +6,7 @@ import {
   workflowEvent,
   type WorkflowEventData,
 } from "fluere";
-import { until } from "fluere/stream";
+import { until } from "fluere/stream/until";
 import { collect, nothing } from "../src/stream/consumer";
 
 describe("workflow context api", () => {

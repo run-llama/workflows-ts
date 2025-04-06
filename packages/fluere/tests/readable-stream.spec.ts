@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, test, vi } from "vitest";
 import { getContext, type Workflow } from "fluere";
 import { createWorkflow } from "fluere";
 import { eventSource, workflowEvent, type WorkflowEventData } from "fluere";
-import { until } from "fluere/stream";
+import { until } from "fluere/stream/until";
 import { collect, nothing } from "../src/stream/consumer";
 
 describe("workflow basic", () => {

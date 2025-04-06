@@ -7,7 +7,7 @@ import {
   getContext,
   type WorkflowEventData,
 } from "fluere";
-import { until } from "fluere/stream";
+import { until } from "fluere/stream/until";
 
 describe("node:stream", () => {
   test("basic usage", async () => {

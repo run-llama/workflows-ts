@@ -1,5 +1,6 @@
 import { workflowEvent, createWorkflow } from "fluere";
-import { consume } from "fluere/stream";
+import { until } from "fluere/stream/until";
+import { nothing } from "fluere/stream/consumer";
 import { z } from "zod";
 import { zodEvent } from "fluere/util/zod";
 import { getContext } from "fluere";
@@ -48,7 +49,7 @@ llamaParseWorkflow.handle(
       },
     ).then((res) => res.json());
     sendEvent(checkStatusEvent.with(id));
-    await consume(stream, checkStatusSuccessEvent);
+    await nothing(until(stream, checkStatusSuccessEvent));
     return fetch(
       `https://api.cloud.llamaindex.ai/api/v1/parsing/job/${id}/result/markdown`,
       {

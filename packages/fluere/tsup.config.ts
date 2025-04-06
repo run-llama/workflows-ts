@@ -60,7 +60,7 @@ export default defineConfig([
   },
   // Stream APIs
   {
-    entry: ["src/stream/index.ts"],
+    entry: ["src/stream/*.ts"],
     outDir: "stream",
     format: ["esm"],
     external: ["fluere", "fluere/async-context"],
