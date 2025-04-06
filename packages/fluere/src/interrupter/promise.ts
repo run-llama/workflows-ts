@@ -1,4 +1,6 @@
 import type { WorkflowContext, WorkflowEvent, WorkflowEventData } from "fluere";
+import { collect } from "fluere/stream/consumer";
+import { until } from "fluere/stream/until";
 
 /**
  * Interrupter that wraps a workflow in a promise.
@@ -19,10 +21,10 @@ export async function promiseHandler<
 ): Promise<WorkflowEventData<Stop>> {
   const { stream, sendEvent } = workflow.createContext();
   sendEvent(start);
-  for await (const event of stream) {
-    if (stop.include(event)) {
-      return event;
-    }
+  const events = await collect(until(stream, stop));
+  const stopEvent = events.reverse().find((e) => stop.include(e));
+  if (stopEvent) {
+    return stopEvent;
   }
   throw new Error("Workflow did not return a stop event");
 }
