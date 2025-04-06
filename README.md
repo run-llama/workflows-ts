@@ -58,6 +58,10 @@ const result = await pipeline(stream, async function (source) {
   }
 });
 console.log(result); // stop received!
+// or
+import { until } from "fluere/stream/until";
+import { collect } from "fluere/stream/consumer";
+const allEvents = await collect(until(stream, stopEvent));
 ```
 
 ### Fan-out (Parallelism)
@@ -69,6 +73,7 @@ By default, we provide a simple fan-out utility to run multiple workflows in par
 
 ```ts
 import { until } from "fluere/stream";
+import { collect } from "fluere/stream/consumer";
 
 let condition = false;
 workflow.handle([startEvent], (start) => {
@@ -77,8 +82,10 @@ workflow.handle([startEvent], (start) => {
     sendEvent(convertEvent.with(i));
   }
   // You define the condition to stop the workflow
-  const results = until(stream, () => condition).filter((ev) =>
-    convertStopEvent.includes(ev),
+  const results = collect(
+    until(stream, () => condition).filter((ev) =>
+      convertStopEvent.includes(ev),
+    ),
   );
   console.log(results.length); // 10
   return stopEvent.with();

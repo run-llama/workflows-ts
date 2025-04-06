@@ -7,6 +7,7 @@ import {
   type WorkflowEventData,
 } from "fluere";
 import { until } from "fluere/stream";
+import { collect, nothing } from "../src/stream/consumer";
 
 describe("workflow context api", () => {
   const startEvent = workflowEvent({
@@ -34,7 +35,9 @@ describe("workflow context api", () => {
       const { sendEvent, stream } = getContext();
       const ev = parseEvent.with(2);
       sendEvent(ev);
-      await until(stream, (e) => parseResultEvent.include(e) && e.data === 0);
+      await nothing(
+        until(stream, (e) => parseResultEvent.include(e) && e.data === 0),
+      );
       return stopEvent.with(1);
     });
     workflow.handle([parseEvent], async ({ data }) => {
@@ -47,13 +50,9 @@ describe("workflow context api", () => {
     });
     const { stream, sendEvent } = workflow.createContext();
     sendEvent(startEvent.with("100"));
-    const events: WorkflowEventData<any>[] = [];
-    for await (const ev of stream) {
-      events.push(ev);
-      if (stopEvent.include(ev)) {
-        break;
-      }
-    }
+    const events: WorkflowEventData<any>[] = await collect(
+      until(stream, stopEvent),
+    );
     expect(events.length).toBe(6);
     expect(events.at(-1)!.data).toBe(1);
     expect(events.map((e) => eventSource(e))).toEqual([
@@ -84,9 +83,13 @@ describe("workflow context api", () => {
       const { sendEvent, stream } = getContext();
       const ev = parseEvent.with(2);
       sendEvent(ev);
-      await until(stream, (e) => parseResultEvent.include(e) && e.data === 0);
+      await nothing(
+        until(stream, (e) => parseResultEvent.include(e) && e.data === 0),
+      );
       sendEvent(ev);
-      await until(stream, (e) => parseResultEvent.include(e) && e.data === 0);
+      await nothing(
+        until(stream, (e) => parseResultEvent.include(e) && e.data === 0),
+      );
       return stopEvent.with(1);
     });
     workflow.handle([parseEvent], async ({ data }) => {
@@ -101,13 +104,9 @@ describe("workflow context api", () => {
 
     const { stream, sendEvent } = workflow.createContext();
     sendEvent(startEvent.with("100"));
-    const events: WorkflowEventData<any>[] = [];
-    for await (const ev of stream) {
-      events.push(ev);
-      if (stopEvent.include(ev)) {
-        break;
-      }
-    }
+    const events: WorkflowEventData<any>[] = await collect(
+      until(stream, stopEvent),
+    );
     expect(events.length).toBe(10);
     expect(events.at(-1)!.data).toBe(1);
     expect(events.map((e) => eventSource(e))).toEqual([
@@ -135,13 +134,9 @@ describe("workflow context api", () => {
     workflow.handle([startEvent], fn);
     const { stream, sendEvent } = workflow.createContext();
     sendEvent(startEvent.with());
-    const events: WorkflowEventData<any>[] = [];
-    for await (const ev of stream) {
-      events.push(ev);
-      if (stopEvent.include(ev)) {
-        break;
-      }
-    }
+    const events: WorkflowEventData<any>[] = await collect(
+      until(stream, stopEvent),
+    );
     expect(fn).toBeCalledTimes(1);
     expect(events).toHaveLength(2);
   });
@@ -166,13 +161,9 @@ describe("workflow context api", () => {
     workflow.handle([aEvent], fn2);
     const { stream, sendEvent } = workflow.createContext();
     sendEvent(startEvent.with());
-    const events: WorkflowEventData<any>[] = [];
-    for await (const ev of stream) {
-      events.push(ev);
-      if (stopEvent.include(ev)) {
-        break;
-      }
-    }
+    const events: WorkflowEventData<any>[] = await collect(
+      until(stream, stopEvent),
+    );
     expect(fn).toBeCalledTimes(1);
     expect(events.map((e) => eventSource(e))).toEqual([
       startEvent,

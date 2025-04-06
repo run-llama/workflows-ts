@@ -1,11 +1,18 @@
 import { describe, test, expect } from "vitest";
-import { createWorkflow, eventSource, type WorkflowEvent } from "fluere";
+import {
+  createWorkflow,
+  eventSource,
+  type WorkflowEvent,
+  type WorkflowEventData,
+} from "fluere";
 import { withStore } from "fluere/middleware/store";
 import { withTraceEvents } from "fluere/middleware/trace-events";
 import { withValidation } from "fluere/middleware/validation";
 import { zodEvent } from "fluere/util/zod";
 import { z } from "zod";
 import { webcrypto } from "node:crypto";
+import { collect } from "../src/stream/consumer";
+import { until } from "fluere/stream";
 
 describe("full workflow middleware", () => {
   const createFullWorkflow = <
@@ -65,14 +72,10 @@ describe("full workflow middleware", () => {
 
     const id = webcrypto.randomUUID();
     const { sendEvent, stream } = workflow.createContext(id);
-    const events = [];
     sendEvent(startEvent.with("start"));
-    for await (const event of stream) {
-      events.push(event);
-      if (stopEvent.include(event)) {
-        break;
-      }
-    }
+    const events: WorkflowEventData<any>[] = await collect(
+      until(stream, stopEvent),
+    );
     expect(events.length).toBe(2);
     expect(events.map(eventSource)).toEqual([startEvent, stopEvent]);
   });
