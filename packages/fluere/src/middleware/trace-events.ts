@@ -9,7 +9,7 @@ import { isPromiseLike } from "../core/utils";
 import {
   createHandlerDecorator,
   decoratorRegistry,
-} from "./trace-events/create-handler-hook";
+} from "./trace-events/create-handler-decorator";
 import { runOnce } from "./trace-events/run-once";
 
 type TracingContext = Record<string, unknown>;

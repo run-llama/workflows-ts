@@ -1,4 +1,4 @@
-import { createHandlerDecorator } from "./create-handler-hook";
+import { createHandlerDecorator } from "./create-handler-decorator";
 
 const noop: (...args: any[]) => void = function noop() {};
 
