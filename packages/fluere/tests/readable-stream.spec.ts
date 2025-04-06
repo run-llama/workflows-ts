@@ -30,6 +30,10 @@ describe("workflow basic", () => {
     expect(ev1 !== ev2).toBe(true);
     expect(ev1.data).toBe("1");
     expect(ev2.data).toBe("2");
+
+    const newEvent = workflowEvent();
+    newEvent.debugLabel = "newEvent";
+    expect(newEvent.debugLabel).toEqual("newEvent");
   });
 
   test("sync", async () => {

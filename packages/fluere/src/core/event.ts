@@ -10,6 +10,7 @@ export type WorkflowEventData<Data, DebugLabel extends string = string> = {
 } & { readonly [opaqueSymbol]: DebugLabel };
 
 export type WorkflowEvent<Data, DebugLabel extends string = string> = {
+  debugLabel?: DebugLabel;
   with(data: Data): WorkflowEventData<Data, DebugLabel>;
   include(event: unknown): event is WorkflowEventData<Data, DebugLabel>;
 } & { readonly [opaqueSymbol]: DebugLabel };
@@ -23,6 +24,7 @@ export const workflowEvent = <Data = void, DebugLabel extends string = string>(
 ): WorkflowEvent<Data, DebugLabel> => {
   const l1 = `${i++}`;
   const event = {
+    debugLabel: config?.debugLabel ?? l1,
     include: (
       instance: WorkflowEventData<any>,
     ): instance is WorkflowEventData<Data> => s.has(instance),
@@ -46,7 +48,6 @@ export const workflowEvent = <Data = void, DebugLabel extends string = string>(
         },
       } as unknown as WorkflowEventData<Data, DebugLabel>;
       s.add(ref);
-      Object.freeze(ref);
       refMap.set(ref, event);
       return ref;
     },
@@ -56,11 +57,11 @@ export const workflowEvent = <Data = void, DebugLabel extends string = string>(
   eventMap.set(event, s);
 
   Object.defineProperty(event, Symbol.toStringTag, {
-    get: () => config?.debugLabel ?? `WorkflowEvent<${l1}>`,
+    get: () => event?.debugLabel ?? `WorkflowEvent<${l1}>`,
   });
 
   Object.defineProperty(event, "displayName", {
-    value: config?.debugLabel ?? `WorkflowEvent<${l1}>`,
+    value: event?.debugLabel ?? `WorkflowEvent<${l1}>`,
   });
 
   event.toString = () => config?.debugLabel ?? `WorkflowEvent<${l1}>`;
