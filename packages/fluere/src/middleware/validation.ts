@@ -65,22 +65,18 @@ export function withValidation<
     const store = getContext();
     const originalSendEvent = store.sendEvent;
     return (...inputs: WorkflowEventData<any>[]) => {
-      let matched = false;
       for (let i = 0; i < outputs.length; i++) {
         const output = outputs[i]!;
         if (output.length === inputs.length) {
           if (output.every((e, idx) => e.include(inputs[idx]))) {
-            matched = true;
-            break;
+            return originalSendEvent(...inputs);
           }
         }
       }
-      if (!matched) {
-        console.warn(
-          "Invalid input detected [%s]",
-          inputs.map((i) => i.data).join(", "),
-        );
-      }
+      console.warn(
+        "Invalid input detected [%s]",
+        inputs.map((i) => i.data).join(", "),
+      );
       return originalSendEvent(...inputs);
     };
   };

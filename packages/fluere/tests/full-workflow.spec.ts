@@ -1,10 +1,5 @@
 import { describe, test, expect } from "vitest";
-import {
-  createWorkflow,
-  eventSource,
-  workflowEvent,
-  type WorkflowEvent,
-} from "fluere";
+import { createWorkflow, eventSource, type WorkflowEvent } from "fluere";
 import { withStore } from "fluere/middleware/store";
 import { withTraceEvents } from "fluere/middleware/trace-events";
 import { withValidation } from "fluere/middleware/validation";

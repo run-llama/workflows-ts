@@ -13,12 +13,18 @@ describe("with directed graph", () => {
   });
 
   test("basic", async () => {
-    const startEvent = workflowEvent<void, "start">();
+    const startEvent = workflowEvent<void, "start">({
+      debugLabel: "start",
+    });
     const nonEvent = workflowEvent<number, "non">({
       debugLabel: "non",
     });
-    const parseEvent = workflowEvent<string, "parse">();
-    const stopEvent = workflowEvent<number, "stop">();
+    const parseEvent = workflowEvent<string, "parse">({
+      debugLabel: "parse",
+    });
+    const stopEvent = workflowEvent<number, "stop">({
+      debugLabel: "stop",
+    });
     const workflow = withValidation(createWorkflow(), [
       [[startEvent], [stopEvent]],
       [[startEvent], [parseEvent, parseEvent]],
@@ -39,10 +45,16 @@ describe("with directed graph", () => {
     sendEvent(startEvent.with());
     await find(stream, stopEvent);
     expect(fn).toBeCalled();
-    expect(consoleWarnMock).toHaveBeenCalledOnce();
-    expect(consoleWarnMock).toHaveBeenLastCalledWith(
+    expect(consoleWarnMock).toBeCalledTimes(2);
+    expect(consoleWarnMock).toHaveBeenNthCalledWith(
+      1,
       "Invalid input detected [%s]",
       "1",
+    );
+    expect(consoleWarnMock).toHaveBeenNthCalledWith(
+      2,
+      "Invalid input detected [%s]",
+      "",
     );
   });
 
