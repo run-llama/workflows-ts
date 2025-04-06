@@ -6,7 +6,7 @@ import {
   createHandlerDecorator,
 } from "fluere/middleware/trace-events";
 
-describe("with tracking", () => {
+describe("with trace events", () => {
   test("runOnce", () => {
     const workflow = withTraceEvents(createWorkflow());
     const startEvent = workflowEvent();

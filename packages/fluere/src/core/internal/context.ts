@@ -5,11 +5,11 @@ import type { Handler } from "./handler";
 type BaseHandlerContext = {
   abortController: AbortController;
   handler: Handler<WorkflowEvent<any>[], any>;
-  // Events that are accepted by the handler
+  // events that are accepted by the handler
   inputEvents: WorkflowEvent<any>[];
-  // Events data that are accepted by the handler
+  // events data that are accepted by the handler
   inputs: WorkflowEventData<any>[];
-  // Events data that are emitted by the handler
+  // events data that are emitted by the handler
   outputs: WorkflowEventData<any>[];
 
   //#region linked list data structure
