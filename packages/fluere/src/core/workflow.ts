@@ -33,9 +33,9 @@ export function createWorkflow(): Workflow {
       // smoke test to check if we are outside the context
       try {
         getContext();
-        console.error("calling handle inside of context is not allowed");
-      } catch {
-        // YES
+        console.error("Calling handle inside of context is not allowed.");
+      } catch (e) {
+        throw e;
       }
       if (config.steps.has(accept)) {
         const set = config.steps.get(accept) as Set<
