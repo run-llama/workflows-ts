@@ -31,11 +31,14 @@ export function createWorkflow(): Workflow {
       handler: Handler<AcceptEvents, Result>,
     ): void => {
       // smoke test to check if we are outside the context
+      let success = false;
       try {
         getContext();
         console.error("Calling handle inside of context is not allowed.");
-      } catch (e) {
-        throw e;
+        success = true;
+      } catch {}
+      if (success) {
+        throw new Error("Calling handle inside of context is not allowed.");
       }
       if (config.steps.has(accept)) {
         const set = config.steps.get(accept) as Set<
