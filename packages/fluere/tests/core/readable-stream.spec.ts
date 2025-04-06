@@ -3,7 +3,7 @@ import { getContext, type Workflow } from "fluere";
 import { createWorkflow } from "fluere";
 import { eventSource, workflowEvent, type WorkflowEventData } from "fluere";
 import { until } from "fluere/stream/until";
-import { collect, nothing } from "../src/stream/consumer";
+import { collect, nothing } from "fluere/stream/consumer";
 
 describe("workflow basic", () => {
   const startEvent = workflowEvent<string>({
