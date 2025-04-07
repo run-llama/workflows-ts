@@ -1,6 +1,5 @@
 import type {
   Handler,
-  Workflow,
   WorkflowContext,
   WorkflowEvent,
   WorkflowEventData,
@@ -31,13 +30,6 @@ const eventToHandlerContextWeakMap = new WeakMap<
   HandlerContext
 >();
 
-type WorkflowTraceableContext = WorkflowContext & {
-  createFilter: <T extends WorkflowEventData<any>, U extends T>(
-    eventData: WorkflowEventData<any>,
-    filter: (eventData: T) => eventData is U,
-  ) => (eventData: T) => eventData is U;
-};
-
 export type HandlerRef<
   AcceptEvents extends WorkflowEvent<any>[],
   Result extends ReturnType<WorkflowEvent<any>["with"]> | void,
@@ -59,7 +51,7 @@ export function withTraceEvents<
   },
 >(
   workflow: WorkflowLike,
-): Omit<WorkflowLike, "handle" | "createContext"> & {
+): Omit<WorkflowLike, "handle"> & {
   handle<
     const AcceptEvents extends WorkflowEvent<any>[],
     Result extends ReturnType<WorkflowEvent<any>["with"]> | void,
@@ -68,10 +60,31 @@ export function withTraceEvents<
     accept: AcceptEvents,
     handler: Fn,
   ): HandlerRef<AcceptEvents, Result, Fn>;
-  createContext(): WorkflowTraceableContext;
+  createFilter: <T extends WorkflowEventData<any>, U extends T>(
+    eventData: WorkflowEventData<any>,
+    filter: (eventData: T) => eventData is U,
+  ) => (eventData: T) => eventData is U;
 } {
   return {
     ...workflow,
+    createFilter: <T extends WorkflowEventData<any>, U extends T>(
+      eventData: WorkflowEventData<any>,
+      filter: (eventData: T) => eventData is U,
+    ): ((eventData: T) => eventData is U) => {
+      const rootContext = eventToHandlerContextWeakMap.get(eventData);
+      return (eventData: T): eventData is U => {
+        let isInSameContext = false;
+        let currentEventContext = eventToHandlerContextWeakMap.get(eventData);
+        while (currentEventContext) {
+          if (currentEventContext === rootContext) {
+            isInSameContext = true;
+            break;
+          }
+          currentEventContext = currentEventContext.prev;
+        }
+        return isInSameContext && filter(eventData);
+      };
+    },
     handle: <
       const AcceptEvents extends WorkflowEvent<any>[],
       Result extends ReturnType<WorkflowEvent<any>["with"]> | void,
@@ -87,7 +100,7 @@ export function withTraceEvents<
         },
       };
     },
-    createContext(): WorkflowTraceableContext {
+    createContext(): WorkflowContext {
       const context = workflow.createContext();
       tracingWeakMap.set(context, new WeakMap());
       context.__internal__call_send_event.add((event, handlerContext) => {
@@ -176,28 +189,7 @@ export function withTraceEvents<
           handler: handlerMiddleware,
         });
       });
-      const createFilter = function createFilter(
-        eventData: WorkflowEventData<any>,
-        filter: (eventData: WorkflowEventData<any>) => boolean,
-      ) {
-        const rootContext = eventToHandlerContextWeakMap.get(eventData);
-        return (eventData: WorkflowEventData<any>): boolean => {
-          let isInSameContext = false;
-          let currentEventContext = eventToHandlerContextWeakMap.get(eventData);
-          while (currentEventContext) {
-            if (currentEventContext === rootContext) {
-              isInSameContext = true;
-              break;
-            }
-            currentEventContext = currentEventContext.prev;
-          }
-          return isInSameContext && filter(eventData);
-        };
-      };
-      Object.defineProperty(context, "createFilter", {
-        value: createFilter,
-      });
-      return context as WorkflowTraceableContext;
+      return context;
     },
   };
 }

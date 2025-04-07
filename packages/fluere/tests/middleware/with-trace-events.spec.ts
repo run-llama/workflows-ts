@@ -59,7 +59,7 @@ describe("with trace events", () => {
     const events = await collect(
       filter(
         until(r, (ev) => ev.data === 2),
-        context.createFilter(ev, (e) => messageEvent.include(e)),
+        workflow.createFilter(ev, (e) => messageEvent.include(e)),
       ),
     );
     expect(counter).toBe(3);

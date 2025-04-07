@@ -1,4 +1,4 @@
-import { describe, test, expect } from "vitest";
+import { describe, test, expect, expectTypeOf } from "vitest";
 import {
   createWorkflow,
   eventSource,
@@ -70,6 +70,7 @@ describe("full workflow middleware", () => {
       sendEvent(stopEvent.with(workflow.getStore().id));
     });
 
+    expectTypeOf(workflow.createFilter).not.toBeNever();
     const id = webcrypto.randomUUID();
     const { sendEvent, stream } = workflow.createContext(id);
     sendEvent(startEvent.with("start"));
