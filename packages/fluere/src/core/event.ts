@@ -5,6 +5,13 @@ const refMap = new WeakMap<WorkflowEventData<any>, WorkflowEvent<any>>();
 let i = 0;
 let j = 0;
 
+export type InferWorkflowEventData<T> =
+  T extends WorkflowEventData<infer U>
+    ? U
+    : T extends WorkflowEvent<infer U>
+      ? U
+      : never;
+
 export type WorkflowEventData<Data, DebugLabel extends string = string> = {
   get data(): Data;
 } & { readonly [opaqueSymbol]: DebugLabel };

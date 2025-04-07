@@ -45,6 +45,9 @@ export interface WorkflowContext {
    * @internal
    */
   __internal__call_context: Set<ContextNext>;
+  __internal__call_send_event: Set<
+    (event: WorkflowEventData<any>, handlerContext: HandlerContext) => void
+  >;
 }
 
 export const _executorAsyncLocalStorage = createAsyncContext<WorkflowContext>();
