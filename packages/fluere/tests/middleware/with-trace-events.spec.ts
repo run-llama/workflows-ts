@@ -1,16 +1,19 @@
 import { describe, test, vi, expectTypeOf, type Mock, expect } from "vitest";
-import { createWorkflow, workflowEvent } from "fluere";
+import { createWorkflow, getContext, workflowEvent } from "fluere";
 import {
   withTraceEvents,
   runOnce,
   createHandlerDecorator,
 } from "fluere/middleware/trace-events";
+import { filter } from "fluere/stream/filter";
+import { collect } from "fluere/stream/consumer";
+import { until } from "fluere/stream/until";
 
 describe("with trace events", () => {
   test("runOnce", () => {
     const workflow = withTraceEvents(createWorkflow());
     const startEvent = workflowEvent();
-    const ref = workflow.handle([startEvent], vi.fn(runOnce(() => {})));
+    const ref = workflow.handle([startEvent], runOnce(vi.fn(() => {})));
     expectTypeOf(ref.handler).toEqualTypeOf<Mock<() => void>>();
     {
       const { sendEvent } = workflow.createContext();
@@ -29,6 +32,66 @@ describe("with trace events", () => {
     }
   });
 
+  test("createFilter", async () => {
+    const workflow = withTraceEvents(createWorkflow());
+    const startEvent = workflowEvent({
+      debugLabel: "startEvent",
+    });
+    const messageEvent = workflowEvent<number>({
+      debugLabel: "messageEvent",
+    });
+    let counter = 0;
+    workflow.handle([startEvent], () => {
+      getContext().sendEvent(messageEvent.with(counter++));
+    });
+
+    const context = workflow.createContext();
+    const stream = context.stream;
+    const ev = startEvent.with();
+    context.sendEvent(ev);
+    context.sendEvent(startEvent.with());
+    context.sendEvent(startEvent.with());
+
+    const [l, r] = stream.tee();
+    const allEvents = await collect(
+      until(l, (ev) => messageEvent.include(ev) && ev.data === 2),
+    );
+    const events = await collect(
+      filter(
+        until(r, (ev) => ev.data === 2),
+        context.createFilter(ev, (e) => messageEvent.include(e)),
+      ),
+    );
+    expect(counter).toBe(3);
+    expect(allEvents.length).toBe(6);
+    expect(events.length).toBe(1);
+  });
+
+  test("should not call once", async () => {
+    const workflow = withTraceEvents(createWorkflow());
+    const startEvent = workflowEvent({
+      debugLabel: "startEvent",
+    });
+    const messageEvent = workflowEvent<number>({
+      debugLabel: "messageEvent",
+    });
+    let counter = 0;
+    workflow.handle([startEvent], () => {
+      getContext().sendEvent(messageEvent.with(counter++));
+    });
+
+    const context = workflow.createContext();
+    const stream = context.stream;
+    const ev = startEvent.with();
+    context.sendEvent(ev);
+    context.sendEvent(startEvent.with());
+    context.sendEvent(startEvent.with());
+    const events = await collect(
+      until(stream, (ev) => messageEvent.include(ev) && ev.data === 2),
+    );
+    expect(events.length).toBe(6);
+  });
+
   test("example: no parallel", async () => {
     const workflow = withTraceEvents(createWorkflow());
     const startEvent = workflowEvent();
@@ -40,6 +103,7 @@ describe("with trace events", () => {
         running: false,
       }),
     );
+    const resolvedSet = new WeakSet<object>();
     const noParallel = createHandlerDecorator<Metadata>({
       getInitialValue,
       onAfterHandler: () => ({
@@ -55,14 +119,20 @@ describe("with trace events", () => {
           if (!current) {
             break;
           }
-          if (current.handler === handlerContext.handler) {
+          if (
+            handlerContext !== current &&
+            current.handler === handlerContext.handler
+          ) {
             similarContexts.push(current);
           }
           queue.push(...current.next);
         }
-        const asyncContexts = similarContexts.filter((c) => c.async);
+        const asyncContexts = similarContexts
+          .filter((c) => c.async)
+          .filter((c) => !resolvedSet.has(c));
         for (const context of asyncContexts) {
           await context.pending;
+          resolvedSet.add(context);
         }
         return h();
       },
@@ -75,8 +145,8 @@ describe("with trace events", () => {
     let result: number[] = [];
     const ref = workflow.handle(
       [startEvent],
-      vi.fn(
-        noParallel(async () => {
+      noParallel(
+        vi.fn(async () => {
           count++;
           const curr = count;
           await p.then(() => {
@@ -97,14 +167,18 @@ describe("with trace events", () => {
     expect(ref.handler).toBeCalledTimes(1);
     expect(result).toEqual([]);
     resolveNext();
-    vi.waitFor(() => expect(result).toEqual([1]));
+    await vi.waitFor(() => expect(result).toEqual([1]));
     resolveNext();
-    vi.waitFor(() => expect(result).toEqual([1, 2]));
+    await vi.waitFor(() => expect(result).toEqual([1, 2]));
     resolveNext();
-    vi.waitFor(() => expect(result).toEqual([1, 2, 3]));
+    await vi.waitFor(() => expect(result).toEqual([1, 2, 3]));
+    expect(ref.handler).toBeCalledTimes(3);
+    resolveNext();
     sendEvent(startEvent.with());
-    vi.waitFor(() => expect(result).toEqual([1, 2, 3]));
+    expect(result).toEqual([1, 2, 3]);
+    expect(ref.handler).toBeCalledTimes(3);
     resolveNext();
-    vi.waitFor(() => expect(result).toEqual([1, 2, 3, 4]));
+    await vi.waitFor(() => expect(result).toEqual([1, 2, 3, 4]));
+    expect(ref.handler).toBeCalledTimes(4);
   });
 });

@@ -8,6 +8,9 @@ let counter = 0;
 export const decoratorRegistry = new Map<
   string,
   {
+    handlers: WeakSet<
+      Handler<WorkflowEvent<any>[], WorkflowEventData<any> | void>
+    >;
     debugLabel: string;
     getInitialValue: () => any;
     onBeforeHandler: (
@@ -31,6 +34,7 @@ export function createHandlerDecorator<Metadata>(config: {
 }) {
   const uid = `${namespace}:${counter++}`;
   decoratorRegistry.set(uid, {
+    handlers: new WeakSet(),
     debugLabel: config.debugLabel ?? uid,
     getInitialValue: config.getInitialValue,
     onAfterHandler: config.onAfterHandler,
@@ -41,6 +45,11 @@ export function createHandlerDecorator<Metadata>(config: {
     Result extends ReturnType<WorkflowEvent<any>["with"]> | void,
     Fn extends Handler<AcceptEvents, Result>,
   >(handler: Fn) {
+    decoratorRegistry
+      .get(uid)!
+      .handlers.add(
+        handler as Handler<WorkflowEvent<any>[], WorkflowEventData<any> | void>,
+      );
     return handler;
   };
 }

@@ -11,6 +11,7 @@ import {
   decoratorRegistry,
 } from "./trace-events/create-handler-decorator";
 import { runOnce } from "./trace-events/run-once";
+import type { HandlerContext } from "../core/internal/context";
 
 type TracingContext = Record<string, unknown>;
 
@@ -24,6 +25,18 @@ const tracingWeakMap = new WeakMap<
     >
   >
 >();
+
+const eventToHandlerContextWeakMap = new WeakMap<
+  WorkflowEventData<any>,
+  HandlerContext
+>();
+
+type WorkflowTraceableContext = WorkflowContext & {
+  createFilter: <T extends WorkflowEventData<any>, U extends T>(
+    eventData: WorkflowEventData<any>,
+    filter: (eventData: T) => eventData is U,
+  ) => (eventData: T) => eventData is U;
+};
 
 export type HandlerRef<
   AcceptEvents extends WorkflowEvent<any>[],
@@ -46,7 +59,7 @@ export function withTraceEvents<
   },
 >(
   workflow: WorkflowLike,
-): Omit<WorkflowLike, "handle"> & {
+): Omit<WorkflowLike, "handle" | "createContext"> & {
   handle<
     const AcceptEvents extends WorkflowEvent<any>[],
     Result extends ReturnType<WorkflowEvent<any>["with"]> | void,
@@ -55,7 +68,7 @@ export function withTraceEvents<
     accept: AcceptEvents,
     handler: Fn,
   ): HandlerRef<AcceptEvents, Result, Fn>;
-  createContext(): WorkflowContext;
+  createContext(): WorkflowTraceableContext;
 } {
   return {
     ...workflow,
@@ -74,10 +87,19 @@ export function withTraceEvents<
         },
       };
     },
-    createContext(): WorkflowContext {
+    createContext(): WorkflowTraceableContext {
       const context = workflow.createContext();
       tracingWeakMap.set(context, new WeakMap());
+      context.__internal__call_send_event.add((event, handlerContext) => {
+        eventToHandlerContextWeakMap.set(event, handlerContext);
+      });
       context.__internal__call_context.add((handlerContext, next) => {
+        handlerContext.inputs.forEach((input) => {
+          if (!eventToHandlerContextWeakMap.has(input)) {
+            console.warn("unregistered event detected");
+          }
+          eventToHandlerContextWeakMap.set(input, handlerContext);
+        });
         const inputEvents = handlerContext.inputEvents;
         const handlersWeakMap = tracingWeakMap.get(context)!;
         if (!handlersWeakMap.has(inputEvents)) {
@@ -114,10 +136,11 @@ export function withTraceEvents<
             return cb(next);
           }, finalHandler)(...args);
           if (isPromiseLike(result)) {
-            return result.then(() => {
+            return result.then((result) => {
               onAfterHandlers.forEach((cb) => {
                 cb();
               });
+              return result;
             });
           } else {
             onAfterHandlers.forEach((cb) => {
@@ -126,25 +149,55 @@ export function withTraceEvents<
             return result;
           }
         };
-        [...decoratorRegistry].forEach(
-          ([name, { getInitialValue, onAfterHandler, onBeforeHandler }]) => {
-            if (!tracingContext[name]) {
-              tracingContext[name] = getInitialValue();
-            }
-            onBeforeHandlers.push((next) =>
-              onBeforeHandler(next, handlerContext, tracingContext[name]),
-            );
-            onAfterHandlers.push(() => {
-              tracingContext[name] = onAfterHandler(tracingContext[name]);
-            });
-          },
-        );
+        [...decoratorRegistry]
+          .filter(([, { handlers }]) =>
+            handlers.has(
+              handlerContext.handler as Handler<
+                WorkflowEvent<any>[],
+                WorkflowEventData<any> | void
+              >,
+            ),
+          )
+          .forEach(
+            ([name, { getInitialValue, onAfterHandler, onBeforeHandler }]) => {
+              if (!tracingContext[name]) {
+                tracingContext[name] = getInitialValue();
+              }
+              onBeforeHandlers.push((next) =>
+                onBeforeHandler(next, handlerContext, tracingContext[name]),
+              );
+              onAfterHandlers.push(() => {
+                tracingContext[name] = onAfterHandler(tracingContext[name]);
+              });
+            },
+          );
         next({
           ...handlerContext,
           handler: handlerMiddleware,
         });
       });
-      return context;
+      const createFilter = function createFilter(
+        eventData: WorkflowEventData<any>,
+        filter: (eventData: WorkflowEventData<any>) => boolean,
+      ) {
+        const rootContext = eventToHandlerContextWeakMap.get(eventData);
+        return (eventData: WorkflowEventData<any>): boolean => {
+          let isInSameContext = false;
+          let currentEventContext = eventToHandlerContextWeakMap.get(eventData);
+          while (currentEventContext) {
+            if (currentEventContext === rootContext) {
+              isInSameContext = true;
+              break;
+            }
+            currentEventContext = currentEventContext.prev;
+          }
+          return isInSameContext && filter(eventData);
+        };
+      };
+      Object.defineProperty(context, "createFilter", {
+        value: createFilter,
+      });
+      return context as WorkflowTraceableContext;
     },
   };
 }

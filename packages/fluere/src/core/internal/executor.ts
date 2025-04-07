@@ -120,25 +120,24 @@ export const createContext = ({
         }
       });
   };
-  const outputCallbacks: ((event: WorkflowEventData<any>) => void)[] = [];
   const createWorkflowContext = (
     handlerContext: HandlerContext,
   ): WorkflowContext => ({
     get stream() {
-      let callback: (event: WorkflowEventData<any>) => void;
       return new ReadableStream({
         start: async (controller) => {
-          callback = (event: WorkflowEventData<any>) => {
-            let currentEventContext = eventContextWeakMap.get(event);
-            while (currentEventContext) {
-              if (currentEventContext === handlerContext) {
-                controller.enqueue(event);
-                break;
+          rootWorkflowContext.__internal__call_send_event.add(
+            (newEvent: WorkflowEventData<any>) => {
+              let currentEventContext = eventContextWeakMap.get(newEvent);
+              while (currentEventContext) {
+                if (currentEventContext === handlerContext) {
+                  controller.enqueue(newEvent);
+                  break;
+                }
+                currentEventContext = currentEventContext.prev;
               }
-              currentEventContext = currentEventContext.prev;
-            }
-          };
-          outputCallbacks.push(callback);
+            },
+          );
         },
       });
     },
@@ -150,11 +149,14 @@ export const createContext = ({
         eventContextWeakMap.set(event, handlerContext);
         handlerContext.outputs.push(event);
         queue.push(event);
-        outputCallbacks.forEach((cb) => cb(event));
+        rootWorkflowContext.__internal__call_send_event.forEach((cb) =>
+          cb(event, handlerContext),
+        );
         queueUpdateCallback(handlerContext);
       });
     },
     __internal__call_context: new Set(),
+    __internal__call_send_event: new Set(),
   });
 
   let rootAbortController = new AbortController();
