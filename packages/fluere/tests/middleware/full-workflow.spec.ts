@@ -28,7 +28,7 @@ describe("full workflow middleware", () => {
   ) => {
     return withStore(
       createStore,
-      withValidation<Validation>(withTraceEvents(createWorkflow()), validation),
+      withValidation(withTraceEvents(createWorkflow()), validation),
     );
   };
   test("type check", () => {
