@@ -60,30 +60,37 @@ export function withTraceEvents<
     accept: AcceptEvents,
     handler: Fn,
   ): HandlerRef<AcceptEvents, Result, Fn>;
-  createFilter: <T extends WorkflowEventData<any>, U extends T>(
+  substream<T extends WorkflowEventData<any>>(
     eventData: WorkflowEventData<any>,
-    filter: (eventData: T) => eventData is U,
-  ) => (eventData: T) => eventData is U;
+    stream: ReadableStream<T>,
+  ): ReadableStream<T>;
 } {
   return {
     ...workflow,
-    createFilter: <T extends WorkflowEventData<any>, U extends T>(
+    substream: <T extends WorkflowEventData<any>>(
       eventData: WorkflowEventData<any>,
-      filter: (eventData: T) => eventData is U,
-    ): ((eventData: T) => eventData is U) => {
+      stream: ReadableStream<T>,
+    ): ReadableStream<T> => {
       const rootContext = eventToHandlerContextWeakMap.get(eventData);
-      return (eventData: T): eventData is U => {
-        let isInSameContext = false;
-        let currentEventContext = eventToHandlerContextWeakMap.get(eventData);
-        while (currentEventContext) {
-          if (currentEventContext === rootContext) {
-            isInSameContext = true;
-            break;
-          }
-          currentEventContext = currentEventContext.prev;
-        }
-        return isInSameContext && filter(eventData);
-      };
+      return stream.pipeThrough(
+        new TransformStream({
+          transform(eventData, controller) {
+            let isInSameContext = false;
+            let currentEventContext =
+              eventToHandlerContextWeakMap.get(eventData);
+            while (currentEventContext) {
+              if (currentEventContext === rootContext) {
+                isInSameContext = true;
+                break;
+              }
+              currentEventContext = currentEventContext.prev;
+            }
+            if (isInSameContext) {
+              controller.enqueue(eventData);
+            }
+          },
+        }),
+      );
     },
     handle: <
       const AcceptEvents extends WorkflowEvent<any>[],
