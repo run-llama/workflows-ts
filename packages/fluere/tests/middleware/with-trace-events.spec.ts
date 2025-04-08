@@ -32,7 +32,7 @@ describe("with trace events", () => {
     }
   });
 
-  test("createFilter", async () => {
+  test("substream", async () => {
     const workflow = withTraceEvents(createWorkflow());
     const startEvent = workflowEvent({
       debugLabel: "startEvent",
@@ -58,8 +58,11 @@ describe("with trace events", () => {
     );
     const events = await collect(
       filter(
-        until(r, (ev) => ev.data === 2),
-        workflow.createFilter(ev, (e) => messageEvent.include(e)),
+        workflow.substream(
+          ev,
+          until(r, (ev) => ev.data === 2),
+        ),
+        (e) => messageEvent.include(e),
       ),
     );
     expect(counter).toBe(3);

@@ -286,6 +286,57 @@ workflow.handle([startEvent], () => {
 }
 ```
 
+#### `workflow.substream(target, stream)`
+
+You can use `substream` to create a substream from the workflow context,
+which will only emit events that are emitted by the target event.
+
+```ts
+const ev = startEvent.with();
+const { sendEvent, stream } = workflow.createContext();
+sendEvent(ev);
+sendEvent(messageEvent.with()); // <- this will not be included in the substream
+const substream = workflow.substream(ev, stream);
+```
+
+This is helpful when you have async requests, and you want to track the events that are emitted by the target event.
+
+For example:
+
+- Parallel requests
+
+  <details>
+    <summary>without substream</summary>
+
+  ```ts
+  workflow.handle([startEvent], async ({ data: uuid }) => {
+    const { sendEvent, stream } = getContext();
+    const ev = networkRequestEvent.with(uuid);
+    sendEvent(networkRequestEvent);
+    // you need bypass uuid to all events to get the correct response
+    const responses = await collect(
+      filter(workflow.substream(ev, stream), (ev) => ev.data === uuid),
+    );
+  });
+
+  sendEvent(startEvent.with(crypto.randomUUID()));
+  sendEvent(startEvent.with(crypto.randomUUID()));
+  ```
+
+  </details>
+
+  ```ts
+  workflow.handle([startEvent], async () => {
+    const { sendEvent, stream } = getContext();
+    const ev = networkRequestEvent.with();
+    sendEvent(networkRequestEvent);
+    const responses = await collect(workflow.substream(ev, stream));
+  });
+
+  sendEvent(startEvent.with());
+  sendEvent(startEvent.with());
+  ```
+
 #### `createHandlerDecorator`
 
 You can create your own handler decorator to modify the behavior of the handler.
