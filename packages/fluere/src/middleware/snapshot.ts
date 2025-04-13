@@ -1,6 +1,20 @@
-import { type Workflow, type WorkflowContext, workflowEvent } from "fluere";
+import {
+  type Workflow,
+  type WorkflowContext,
+  type WorkflowEvent,
+  workflowEvent,
+} from "fluere";
+import { isPromiseLike } from "../core/utils";
+import type { WorkflowEventInstance } from "../core/event";
 
-export const suspense = workflowEvent({
+/**
+ * Suspense event is a special event
+ *  used to indicate that the workflow is in a suspended state.
+ *
+ * You will need to handle it outside the context
+ *  and put the result back into the context.
+ */
+export const suspense = workflowEvent<WorkflowEvent<any>, "suspense">({
   debugLabel: "suspense",
 });
 
@@ -17,9 +31,39 @@ export const withSnapshot = (workflow: Workflow): SuspenseWorkflow => {
     ...workflow,
     createContext(): SuspenseContext {
       const context = workflow.createContext();
+      const pendingTask = new Set<PromiseLike<any>>();
+      const collectedSuspense = new Set<
+        WorkflowEventInstance<typeof suspense>
+      >();
+      let lock = false;
+      context.__internal__call_send_event.add(() => {
+        if (lock) {
+          throw new Error("Cannot send event after snapshot");
+        }
+      });
+      context.__internal__call_context.add((context, next) => {
+        const originalHandler = context.handler;
+        context.handler = (...events) => {
+          const result = originalHandler(...events);
+          if (isPromiseLike(result)) {
+            pendingTask.add(result);
+            result.then((event) => {
+              if (suspense.include(event)) {
+                collectedSuspense.add(event);
+              }
+              pendingTask.delete(result);
+            });
+          } else if (suspense.include(result)) {
+            collectedSuspense.add(result);
+          }
+          return result;
+        };
+        next(context);
+      });
       return {
         ...context,
-        snapshot: () => {
+        snapshot: async () => {
+          lock = true;
           return null!;
         },
       };
