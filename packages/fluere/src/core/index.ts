@@ -1,8 +1,7 @@
 // workflow
 export { createWorkflow, type Workflow } from "./workflow";
-// context API
-export { getContext, type WorkflowContext } from "./internal/context";
-export type { Handler, HandlerRef } from "./internal/handler";
+// context
+export { getContext, type WorkflowContext, type Handler } from "./context";
 // event system
 export {
   eventSource,
