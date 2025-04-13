@@ -9,4 +9,5 @@ export {
   type WorkflowEvent,
   type WorkflowEventData,
   type WorkflowEventConfig,
+  type InferWorkflowEventData,
 } from "./event";
