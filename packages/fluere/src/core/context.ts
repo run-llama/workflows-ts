@@ -45,7 +45,7 @@ export type ContextNext = (
   next: (context: HandlerContext) => void,
 ) => void;
 
-export interface WorkflowContext {
+export type WorkflowContext = {
   get stream(): ReadableStream<WorkflowEventData<any>>;
   get signal(): AbortSignal;
   sendEvent: (...events: WorkflowEventData<any>[]) => void;
@@ -57,7 +57,7 @@ export interface WorkflowContext {
   __internal__call_send_event: Set<
     (event: WorkflowEventData<any>, handlerContext: HandlerContext) => void
   >;
-}
+};
 
 export const _executorAsyncLocalStorage = createAsyncContext<WorkflowContext>();
 
