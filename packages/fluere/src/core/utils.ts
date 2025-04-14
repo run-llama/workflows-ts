@@ -32,15 +32,18 @@ export type Subscribable<Args extends any[], R> = {
   publish: (...args: Args) => void;
 };
 
-const subscribesSourcemap = new WeakMap<
+const __internal__subscribesSourcemap = new WeakMap<
   Subscribable<any, any>,
   Set<(...args: any[]) => any>
 >();
 
+/**
+ * @internal
+ */
 export function getSubscribers<Args extends any[], R>(
   subscribable: Subscribable<Args, R>,
 ): Set<(...args: Args) => R> {
-  return subscribesSourcemap.get(subscribable)!;
+  return __internal__subscribesSourcemap.get(subscribable)!;
 }
 
 export function createSubscribable<Args extends any[], R>(): Subscribable<
@@ -61,6 +64,6 @@ export function createSubscribable<Args extends any[], R>(): Subscribable<
       }
     },
   };
-  subscribesSourcemap.set(obj, subscribers);
+  __internal__subscribesSourcemap.set(obj, subscribers);
   return obj;
 }
