@@ -10,7 +10,7 @@ import {
   decoratorRegistry,
 } from "./trace-events/create-handler-decorator";
 import { runOnce } from "./trace-events/run-once";
-import type { HandlerContext } from "../core/internal/context";
+import type { HandlerContext } from "../core/context";
 
 type TracingContext = Record<string, unknown>;
 
@@ -110,10 +110,10 @@ export function withTraceEvents<
     createContext(): WorkflowContext {
       const context = workflow.createContext();
       tracingWeakMap.set(context, new WeakMap());
-      context.__internal__call_send_event.add((event, handlerContext) => {
+      context.__internal__call_send_event.subscribe((event, handlerContext) => {
         eventToHandlerContextWeakMap.set(event, handlerContext);
       });
-      context.__internal__call_context.add((handlerContext, next) => {
+      context.__internal__call_context.subscribe((handlerContext, next) => {
         handlerContext.inputs.forEach((input) => {
           if (!eventToHandlerContextWeakMap.has(input)) {
             console.warn("unregistered event detected");
