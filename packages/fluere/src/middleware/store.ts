@@ -62,7 +62,7 @@ export function withStore<
     } {
       const currentStore = createStore(input);
       const context = workflow.createContext();
-      context.__internal__call_context.add((_, next) => {
+      context.__internal__call_context.subscribe((_, next) => {
         (getContext() as any).getStore = () => currentStore;
         next(_);
       });

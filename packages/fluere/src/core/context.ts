@@ -1,5 +1,12 @@
 import type { WorkflowEvent, WorkflowEventData } from "fluere";
-import { flattenEvents, isEventData, isPromiseLike } from "./utils";
+import {
+  createSubscribable,
+  flattenEvents,
+  getSubscribers,
+  isEventData,
+  isPromiseLike,
+  type Subscribable,
+} from "./utils";
 import { createAsyncContext } from "fluere/async-context";
 
 export type Handler<
@@ -53,9 +60,13 @@ export type WorkflowContext = {
   /**
    * @internal
    */
-  __internal__call_context: Set<ContextNext>;
-  __internal__call_send_event: Set<
-    (event: WorkflowEventData<any>, handlerContext: HandlerContext) => void
+  __internal__call_context: Subscribable<
+    Parameters<ContextNext>,
+    ReturnType<ContextNext>
+  >;
+  __internal__call_send_event: Subscribable<
+    [event: WorkflowEventData<any>, handlerContext: HandlerContext],
+    void
   >;
 };
 
@@ -121,8 +132,8 @@ export const createContext = ({
     handlerContextAsyncLocalStorage.run(handlerContext, () => {
       const cbs = [
         ...new Set([
-          ...rootWorkflowContext.__internal__call_context,
-          ...workflowContext.__internal__call_context,
+          ...getSubscribers(rootWorkflowContext.__internal__call_context),
+          ...getSubscribers(workflowContext.__internal__call_context),
         ]),
       ];
       _executorAsyncLocalStorage.run(workflowContext, () => {
@@ -186,20 +197,27 @@ export const createContext = ({
     handlerContext: HandlerContext,
   ): WorkflowContext => ({
     get stream() {
+      let unsubscribe: () => void;
       return new ReadableStream({
         start: async (controller) => {
-          rootWorkflowContext.__internal__call_send_event.add(
-            (newEvent: WorkflowEventData<any>) => {
-              let currentEventContext = eventContextWeakMap.get(newEvent);
-              while (currentEventContext) {
-                if (currentEventContext === handlerContext) {
-                  controller.enqueue(newEvent);
-                  break;
+          unsubscribe =
+            rootWorkflowContext.__internal__call_send_event.subscribe(
+              (newEvent: WorkflowEventData<any>) => {
+                let currentEventContext = eventContextWeakMap.get(newEvent);
+                while (currentEventContext) {
+                  if (currentEventContext === handlerContext) {
+                    controller.enqueue(newEvent);
+                    break;
+                  }
+                  currentEventContext = currentEventContext.prev;
                 }
-                currentEventContext = currentEventContext.prev;
-              }
-            },
-          );
+              },
+            );
+        },
+        cancel: () => {
+          if (unsubscribe) {
+            unsubscribe();
+          }
         },
       });
     },
@@ -211,14 +229,15 @@ export const createContext = ({
         eventContextWeakMap.set(event, handlerContext);
         handlerContext.outputs.push(event);
         queue.push(event);
-        rootWorkflowContext.__internal__call_send_event.forEach((cb) =>
-          cb(event, handlerContext),
+        rootWorkflowContext.__internal__call_send_event.publish(
+          event,
+          handlerContext,
         );
         queueUpdateCallback(handlerContext);
       });
     },
-    __internal__call_context: new Set(),
-    __internal__call_send_event: new Set(),
+    __internal__call_context: createSubscribable(),
+    __internal__call_send_event: createSubscribable(),
   });
 
   let rootAbortController = new AbortController();

@@ -1,5 +1,5 @@
 import type { Handler, WorkflowEvent, WorkflowEventData } from "fluere";
-import type { HandlerContext } from "../../core/internal/context";
+import type { HandlerContext } from "../../core/context";
 
 const namespace = "decorator" as const;
 

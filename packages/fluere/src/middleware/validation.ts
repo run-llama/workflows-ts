@@ -97,7 +97,7 @@ export function withValidation<
     },
     createContext() {
       const context = workflow.createContext();
-      context.__internal__call_context.add((context, next) => {
+      context.__internal__call_context.subscribe((context, next) => {
         (getContext() as any).safeSendEvent = createSafeSendEvent(
           ...context.inputs,
         );
