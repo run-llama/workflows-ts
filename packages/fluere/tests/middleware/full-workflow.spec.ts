@@ -45,7 +45,7 @@ describe("full workflow middleware", () => {
       [[[startEvent], [stopEvent]]],
       () => ({}),
     );
-    workflow.handle([startEvent], (sendEvent, events) => {
+    workflow.strictHandle([startEvent], (sendEvent, events) => {
       // @ts-expect-error
       sendEvent(messageEvent.with());
       sendEvent(stopEvent.with(""));
@@ -65,7 +65,7 @@ describe("full workflow middleware", () => {
         id,
       }),
     );
-    workflow.handle([startEvent], (sendEvent, start) => {
+    workflow.strictHandle([startEvent], (sendEvent, start) => {
       expect(start.data).toBe("start");
       sendEvent(stopEvent.with(workflow.getStore().id));
     });

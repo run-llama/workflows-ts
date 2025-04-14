@@ -1,5 +1,4 @@
 import {
-  type WorkflowContext,
   getContext,
   type Handler,
   type Workflow,
@@ -37,7 +36,7 @@ export type WithValidationWorkflow<
     output: WorkflowEvent<any>[],
   ][],
 > = {
-  handle<
+  strictHandle<
     const AcceptEvents extends WorkflowEvent<any>[],
     Result extends ReturnType<WorkflowEvent<any>["with"]> | void,
   >(
@@ -55,7 +54,7 @@ export function withValidation<
 >(
   workflow: WorkflowLike,
   validation: Validation,
-): WithValidationWorkflow<Validation> & Omit<WorkflowLike, "handle"> {
+): WithValidationWorkflow<Validation> & WorkflowLike {
   const createSafeSendEvent = (...events: WorkflowEventData<any>[]) => {
     const outputs = validation
       .filter(([inputs]) =>
@@ -82,7 +81,7 @@ export function withValidation<
   };
   return {
     ...workflow,
-    handle: (accept, handler) => {
+    strictHandle: (accept, handler) => {
       const wrappedHandler: Handler<WorkflowEvent<any>[], any> = (
         ...events
       ) => {

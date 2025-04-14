@@ -30,7 +30,7 @@ export type WorkflowMutatorIdentifier = keyof WorkflowMutators<
 export type WorkflowCreator<
   Mis extends [] = [],
   Mos extends [] = [],
-> = ({}) => Workflow<Mis, Mos>;
+> = () => Workflow<Mis, Mos>;
 
 export const createWorkflow: WorkflowCreator = (): Workflow => {
   const config = {
