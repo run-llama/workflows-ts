@@ -31,7 +31,7 @@ describe("with directed graph", () => {
     ]);
     const fn = vi.fn();
 
-    workflow.handle([startEvent], (sendEvent) => {
+    workflow.strictHandle([startEvent], (sendEvent) => {
       fn();
       sendEvent(
         // @ts-expect-error
@@ -65,7 +65,7 @@ describe("with directed graph", () => {
       [[startEvent], [stopEvent]],
     ]);
 
-    workflow.handle([startEvent], (sendEvent) => {
+    workflow.strictHandle([startEvent], (sendEvent) => {
       sendEvent(stopEvent.with(1));
     });
 

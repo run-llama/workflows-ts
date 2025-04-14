@@ -238,7 +238,7 @@ const workflow = withValidation(createWorkflow(), [
   [[startEvent], [parseEvent]],
 ]);
 
-workflow.handle([startEvent], (sendEvent, start) => {
+workflow.strictHandle([startEvent], (sendEvent, start) => {
   sendEvent(
     disallowedEvent.with(), // <-- ❌ Type Check Failed, Runtime Error
   );
