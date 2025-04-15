@@ -1,7 +1,6 @@
 # llama-flow
 
-llama-flow 🌊 is a simple, lightweight workflow engine, inspired
-by [LlamaIndex Workflow](https://docs.llamaindex.ai/en/stable/module_guides/workflow/)
+llama-flow 🌊 is a simple, lightweight workflow engine, in TypeScript.
 
 [![Bundle Size](https://img.shields.io/bundlephobia/min/@llama-flow/core)](https://bundlephobia.com/result?p=@llama-flow/core)
 [![Bundle Size](https://img.shields.io/bundlephobia/minzip/@llama-flow/core)](https://bundlephobia.com/result?p=@llama-flow/core)
