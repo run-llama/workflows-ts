@@ -3,7 +3,7 @@ import {
   startEvent,
   stopEvent,
 } from "../workflows/llama-parse-workflow.js";
-import { promiseHandler } from "fluere/interrupter/promise";
+import { promiseHandler } from "@llama-flow/core/interrupter/promise";
 
 promiseHandler(
   llamaParseWorkflow,

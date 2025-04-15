@@ -1,10 +1,10 @@
-# fluere
+# llama-flow
 
-fluere 🌊 is a simple, lightweight workflow engine, inspired
+@llama-flow/core 🌊 is a simple, lightweight workflow engine, inspired
 by [LlamaIndex Workflow](https://docs.llamaindex.ai/en/stable/module_guides/workflow/)
 
-[![Bundle Size](https://img.shields.io/bundlephobia/min/fluere)](https://bundlephobia.com/result?p=fluere)
-[![Bundle Size](https://img.shields.io/bundlephobia/minzip/fluere)](https://bundlephobia.com/result?p=fluere)
+[![Bundle Size](https://img.shields.io/bundlephobia/min/@llama-flow/core)](https://bundlephobia.com/result?p=@llama-flow/core)
+[![Bundle Size](https://img.shields.io/bundlephobia/minzip/@llama-flow/core)](https://bundlephobia.com/result?p=@llama-flow/core)
 
 - Minimal core API (<=2kb)
 - 100% Type safe
@@ -14,13 +14,19 @@ by [LlamaIndex Workflow](https://docs.llamaindex.ai/en/stable/module_guides/work
 ## Usage
 
 ```shell
-npm i fluere
+npm i @llama-flow/core
+
+yarn add @llama-flow/core
+
+pnpm add @llama-flow/core
+
+deno add jsr:@llama-flow/core
 ```
 
 ### First, define events
 
 ```ts
-import { workflowEvent } from "fluere";
+import { workflowEvent } from "@llama-flow/core";
 
 const startEvent = workflowEvent<string>();
 const stopEvent = workflowEvent<1 | -1>();
@@ -29,7 +35,7 @@ const stopEvent = workflowEvent<1 | -1>();
 ### Connect events with workflow
 
 ```ts
-import { createWorkflow } from "fluere";
+import { createWorkflow } from "@llama-flow/core";
 
 const convertEvent = workflowEvent();
 
@@ -59,8 +65,8 @@ const result = await pipeline(stream, async function (source) {
 });
 console.log(result); // stop received!
 // or
-import { until } from "fluere/stream/until";
-import { collect } from "fluere/stream/consumer";
+import { until } from "@llama-flow/core/stream/until";
+import { collect } from "@llama-flow/core/stream/consumer";
 const allEvents = await collect(until(stream, stopEvent));
 ```
 
@@ -72,8 +78,8 @@ By default, we provide a simple fan-out utility to run multiple workflows in par
 - `getContext().stream` will return a stream of events emitted by the sub-workflow
 
 ```ts
-import { until } from "fluere/stream/until";
-import { collect } from "fluere/stream/consumer";
+import { until } from "@llama-flow/core/stream/until";
+import { collect } from "@llama-flow/core/stream/consumer";
 
 let condition = false;
 workflow.handle([startEvent], (start) => {
@@ -124,7 +130,7 @@ Workflow can be used as middleware in any server framework, like `express`, `hon
 ```ts
 import { Hono } from "hono";
 import { serve } from "@hono/node-server";
-import { createHonoHandler } from "fluere/interrupter/hono";
+import { createHonoHandler } from "@llama-flow/core/interrupter/hono";
 import {
   agentWorkflow,
   startEvent,
@@ -190,7 +196,7 @@ Adding a `getStore()` method to the workflow context, which returns a store obje
 context.
 
 ```ts
-import { withStore } from "fluere/middleware/store";
+import { withStore } from "@llama-flow/core/middleware/store";
 
 const workflow = withStore(
   () => ({
@@ -225,7 +231,7 @@ workflow.handle([startEvent], (sendEvent, start) => {});
 ```
 
 ```ts
-import { withValidation } from "fluere/middleware/validation";
+import { withValidation } from "@llama-flow/core/middleware/validation";
 
 const startEvent = workflowEvent<void, "start">();
 const disallowedEvent = workflowEvent<void, "disallowed">({
@@ -255,7 +261,10 @@ When enabled,
 it collects events based on the directed graph of the runtime and provide lifecycle hooks for each handler.
 
 ```ts
-import { withTraceEvents, runOnce } from "fluere/middleware/trace-events";
+import {
+  withTraceEvents,
+  runOnce,
+} from "@llama-flow/core/middleware/trace-events";
 
 const workflow = withTraceEvents(createWorkflow());
 
@@ -342,7 +351,7 @@ For example:
 You can create your own handler decorator to modify the behavior of the handler.
 
 ```ts
-import { createHandlerDecorator } from "fluere/middleware/trace-events";
+import { createHandlerDecorator } from "@llama-flow/core/middleware/trace-events";
 
 const noop: (...args: any[]) => void = function noop() {};
 export const runOnce = createHandlerDecorator({

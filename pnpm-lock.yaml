@@ -26,12 +26,12 @@ importers:
       '@hono/node-server':
         specifier: ^1.13.8
         version: 1.13.8(hono@4.7.4)
+      '@llama-flow/core':
+        specifier: workspace:*
+        version: link:../packages/core
       '@modelcontextprotocol/sdk':
         specifier: ^1.7.0
         version: 1.7.0
-      fluere:
-        specifier: workspace:*
-        version: link:../packages/fluere
       hono:
         specifier: ^4.7.4
         version: 4.7.4
@@ -57,9 +57,9 @@ importers:
 
   demo/browser:
     dependencies:
-      fluere:
+      '@llama-flow/core':
         specifier: workspace:*
-        version: link:../../packages/fluere
+        version: link:../../packages/core
       react:
         specifier: ^19.1.0
         version: 19.1.0
@@ -88,9 +88,9 @@ importers:
 
   demo/cloudflare:
     dependencies:
-      fluere:
+      '@llama-flow/core':
         specifier: workspace:*
-        version: link:../../packages/fluere
+        version: link:../../packages/core
       hono:
         specifier: ^4.4.7
         version: 4.7.4
@@ -108,7 +108,7 @@ importers:
         specifier: ^4.0.0
         version: 4.0.0(@cloudflare/workers-types@4.20250313.0)
 
-  packages/fluere:
+  packages/core:
     devDependencies:
       '@edge-runtime/vm':
         specifier: ^5.0.0
