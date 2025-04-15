@@ -11,9 +11,11 @@
   },
   "scripts": {
     "lint:fix": "prettier . --write",
+    "publish": "pnpm -r run build && changeset publish",
     "prepare": "husky"
   },
   "devDependencies": {
+    "@changesets/cli": "^2.29.0",
     "husky": "^9.1.7",
     "lint-staged": "^15.5.0",
     "prettier": "^3.5.3",

@@ -1,6 +1,7 @@
 {
   "name": "demo",
   "type": "module",
+  "private": true,
   "dependencies": {
     "@hono/node-server": "^1.13.8",
     "@modelcontextprotocol/sdk": "^1.7.0",

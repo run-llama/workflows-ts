@@ -70,7 +70,6 @@
     "dev": "tsup --watch",
     "test": "vitest run",
     "test:ui": "vitest --ui",
-    "prepublish": "tsup",
     "prepublishOnly": "cp ../../README.md ./README.md"
   },
   "devDependencies": {
