@@ -4,8 +4,8 @@ import {
   startEvent,
 } from "../workflows/file-parse-agent.js";
 import { from, filter } from "rxjs";
-import { eventSource } from "fluere";
-import type { WorkflowEventData } from "fluere";
+import { eventSource } from "@llama-flow/core";
+import type { WorkflowEventData } from "@llama-flow/core";
 
 const directory = "..";
 

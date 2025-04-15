@@ -130,10 +130,10 @@ dist
 .yarn/install-state.gz
 .pnp.*
 
-packages/fluere/core
-packages/fluere/async-context
-packages/fluere/interrupter
-packages/fluere/middleware
-packages/fluere/util
-packages/fluere/stream
-packages/fluere/README.md
+packages/core/core
+packages/core/async-context
+packages/core/interrupter
+packages/core/middleware
+packages/core/util
+packages/core/stream
+packages/core/README.md

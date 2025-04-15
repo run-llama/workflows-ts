@@ -1,4 +1,4 @@
-import { promiseHandler } from "fluere/interrupter/promise";
+import { promiseHandler } from "@llama-flow/core/interrupter/promise";
 import {
   fileParseWorkflow,
   startEvent,
