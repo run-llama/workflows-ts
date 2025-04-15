@@ -1,6 +1,6 @@
 # llama-flow
 
-@llama-flow/core 🌊 is a simple, lightweight workflow engine, inspired
+llama-flow 🌊 is a simple, lightweight workflow engine, inspired
 by [LlamaIndex Workflow](https://docs.llamaindex.ai/en/stable/module_guides/workflow/)
 
 [![Bundle Size](https://img.shields.io/bundlephobia/min/@llama-flow/core)](https://bundlephobia.com/result?p=@llama-flow/core)
