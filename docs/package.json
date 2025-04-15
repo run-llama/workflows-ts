@@ -4,5 +4,8 @@
   "files": [
     "**/*.md",
     "**/*.mdx"
-  ]
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
 }

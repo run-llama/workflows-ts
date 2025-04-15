@@ -1,7 +1,6 @@
 {
   "name": "monorepo",
-  "version": "0.0.1",
-  "description": "workflow execution engine",
+  "private": true,
   "type": "module",
   "packageManager": "pnpm@10.6.3",
   "pnpm": {
