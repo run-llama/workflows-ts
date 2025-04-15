@@ -2,8 +2,7 @@
   "name": "@llama-flow/docs",
   "version": "0.0.2",
   "files": [
-    "**/*.md",
-    "**/*.mdx"
+    "llamaflow"
   ],
   "publishConfig": {
     "access": "public"
