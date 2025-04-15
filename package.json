@@ -1,6 +1,7 @@
 {
   "name": "monorepo",
   "private": true,
+  "version": "0.0.1",
   "type": "module",
   "packageManager": "pnpm@10.6.3",
   "pnpm": {
