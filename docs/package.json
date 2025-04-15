@@ -1,0 +1,8 @@
+{
+  "name": "@llama-flow/docs",
+  "version": "0.0.1",
+  "files": [
+    "**/*.md",
+    "**/*.mdx"
+  ]
+}

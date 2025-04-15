@@ -108,6 +108,8 @@ importers:
         specifier: ^4.0.0
         version: 4.0.0(@cloudflare/workers-types@4.20250313.0)
 
+  docs: {}
+
   packages/core:
     devDependencies:
       '@edge-runtime/vm':
