@@ -10,9 +10,20 @@ import { until } from "@llama-flow/core/stream/until";
 import { collect } from "@llama-flow/core/stream/consumer";
 import { withStore } from "@llama-flow/core/middleware/store";
 
-export type HandlerContext<T = unknown> = ReturnType<typeof getContext> & {
+export { workflowEvent } from "@llama-flow/core";
+
+export type StepContext<T = unknown> = ReturnType<typeof getContext> & {
   get data(): T;
 };
+
+export type StepHandler<
+  ContextData,
+  Inputs extends WorkflowEvent<any>[],
+  Outputs extends WorkflowEventData<any>[],
+> = (
+  context: StepContext<ContextData>,
+  ...args: Parameters<Handler<Inputs, Outputs[number]>>
+) => ReturnType<Handler<Inputs, Outputs[number]>>;
 
 export const startEvent = workflowEvent<any, "llamaindex-start">({
   debugLabel: "llamaindex-start",
@@ -30,7 +41,7 @@ export class Workflow<ContextData, Start, Stop> {
       inputs: AcceptEvents;
     },
     handler: (
-      context: HandlerContext<ContextData>,
+      context: StepContext<ContextData>,
       ...args: Parameters<Handler<AcceptEvents, WorkflowEventData<any> | void>>
     ) => ReturnType<Handler<AcceptEvents, WorkflowEventData<any> | void>>,
   ) {

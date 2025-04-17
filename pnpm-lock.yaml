@@ -11,6 +11,12 @@ importers:
       '@changesets/cli':
         specifier: ^2.29.0
         version: 2.29.0
+      '@edge-runtime/vm':
+        specifier: ^5.0.0
+        version: 5.0.0
+      happy-dom:
+        specifier: ^17.4.4
+        version: 17.4.4
       husky:
         specifier: ^9.1.7
         version: 9.1.7
@@ -23,6 +29,9 @@ importers:
       vite-tsconfig-paths:
         specifier: ^5.1.4
         version: 5.1.4(typescript@5.8.2)(vite@6.2.2(@types/node@22.13.10)(tsx@4.19.3)(yaml@2.7.1))
+      vitest:
+        specifier: ^3.0.8
+        version: 3.0.8(@edge-runtime/vm@5.0.0)(@types/node@22.13.10)(happy-dom@17.4.4)(tsx@4.19.3)(yaml@2.7.1)
 
   demo:
     dependencies:
@@ -115,18 +124,12 @@ importers:
 
   packages/core:
     devDependencies:
-      '@edge-runtime/vm':
-        specifier: ^5.0.0
-        version: 5.0.0
       '@modelcontextprotocol/sdk':
         specifier: ^1.7.0
         version: 1.7.0
       '@types/node':
         specifier: ^22.13.10
         version: 22.13.10
-      happy-dom:
-        specifier: ^17.4.4
-        version: 17.4.4
       hono:
         specifier: ^4.7.4
         version: 4.7.4
@@ -148,9 +151,6 @@ importers:
       typescript:
         specifier: ^5.8.2
         version: 5.8.2
-      vitest:
-        specifier: ^3.0.8
-        version: 3.0.8(@edge-runtime/vm@5.0.0)(@types/node@22.13.10)(happy-dom@17.4.4)(tsx@4.19.3)(yaml@2.7.1)
       zod:
         specifier: ^3.24.2
         version: 3.24.2
