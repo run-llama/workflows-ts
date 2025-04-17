@@ -31,4 +31,4 @@ jobs:
       - name: Install dependencies
         run: pnpm install
       - name: Run tests
-        run: turbo run test
+        run: pnpx turbo run test
