@@ -1,5 +1,5 @@
 {
-  "extends": "./tsconfig.browser.json",
+  "extends": "./tsconfig.json",
   "compilerOptions": {
     "outDir": "./lib/browser-test",
     "tsBuildInfoFile": "./lib/browser-test/.tsbuildinfo",
@@ -15,10 +15,5 @@
       "@llama-flow/core/util/*": ["./src/util/*.ts"]
     }
   },
-  "include": ["./src", "./tests", "./vitest.config.ts"],
-  "references": [
-    {
-      "path": "./tsconfig.browser.json"
-    }
-  ]
+  "include": ["./src", "./tests", "./vitest.config.ts"]
 }
