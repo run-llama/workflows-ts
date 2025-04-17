@@ -1,7 +1,6 @@
 import {
   createWorkflow,
   type Handler,
-  type Workflow as CoreWorkflow,
   type WorkflowEvent,
   workflowEvent,
   type WorkflowEventData,
@@ -9,6 +8,7 @@ import {
 } from "@llama-flow/core";
 import { until } from "@llama-flow/core/stream/until";
 import { collect } from "@llama-flow/core/stream/consumer";
+import { withStore } from "@llama-flow/core/middleware/store";
 
 export const startEvent = workflowEvent<any, "llamaindex-start">({
   debugLabel: "llamaindex-start",
@@ -18,12 +18,8 @@ export const stopEvent = workflowEvent<any, "llamaindex-stop">({
   debugLabel: "llamaindex-stop",
 });
 
-export class Workflow<Start, Stop> {
-  #workflow: CoreWorkflow;
-
-  constructor() {
-    this.#workflow = createWorkflow();
-  }
+export class Workflow<ContextData, Start, Stop> {
+  #workflow = withStore((data: ContextData) => data, createWorkflow());
 
   addStep<AcceptEvents extends WorkflowEvent<any>[]>(
     parameters: {
@@ -40,8 +36,8 @@ export class Workflow<Start, Stop> {
     });
   }
 
-  async run(start: Start): Promise<Stop> {
-    const { sendEvent, stream } = this.#workflow.createContext();
+  async run(start: Start, context?: ContextData): Promise<Stop> {
+    const { sendEvent, stream } = this.#workflow.createContext(context);
     sendEvent(startEvent.with(start));
     const events = await collect(until(stream, stopEvent));
     return events.at(-1)!.data;
