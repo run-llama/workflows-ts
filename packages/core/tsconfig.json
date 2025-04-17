@@ -1,21 +1,8 @@
 {
+  "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "rootDir": ".",
-    "target": "es2022",
-    "module": "esnext",
-    "moduleResolution": "bundler",
-    "verbatimModuleSyntax": true,
-    "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
-    "noUncheckedIndexedAccess": true,
-    "strictNullChecks": true,
-    "exactOptionalPropertyTypes": true,
-    "strict": true,
-    "skipLibCheck": true,
-    "stripInternal": true,
     "outDir": "./lib",
     "tsBuildInfoFile": "./lib/.tsbuildinfo",
-    "lib": ["ES2022", "DOM", "DOM.Iterable", "DOM.AsyncIterable"],
     "paths": {
       "@llama-flow/core": ["./src/core/index.ts"],
       "@llama-flow/core/async-context": ["./src/async-context/index.ts"],
@@ -25,13 +12,5 @@
       "@llama-flow/core/stream/*": ["./src/stream/*.ts"]
     }
   },
-  "include": ["./src"],
-  "references": [
-    {
-      "path": "./tsconfig.test.json"
-    },
-    {
-      "path": "./tsconfig.browser.json"
-    }
-  ]
+  "include": ["./src"]
 }

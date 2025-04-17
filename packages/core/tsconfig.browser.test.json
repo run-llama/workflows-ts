@@ -1,7 +1,13 @@
 {
   "extends": "./tsconfig.browser.json",
   "compilerOptions": {
-    "composite": true
+    "outDir": "./lib/browser-test",
+    "tsBuildInfoFile": "./lib/browser-test/.tsbuildinfo"
   },
-  "include": ["./src", "./tests", "./vitest.config.ts"]
+  "include": ["./src", "./tests", "./vitest.config.ts"],
+  "references": [
+    {
+      "path": "./tsconfig.browser.json"
+    }
+  ]
 }

@@ -1,7 +1,8 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "composite": true,
+    "outDir": "./lib/browser",
+    "tsBuildInfoFile": "./lib/browser/.tsbuildinfo",
     "target": "es2015",
     "paths": {
       "@llama-flow/core": ["./src/core/index.ts"],

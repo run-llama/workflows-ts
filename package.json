@@ -10,15 +10,20 @@
     ]
   },
   "scripts": {
+    "typecheck": "tsc -b --verbose",
     "lint:fix": "prettier . --write",
     "publish": "pnpm -r run build && changeset publish",
     "prepare": "husky"
   },
   "devDependencies": {
     "@changesets/cli": "^2.29.0",
+    "@edge-runtime/vm": "^5.0.0",
+    "happy-dom": "^17.4.4",
     "husky": "^9.1.7",
     "lint-staged": "^15.5.0",
     "prettier": "^3.5.3",
-    "vite-tsconfig-paths": "^5.1.4"
+    "turbo": "^2.5.0",
+    "vite-tsconfig-paths": "^5.1.4",
+    "vitest": "^3.0.8"
   }
 }
