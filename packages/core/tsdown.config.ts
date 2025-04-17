@@ -1,4 +1,4 @@
-import { defineConfig } from "tsup";
+import { defineConfig } from "tsdown";
 
 export default defineConfig([
   // Core APIs
@@ -7,7 +7,6 @@ export default defineConfig([
     outDir: "dist",
     format: ["cjs", "esm"],
     external: ["@llama-flow/core/async-context"],
-    tsconfig: "./tsconfig.build.json",
     dts: true,
     sourcemap: true,
   },
@@ -15,13 +14,9 @@ export default defineConfig([
   {
     entry: ["src/core/index.ts"],
     outDir: "dist",
-    outExtension: () => ({
-      js: ".browser.js",
-    }),
-    tsconfig: "./tsconfig.browser.build.json",
     platform: "browser",
     format: ["esm"],
-    minify: true,
+    external: ["@llama-flow/core/async-context"],
     sourcemap: true,
   },
   // Async Context APIs
@@ -29,7 +24,7 @@ export default defineConfig([
     entry: ["src/async-context/*.ts"],
     outDir: "async-context",
     format: ["cjs", "esm"],
-    tsconfig: "./tsconfig.build.json",
+    external: ["@llama-flow/core/async-context"],
     dts: true,
     sourcemap: true,
   },
@@ -44,7 +39,6 @@ export default defineConfig([
       "@llama-flow/core",
       "@llama-flow/core/async-context",
     ],
-    tsconfig: "./tsconfig.build.json",
     dts: true,
     sourcemap: true,
   },
@@ -54,7 +48,6 @@ export default defineConfig([
     outDir: "middleware",
     external: ["@llama-flow/core", "@llama-flow/core/async-context"],
     format: ["esm"],
-    tsconfig: "./tsconfig.build.json",
     dts: true,
     sourcemap: true,
   },
@@ -64,7 +57,6 @@ export default defineConfig([
     outDir: "util",
     format: ["esm"],
     external: ["@llama-flow/core", "@llama-flow/core/async-context"],
-    tsconfig: "./tsconfig.build.json",
     dts: true,
     sourcemap: true,
   },
@@ -74,7 +66,6 @@ export default defineConfig([
     outDir: "stream",
     format: ["esm"],
     external: ["@llama-flow/core", "@llama-flow/core/async-context"],
-    tsconfig: "./tsconfig.build.json",
     dts: true,
     sourcemap: true,
   },
