@@ -1,0 +1,15 @@
+{
+  "extends": ["//"],
+  "tasks": {
+    "build": {
+      "outputs": [
+        "async-context/**",
+        "dist/**",
+        "interrupter/**",
+        "middleware/**",
+        "stream/**",
+        "util/**"
+      ]
+    }
+  }
+}
