@@ -14,5 +14,8 @@
   ],
   "dependencies": {
     "@llama-flow/core": "workspace:*"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
