@@ -3,7 +3,6 @@
   "compilerOptions": {
     "outDir": "./lib/browser",
     "tsBuildInfoFile": "./lib/browser/.tsbuildinfo",
-    "composite": true,
     "target": "es2015",
     "paths": {
       "@llama-flow/core": ["./src/core/index.ts"],
