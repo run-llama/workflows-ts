@@ -1,6 +1,7 @@
 {
   "name": "@llama-flow/llamaindex",
   "version": "0.0.1",
+  "type": "module",
   "description": "LlamaIndex binding for llama-flow",
   "scripts": {
     "test": "vitest run"
