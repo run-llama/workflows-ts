@@ -1,0 +1,18 @@
+{
+  "name": "@llama-flow/llamaindex",
+  "version": "0.0.1",
+  "description": "LlamaIndex binding for llama-flow",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/run-llama/fluere.git"
+  },
+  "private": true,
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "dependencies": {
+    "@llama-flow/core": "workspace:*"
+  }
+}

@@ -10,6 +10,7 @@
     ]
   },
   "scripts": {
+    "typecheck": "tsc -b --verbose",
     "lint:fix": "prettier . --write",
     "publish": "pnpm -r run build && changeset publish",
     "prepare": "husky"

@@ -1,6 +1,8 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
+    "outDir": "./lib/browser",
+    "tsBuildInfoFile": "./lib/browser/.tsbuildinfo",
     "composite": true,
     "target": "es2015",
     "paths": {

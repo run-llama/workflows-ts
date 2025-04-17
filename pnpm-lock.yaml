@@ -155,6 +155,12 @@ importers:
         specifier: ^3.24.2
         version: 3.24.2
 
+  packages/llamaindex:
+    dependencies:
+      '@llama-flow/core':
+        specifier: workspace:*
+        version: link:../core
+
 packages:
 
   '@babel/runtime@7.27.0':
