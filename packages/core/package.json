@@ -40,21 +40,57 @@
         "default": "./async-context/index.js"
       }
     },
-    "./interrupter/*": {
-      "types": "./interrupter/*.d.ts",
-      "default": "./interrupter/*.js"
+    "./interrupter/hono": {
+      "types": "./interrupter/hono.d.ts",
+      "default": "./interrupter/hono.js"
     },
-    "./middleware/*": {
-      "types": "./middleware/*.d.ts",
-      "default": "./middleware/*.js"
+    "./interrupter/mcp": {
+      "types": "./interrupter/mcp.d.ts",
+      "default": "./interrupter/mcp.js"
     },
-    "./util/*": {
-      "types": "./util/*.d.ts",
-      "default": "./util/*.js"
+    "./interrupter/next": {
+      "types": "./interrupter/next.d.ts",
+      "default": "./interrupter/next.js"
     },
-    "./stream/*": {
-      "types": "./stream/*.d.ts",
-      "default": "./stream/*.js"
+    "./interrupter/promise": {
+      "types": "./interrupter/promise.d.ts",
+      "default": "./interrupter/promise.js"
+    },
+    "./middleware/store": {
+      "types": "./middleware/store.d.ts",
+      "default": "./middleware/store.js"
+    },
+    "./middleware/trace-events": {
+      "types": "./middleware/trace-events.d.ts",
+      "default": "./middleware/trace-events.js"
+    },
+    "./middleware/validation": {
+      "types": "./middleware/validation.d.ts",
+      "default": "./middleware/validation.js"
+    },
+    "./util/p-retry": {
+      "types": "./util/p-retry.d.ts",
+      "default": "./util/p-retry.js"
+    },
+    "./util/zod": {
+      "types": "./util/zod.d.ts",
+      "default": "./util/zod.js"
+    },
+    "./stream/consumer": {
+      "types": "./stream/consumer.d.ts",
+      "default": "./stream/consumer.js"
+    },
+    "./stream/filter": {
+      "types": "./stream/filter.d.ts",
+      "default": "./stream/filter.js"
+    },
+    "./stream/find": {
+      "types": "./stream/find.d.ts",
+      "default": "./stream/find.js"
+    },
+    "./stream/until": {
+      "types": "./stream/until.d.ts",
+      "default": "./stream/until.js"
     }
   },
   "files": [
@@ -66,8 +102,8 @@
     "stream"
   ],
   "scripts": {
-    "build": "rimraf dist interrupter middleware stream util async-context && tsup",
-    "dev": "tsup --watch",
+    "build": "bunchee",
+    "dev": "bunchee --watch",
     "test": "vitest run",
     "test:ui": "vitest --ui",
     "prepublishOnly": "cp ../../README.md ./README.md"
@@ -75,12 +111,12 @@
   "devDependencies": {
     "@modelcontextprotocol/sdk": "^1.7.0",
     "@types/node": "^22.13.10",
+    "bunchee": "^6.5.0",
     "hono": "^4.7.4",
     "next": "^15.2.2",
     "p-retry": "^6.2.1",
     "rimraf": "^6.0.1",
     "stream-chain": "^3.4.0",
-    "tsup": "^8.4.0",
     "typescript": "^5.8.2",
     "zod": "^3.24.2"
   },

@@ -2,7 +2,18 @@
   "extends": "./tsconfig.browser.json",
   "compilerOptions": {
     "outDir": "./lib/browser-test",
-    "tsBuildInfoFile": "./lib/browser-test/.tsbuildinfo"
+    "tsBuildInfoFile": "./lib/browser-test/.tsbuildinfo",
+    "target": "es2015",
+    "paths": {
+      "@llama-flow/core": ["./src/core/index.ts"],
+      "@llama-flow/core/stream/*": ["./src/stream/*.ts"],
+      "@llama-flow/core/async-context": [
+        "./src/async-context/index.browser.ts"
+      ],
+      "@llama-flow/core/interrupter/*": ["./src/interrupter/*.ts"],
+      "@llama-flow/core/middleware/*": ["./src/middleware/*.ts"],
+      "@llama-flow/core/util/*": ["./src/util/*.ts"]
+    }
   },
   "include": ["./src", "./tests", "./vitest.config.ts"],
   "references": [
