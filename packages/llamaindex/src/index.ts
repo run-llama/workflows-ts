@@ -10,6 +10,10 @@ import { until } from "@llama-flow/core/stream/until";
 import { collect } from "@llama-flow/core/stream/consumer";
 import { withStore } from "@llama-flow/core/middleware/store";
 
+export type HandlerContext<T = unknown> = ReturnType<typeof getContext> & {
+  get data(): T;
+};
+
 export const startEvent = workflowEvent<any, "llamaindex-start">({
   debugLabel: "llamaindex-start",
 });
@@ -26,18 +30,27 @@ export class Workflow<ContextData, Start, Stop> {
       inputs: AcceptEvents;
     },
     handler: (
-      context: ReturnType<typeof getContext>,
+      context: HandlerContext<ContextData>,
       ...args: Parameters<Handler<AcceptEvents, WorkflowEventData<any> | void>>
     ) => ReturnType<Handler<AcceptEvents, WorkflowEventData<any> | void>>,
   ) {
     this.#workflow.handle(parameters.inputs, (...events) => {
       const context = getContext();
-      return handler(context, ...events);
+      const contextData = this.#workflow.getStore();
+      return handler(
+        {
+          ...context,
+          get data(): ContextData {
+            return contextData;
+          },
+        },
+        ...events,
+      );
     });
   }
 
   async run(start: Start, context?: ContextData): Promise<Stop> {
-    const { sendEvent, stream } = this.#workflow.createContext(context);
+    const { sendEvent, stream } = this.#workflow.createContext(context!);
     sendEvent(startEvent.with(start));
     const events = await collect(until(stream, stopEvent));
     return events.at(-1)!.data;
