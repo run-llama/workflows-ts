@@ -20,6 +20,15 @@
   "include": [],
   "references": [
     {
+      "path": "./packages/core/tsconfig.test.json"
+    },
+    {
+      "path": "./packages/core/tsconfig.browser.test.json"
+    },
+    {
+      "path": "./packages/core/tsconfig.browser.json"
+    },
+    {
       "path": "./packages/core/tsconfig.json"
     },
     {

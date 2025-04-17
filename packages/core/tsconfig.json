@@ -12,13 +12,5 @@
       "@llama-flow/core/stream/*": ["./src/stream/*.ts"]
     }
   },
-  "include": ["./src"],
-  "references": [
-    {
-      "path": "./tsconfig.test.json"
-    },
-    {
-      "path": "./tsconfig.browser.json"
-    }
-  ]
+  "include": ["./src"]
 }

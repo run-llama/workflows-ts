@@ -4,5 +4,10 @@
     "outDir": "./lib/test/browser",
     "tsBuildInfoFile": "./lib/test/.tsbuildinfo"
   },
-  "include": ["./src", "./tests", "./vitest.config.ts"]
+  "include": ["./src", "./tests", "./vitest.config.ts"],
+  "references": [
+    {
+      "path": "./tsconfig.json"
+    }
+  ]
 }
