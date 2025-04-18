@@ -81,17 +81,19 @@ By default, we provide a simple fan-out utility to run multiple workflows in par
 ```ts
 import { until } from "@llama-flow/core/stream/until";
 import { collect } from "@llama-flow/core/stream/consumer";
+import { filter } from "@llama-flow/core/stream/filter";
 
 let condition = false;
-workflow.handle([startEvent], (start) => {
+workflow.handle([startEvent], async (start) => {
   const { sendEvent, stream } = getContext();
   for (let i = 0; i < 10; i++) {
     sendEvent(convertEvent.with(i));
   }
   // You define the condition to stop the workflow
-  const results = collect(
-    until(stream, () => condition).filter((ev) =>
-      convertStopEvent.includes(ev),
+  const results = await collect(
+    filter(
+      until(stream, () => condition),
+      (ev) => convertStopEvent.includes(ev),
     ),
   );
   console.log(results.length); // 10
