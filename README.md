@@ -2,6 +2,8 @@
 
 llama-flow 🌊 is a simple, lightweight workflow engine, in TypeScript.
 
+[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz_small.svg)](https://stackblitz.com/github/run-llama/llama-flow/tree/main/demo/browser?file=src%2FApp.tsx)
+
 [![Bundle Size](https://img.shields.io/bundlephobia/min/@llama-flow/core)](https://bundlephobia.com/result?p=@llama-flow/core)
 [![Bundle Size](https://img.shields.io/bundlephobia/minzip/@llama-flow/core)](https://bundlephobia.com/result?p=@llama-flow/core)
 
