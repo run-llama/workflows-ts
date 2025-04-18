@@ -9,7 +9,7 @@
     "cf-typegen": "wrangler types"
   },
   "dependencies": {
-    "@llama-flow/core": "workspace:*",
+    "@llama-flow/core": "latest",
     "hono": "^4.4.7"
   },
   "devDependencies": {
