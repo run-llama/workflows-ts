@@ -42,7 +42,7 @@ importers:
         specifier: ^1.13.8
         version: 1.13.8(hono@4.7.4)
       '@llama-flow/core':
-        specifier: workspace:*
+        specifier: latest
         version: link:../packages/core
       '@modelcontextprotocol/sdk':
         specifier: ^1.7.0
@@ -73,7 +73,7 @@ importers:
   demo/browser:
     dependencies:
       '@llama-flow/core':
-        specifier: workspace:*
+        specifier: latest
         version: link:../../packages/core
       react:
         specifier: ^19.1.0
@@ -104,7 +104,7 @@ importers:
   demo/cloudflare:
     dependencies:
       '@llama-flow/core':
-        specifier: workspace:*
+        specifier: latest
         version: link:../../packages/core
       hono:
         specifier: ^4.4.7
