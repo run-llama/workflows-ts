@@ -78,6 +78,9 @@ workflow.handle([convertEvent], (convert) => {
 
 Finally, we can execute our workflow:
 
+:::note
+This may require setting `"lib": ["ES2022", "DOM", "DOM.Iterable", "DOM.AsyncIterable"],` in your `tsconfig`
+
 ```ts
 // Create a workflow context and send the initial event
 const { stream, sendEvent } = workflow.createContext();
@@ -100,7 +103,12 @@ console.log(result); // "Result: positive"
 Or using the stream utilities:
 
 ```ts
-import { collect, until } from "@llama-flow/core";
+import { collect } from '@llama-flow/core/stream/consumer';
+import { until } from '@llama-flow/core/stream/until';
+
+// Create a workflow context and send the initial event
+const { stream, sendEvent } = workflow.createContext();
+sendEvent(startEvent.with("42"));
 
 // Collect all events until we get a stopEvent
 const allEvents = await collect(until(stream, stopEvent));

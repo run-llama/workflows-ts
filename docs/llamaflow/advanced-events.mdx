@@ -52,7 +52,9 @@ workflow.handle([booleanEvent], (event) => {
 You can create complex event flows with branching and merging patterns:
 
 ```ts
-import { createWorkflow, workflowEvent, until, collect } from "@llama-flow/core";
+import { createWorkflow, workflowEvent, getContext } from "@llama-flow/core";
+import { collect } from '@llama-flow/core/stream/consumer';
+import { until } from '@llama-flow/core/stream/until';
 
 // Define events for a data processing pipeline
 const inputEvent = workflowEvent<string>();
@@ -470,7 +472,9 @@ workflow.handle([dbQueryEvent], async (event) => {
 LlamaIndex workflows excel at managing complex asynchronous patterns:
 
 ```ts
-import { createWorkflow, workflowEvent, until, collect } from "@llama-flow/core";
+import { createWorkflow, workflowEvent, getContext } from "@llama-flow/core";
+import { collect } from '@llama-flow/core/stream/consumer';
+import { until } from '@llama-flow/core/stream/until';
 
 // Events for an orchestration workflow
 const orchestrateEvent = workflowEvent<string[]>();
