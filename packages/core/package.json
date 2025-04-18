@@ -40,21 +40,57 @@
         "default": "./async-context/index.js"
       }
     },
-    "./interrupter/*": {
-      "types": "./interrupter/*.d.ts",
-      "default": "./interrupter/*.js"
+    "./interrupter/hono": {
+      "types": "./interrupter/hono.d.ts",
+      "default": "./interrupter/hono.js"
     },
-    "./middleware/*": {
-      "types": "./middleware/*.d.ts",
-      "default": "./middleware/*.js"
+    "./interrupter/mcp": {
+      "types": "./interrupter/mcp.d.ts",
+      "default": "./interrupter/mcp.js"
     },
-    "./util/*": {
-      "types": "./util/*.d.ts",
-      "default": "./util/*.js"
+    "./interrupter/next": {
+      "types": "./interrupter/next.d.ts",
+      "default": "./interrupter/next.js"
     },
-    "./stream/*": {
-      "types": "./stream/*.d.ts",
-      "default": "./stream/*.js"
+    "./interrupter/promise": {
+      "types": "./interrupter/promise.d.ts",
+      "default": "./interrupter/promise.js"
+    },
+    "./middleware/store": {
+      "types": "./middleware/store.d.ts",
+      "default": "./middleware/store.js"
+    },
+    "./middleware/trace-events": {
+      "types": "./middleware/trace-events.d.ts",
+      "default": "./middleware/trace-events.js"
+    },
+    "./middleware/validation": {
+      "types": "./middleware/validation.d.ts",
+      "default": "./middleware/validation.js"
+    },
+    "./util/p-retry": {
+      "types": "./util/p-retry.d.ts",
+      "default": "./util/p-retry.js"
+    },
+    "./util/zod": {
+      "types": "./util/zod.d.ts",
+      "default": "./util/zod.js"
+    },
+    "./stream/consumer": {
+      "types": "./stream/consumer.d.ts",
+      "default": "./stream/consumer.js"
+    },
+    "./stream/filter": {
+      "types": "./stream/filter.d.ts",
+      "default": "./stream/filter.js"
+    },
+    "./stream/find": {
+      "types": "./stream/find.d.ts",
+      "default": "./stream/find.js"
+    },
+    "./stream/until": {
+      "types": "./stream/until.d.ts",
+      "default": "./stream/until.js"
     }
   },
   "files": [
