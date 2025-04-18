@@ -12,7 +12,7 @@
   "scripts": {
     "typecheck": "tsc -b --verbose",
     "lint:fix": "prettier . --write",
-    "publish": "pnpm -r run build && changeset publish",
+    "publish": "turbo build --filter=\"./packages/*\" && changeset publish",
     "prepare": "husky"
   },
   "devDependencies": {
