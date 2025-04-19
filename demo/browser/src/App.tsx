@@ -2,8 +2,8 @@ import { Suspense } from "react";
 import reactLogo from "./assets/react.svg";
 import llamaindexLogo from "/llamaindex.svg";
 import "./App.css";
-import { createWorkflow, getContext, workflowEvent } from "fluere";
-import { promiseHandler } from "fluere/interrupter/promise";
+import { createWorkflow, getContext, workflowEvent } from "@llama-flow/core";
+import { promiseHandler } from "@llama-flow/core/interrupter/promise";
 
 const startEvent = workflowEvent();
 const stopEvent = workflowEvent<string>();

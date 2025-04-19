@@ -1,10 +1,10 @@
-import { mcpTool } from "fluere/interrupter/mcp";
+import { mcpTool } from "@llama-flow/core/interrupter/mcp";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { fileParseWorkflow } from "../workflows/file-parse-agent.js";
-import { createWorkflow, workflowEvent } from "fluere";
-import { until } from "fluere/stream/until";
-import { nothing } from "fluere/stream/consumer";
+import { createWorkflow, workflowEvent } from "@llama-flow/core";
+import { until } from "@llama-flow/core/stream/until";
+import { nothing } from "@llama-flow/core/stream/consumer";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 
 const server = new McpServer({

@@ -1,7 +1,0 @@
-{
-  "extends": "./tsconfig.browser.json",
-  "compilerOptions": {
-    "composite": true
-  },
-  "include": ["./src", "./tests", "./vitest.config.ts"]
-}

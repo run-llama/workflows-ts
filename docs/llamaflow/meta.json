@@ -1,0 +1,6 @@
+{
+  "title": "LlamaFlow",
+  "description": "Simple, lightweight workflow engine",
+  "root": true,
+  "pages": ["---Guide---", "index", "..."]
+}

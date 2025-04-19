@@ -9,7 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "fluere": "workspace:*",
+    "@llama-flow/core": "latest",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
   },
