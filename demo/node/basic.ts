@@ -1,4 +1,5 @@
 import { createWorkflow, workflowEvent, getContext } from "@llama-flow/core";
+import { withTraceEvents } from "@llama-flow/core/middleware/trace-events";
 import { pipeline } from "node:stream/promises";
 import { collect } from "@llama-flow/core/stream/consumer";
 import { until } from "@llama-flow/core/stream/until";
@@ -14,7 +15,7 @@ const branchCompleteEvent = workflowEvent<string>();
 const allCompleteEvent = workflowEvent<string>();
 const stopEvent = workflowEvent<string>();
 
-const workflow = createWorkflow();
+const workflow = withTraceEvents(createWorkflow());
 
 // handle the start event
 workflow.handle([startEvent], async () => {
@@ -24,15 +25,18 @@ workflow.handle([startEvent], async () => {
   sendEvent(branchBEvent.with("Branch B"));
   sendEvent(branchCEvent.with("Branch C"));
 
-  let condition = false;
+  let condition = 0;
   const results = await collect(
-    filter(
-      until(stream, () => condition),
-      (ev) => branchCompleteEvent.include(ev),
+    until(
+      filter(stream, (ev) => branchCompleteEvent.include(ev)),
+      () => {
+        condition++;
+        return condition === 3;
+      },
     ),
   );
 
-  return allCompleteEvent.with(results.join(", "));
+  return allCompleteEvent.with(results.map((e) => e.data).join(", "));
 });
 
 // handle branch A
