@@ -58,10 +58,12 @@ workflow.handle([allCompleteEvent], (allComplete) => {
 const { stream, sendEvent } = workflow.createContext();
 sendEvent(startEvent.with("initial data"));
 
-pipeline(stream, async function (source) {
+const result = await pipeline(stream, async function (source) {
   for await (const event of source) {
     if (stopEvent.include(event)) {
       return `Result: ${event.data}`;
     }
   }
-}).then(console.log);
+});
+
+console.log(result); // Result: Branch A, Branch B, Branch C
