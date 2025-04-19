@@ -14,14 +14,10 @@ export default defineConfig([
   // Core APIs - Browser ESM
   {
     entry: ["src/core/index.ts"],
-    outDir: "dist",
-    // outExtension: () => ({
-    //   js: ".browser.js",
-    // }),
+    outDir: "dist/browser",
     tsconfig: "./tsconfig.browser.build.json",
     platform: "browser",
     format: ["esm"],
-    external: ["@llama-flow/core/async-context"],
     sourcemap: true,
   },
   // Async Context APIs
