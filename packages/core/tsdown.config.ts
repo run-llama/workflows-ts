@@ -1,4 +1,4 @@
-import { defineConfig } from "tsup";
+import { defineConfig } from "tsdown";
 
 export default defineConfig([
   // Core APIs
@@ -14,14 +14,10 @@ export default defineConfig([
   // Core APIs - Browser ESM
   {
     entry: ["src/core/index.ts"],
-    outDir: "dist",
-    outExtension: () => ({
-      js: ".browser.js",
-    }),
+    outDir: "dist/browser",
     tsconfig: "./tsconfig.browser.build.json",
     platform: "browser",
     format: ["esm"],
-    minify: true,
     sourcemap: true,
   },
   // Async Context APIs
