@@ -25,7 +25,6 @@ export default defineConfig([
     entry: ["src/async-context/*.ts"],
     outDir: "async-context",
     format: ["cjs", "esm"],
-    external: ["@llama-flow/core/async-context"],
     tsconfig: "./tsconfig.build.json",
     dts: true,
     sourcemap: true,
