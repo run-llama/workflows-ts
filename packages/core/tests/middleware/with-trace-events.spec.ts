@@ -215,6 +215,7 @@ describe("get event origins", () => {
     const workflow = withTraceEvents(createWorkflow());
     workflow.handle([startEvent], async () => {
       const { sendEvent, stream } = getContext();
+      const context = getContext();
       sendEvent(branchAEvent.with("Branch A"));
       sendEvent(branchBEvent.with("Branch B"));
       sendEvent(branchCEvent.with("Branch C"));
@@ -230,7 +231,10 @@ describe("get event origins", () => {
         ),
       );
 
-      const result = Object.groupBy(results, (e) => `${getEventOrigins(e)[0]}`);
+      const result = Object.groupBy(
+        results,
+        (e) => `${getEventOrigins(e, context)[0]}`,
+      );
       expect(result).toMatchInlineSnapshot(`
         {
           "branchAEvent(1)": [

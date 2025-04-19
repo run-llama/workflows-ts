@@ -1,8 +1,9 @@
-import type {
-  Handler,
-  WorkflowContext,
-  WorkflowEvent,
-  WorkflowEventData,
+import {
+  getContext,
+  type Handler,
+  type WorkflowContext,
+  type WorkflowEvent,
+  type WorkflowEventData,
 } from "@llama-flow/core";
 import { isPromiseLike } from "../core/utils";
 import {
@@ -25,6 +26,8 @@ const tracingWeakMap = new WeakMap<
   >
 >();
 
+const contextTraceWeakMap = new WeakMap<HandlerContext, WorkflowContext>();
+
 const eventToHandlerContextWeakMap = new WeakMap<
   WorkflowEventData<any>,
   HandlerContext
@@ -32,6 +35,7 @@ const eventToHandlerContextWeakMap = new WeakMap<
 
 export function getEventOrigins(
   eventData: WorkflowEventData<any>,
+  context = getContext(),
 ): [WorkflowEventData<any>, ...WorkflowEventData<any>[]] {
   let currentContext = eventToHandlerContextWeakMap.get(eventData);
   if (!currentContext) {
@@ -39,17 +43,20 @@ export function getEventOrigins(
       "Event context not found, this should not happen. Please report this issue with a reproducible example.",
     );
   }
-  while (
-    currentContext.prev &&
-    currentContext.prev.prev !== currentContext.root
-  ) {
-    currentContext = currentContext.prev;
-  }
+  do {
+    const workflowContext = contextTraceWeakMap.get(currentContext.prev)!;
+    if (workflowContext === context) {
+      return currentContext.inputs as [
+        WorkflowEventData<any>,
+        ...WorkflowEventData<any>[],
+      ];
+    }
 
-  return currentContext.inputs as [
-    WorkflowEventData<any>,
-    ...WorkflowEventData<any>[],
-  ];
+    currentContext = currentContext.prev;
+  } while (currentContext.prev);
+  throw new Error(
+    "Event context not found, this should not happen. Please report this issue with a reproducible example.",
+  );
 }
 
 export type HandlerRef<
@@ -174,6 +181,8 @@ export function withTraceEvents<
           >,
         ) => Handler<WorkflowEvent<any>[], WorkflowEventData<any> | void>)[];
         handlerMiddleware = (...args) => {
+          const context = getContext();
+          contextTraceWeakMap.set(handlerContext, context);
           const result = onBeforeHandlers.reduce((next, cb) => {
             return cb(next);
           }, finalHandler)(...args);
@@ -213,10 +222,8 @@ export function withTraceEvents<
               });
             },
           );
-        next({
-          ...handlerContext,
-          handler: handlerMiddleware,
-        });
+        handlerContext.handler = handlerMiddleware;
+        next(handlerContext);
       });
       return context;
     },
