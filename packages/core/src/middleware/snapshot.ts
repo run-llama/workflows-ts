@@ -3,9 +3,9 @@ import {
   type WorkflowContext,
   type WorkflowEvent,
   workflowEvent,
-} from "fluere";
+} from "@llama-flow/core";
 import { isPromiseLike } from "../core/utils";
-import type { WorkflowEventInstance } from "../core/event";
+import type { InferWorkflowEvent } from "../core/event";
 
 /**
  * Suspense event is a special event
@@ -32,16 +32,14 @@ export const withSnapshot = (workflow: Workflow): SuspenseWorkflow => {
     createContext(): SuspenseContext {
       const context = workflow.createContext();
       const pendingTask = new Set<PromiseLike<any>>();
-      const collectedSuspense = new Set<
-        WorkflowEventInstance<typeof suspense>
-      >();
+      const collectedSuspense = new Set<InferWorkflowEvent<typeof suspense>>();
       let lock = false;
-      context.__internal__call_send_event.add(() => {
+      context.__internal__call_send_event.subscribe(() => {
         if (lock) {
           throw new Error("Cannot send event after snapshot");
         }
       });
-      context.__internal__call_context.add((context, next) => {
+      context.__internal__call_context.subscribe((context, next) => {
         const originalHandler = context.handler;
         context.handler = (...events) => {
           const result = originalHandler(...events);

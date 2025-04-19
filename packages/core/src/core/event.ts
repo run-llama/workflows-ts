@@ -12,7 +12,7 @@ export type InferWorkflowEventData<T> =
       ? U
       : never;
 
-export type WorkflowEventInstance<Event> =
+export type InferWorkflowEvent<Event> =
   Event extends WorkflowEvent<infer Data, infer DebugLabel>
     ? WorkflowEventData<Data, DebugLabel>
     : never;
