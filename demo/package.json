@@ -5,7 +5,7 @@
   "dependencies": {
     "@hono/node-server": "^1.13.8",
     "@modelcontextprotocol/sdk": "^1.7.0",
-    "@llama-flow/core": "workspace:*",
+    "@llama-flow/core": "latest",
     "hono": "^4.7.4",
     "openai": "^4.87.3",
     "p-retry": "^6.2.1",

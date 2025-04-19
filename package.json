@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.1",
   "type": "module",
-  "packageManager": "pnpm@10.6.3",
+  "packageManager": "pnpm@10.8.1",
   "pnpm": {
     "onlyBuiltDependencies": [
       "@swc/core"
@@ -12,7 +12,7 @@
   "scripts": {
     "typecheck": "tsc -b --verbose",
     "lint:fix": "prettier . --write",
-    "publish": "pnpm -r run build && changeset publish",
+    "publish": "turbo build --filter=\"./packages/*\" && changeset publish",
     "prepare": "husky"
   },
   "devDependencies": {
