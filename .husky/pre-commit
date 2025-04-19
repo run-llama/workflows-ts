@@ -1,1 +1,3 @@
-lint-staged --config lint-staged.config.js
+export NODE_OPTIONS="--experimental-strip-types"
+
+lint-staged --config lint-staged.config.ts
