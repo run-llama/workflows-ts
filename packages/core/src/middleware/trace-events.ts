@@ -30,6 +30,28 @@ const eventToHandlerContextWeakMap = new WeakMap<
   HandlerContext
 >();
 
+export function getEventOrigins(
+  eventData: WorkflowEventData<any>,
+): [WorkflowEventData<any>, ...WorkflowEventData<any>[]] {
+  let currentContext = eventToHandlerContextWeakMap.get(eventData);
+  if (!currentContext) {
+    throw new Error(
+      "Event context not found, this should not happen. Please report this issue with a reproducible example.",
+    );
+  }
+  while (
+    currentContext.prev &&
+    currentContext.prev.prev !== currentContext.root
+  ) {
+    currentContext = currentContext.prev;
+  }
+
+  return currentContext.inputs as [
+    WorkflowEventData<any>,
+    ...WorkflowEventData<any>[],
+  ];
+}
+
 export type HandlerRef<
   AcceptEvents extends WorkflowEvent<any>[],
   Result extends ReturnType<WorkflowEvent<any>["with"]> | void,
