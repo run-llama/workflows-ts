@@ -37,7 +37,7 @@ jobs:
       - name: Update jsr.json
         run: |
           jq --arg version "$(jq -r '.version' ./packages/core/package.json)" '.version = $version' ./packages/core/jsr.json > tmp.json && mv tmp.json ./packages/core/jsr.json
-          prettier --write ./packages/core/jsr.json
+          pnpx prettier --write ./packages/core/jsr.json
 
       - name: Commit lock file
         continue-on-error: true
@@ -48,6 +48,7 @@ jobs:
           file_pattern: "**/jsr.json"
 
   publish:
+    name: Publish to jsr
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -62,5 +63,5 @@ jobs:
           cache: "pnpm"
       - name: Install dependencies
         run: pnpm install
-      - run: npx jsr publish
+      - run: pnpm dlx jsr publish --allow-slow-types
         working-directory: ./packages/core
