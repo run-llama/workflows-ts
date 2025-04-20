@@ -20,7 +20,9 @@ yarn add @llama-flow/core
 
 pnpm add @llama-flow/core
 
-deno add jsr:@llama-flow/core
+bun add @llama-flow/core
+
+deno add npm:@llama-flow/core
 ```
 
 ### First, define events

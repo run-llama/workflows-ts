@@ -46,22 +46,23 @@ jobs:
           commit_message: "chore: update jsr.json"
           branch: changeset-release/main
           file_pattern: "**/jsr.json"
-
-  publish:
-    name: Publish to jsr
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      id-token: write
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: "pnpm"
-      - name: Install dependencies
-        run: pnpm install
-      - run: pnpm dlx jsr publish --allow-slow-types
-        working-directory: ./packages/core
+#  Blocked by upstream issue: https://github.com/jsr-io/jsr/issues/543
+#
+#  publish:
+#    name: Publish to jsr
+#    runs-on: ubuntu-latest
+#    permissions:
+#      contents: read
+#      id-token: write
+#    steps:
+#      - uses: actions/checkout@v4
+#      - uses: pnpm/action-setup@v4
+#      - name: Setup Node.js
+#        uses: actions/setup-node@v4
+#        with:
+#          node-version: 22
+#          cache: "pnpm"
+#      - name: Install dependencies
+#        run: pnpm install
+#      - run: pnpm dlx jsr publish --allow-slow-types
+#        working-directory: ./packages/core
