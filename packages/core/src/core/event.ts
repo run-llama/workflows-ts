@@ -44,7 +44,7 @@ export const workflowEvent = <Data = void, DebugLabel extends string = string>(
           config?.debugLabel ? config.debugLabel : `WorkflowEvent(${l1}.${l2})`,
         toJSON: () => {
           return {
-            event: l1,
+            type: config?.debugLabel ? config.debugLabel : l1,
             data,
           };
         },
