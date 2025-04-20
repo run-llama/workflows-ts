@@ -11,6 +11,7 @@
   },
   "scripts": {
     "typecheck": "tsc -b --verbose",
+    "lint": "prettier . --check",
     "lint:fix": "prettier . --write",
     "publish": "turbo build --filter=\"./packages/*\" && changeset publish",
     "prepare": "husky"
