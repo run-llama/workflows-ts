@@ -237,19 +237,19 @@ describe("get event origins", () => {
       );
       expect(result).toMatchInlineSnapshot(`
         {
-          "branchAEvent(1)": [
+          "branchAEvent": [
             {
               "data": "Branch A",
               "event": "4",
             },
           ],
-          "branchBEvent(3)": [
+          "branchBEvent": [
             {
               "data": "Branch B",
               "event": "4",
             },
           ],
-          "branchCEvent(5)": [
+          "branchCEvent": [
             {
               "data": "Branch C",
               "event": "4",

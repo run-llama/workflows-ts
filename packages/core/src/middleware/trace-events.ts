@@ -222,8 +222,10 @@ export function withTraceEvents<
               });
             },
           );
-        handlerContext.handler = handlerMiddleware;
-        next(handlerContext);
+        next({
+          ...handlerContext,
+          handler: handlerMiddleware,
+        });
       });
       return context;
     },
