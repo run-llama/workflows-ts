@@ -11,6 +11,23 @@ import { collect } from "@llama-flow/core/stream/consumer";
 import { until } from "@llama-flow/core/stream/until";
 import { pipeline } from "node:stream/promises";
 
+const groupBy = <T>(
+  array: T[],
+  fn: (item: T) => string,
+): Record<string, T[]> => {
+  return array.reduce(
+    (acc, obj) => {
+      const key = fn(obj);
+      if (!acc[key]) {
+        acc[key] = [];
+      }
+      acc[key].push(obj);
+      return acc;
+    },
+    {} as Record<string, T[]>,
+  );
+};
+
 describe("with trace events", () => {
   test("runOnce", () => {
     const workflow = withTraceEvents(createWorkflow());
@@ -231,7 +248,7 @@ describe("get event origins", () => {
         ),
       );
 
-      const result = Object.groupBy(
+      const result = groupBy(
         results,
         (e) => `${getEventOrigins(e, context)[0]}`,
       );
