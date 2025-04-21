@@ -32,3 +32,39 @@ jobs:
         run: pnpm install
       - name: Run tests
         run: pnpx turbo run test
+  deno-test:
+    name: Test on Deno
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - uses: pnpm/action-setup@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "pnpm"
+      - name: Install dependencies
+        run: pnpm install
+      - name: Run build
+        run: pnpx turbo run build --filter="./packages/*"
+      - name: Run Deno tests
+        run: deno test
+        working-directory: ./demo/deno
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "pnpm"
+      - name: Install dependencies
+        run: pnpm install
+      - name: Run lint
+        run: pnpm run lint

@@ -1,0 +1,24 @@
+{
+  "name": "@llama-flow/core",
+  "version": "0.3.5",
+  "exports": {
+    ".": "./src/core/index.ts",
+    "./async-context": "./src/async-context/index.ts",
+    "./interrupter/hono": "./src/interrupter/hono.ts",
+    "./interrupter/mcp": "./src/interrupter/mcp.ts",
+    "./interrupter/next": "./src/interrupter/next.ts",
+    "./interrupter/promise": "./src/interrupter/promise.ts",
+    "./middleware/store": "./src/middleware/store.ts",
+    "./middleware/trace-events": "./src/middleware/trace-events.ts",
+    "./middleware/validation": "./src/middleware/validation.ts",
+    "./util/p-retry": "./src/util/p-retry.ts",
+    "./util/zod": "./src/util/zod.ts",
+    "./stream/consumer": "./src/stream/consumer.ts",
+    "./stream/filter": "./src/stream/filter.ts",
+    "./stream/find": "./src/stream/find.ts",
+    "./stream/until": "./src/stream/until.ts"
+  },
+  "publish": {
+    "include": ["LICENSE", "README.md", "src/**/*.ts"]
+  }
+}

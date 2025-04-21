@@ -1,0 +1,56 @@
+{
+  "version": "4",
+  "specifiers": {
+    "jsr:@std/assert@1": "1.0.12",
+    "jsr:@std/internal@^1.0.6": "1.0.6",
+    "npm:@llama-flow/core@*": "0.3.4"
+  },
+  "jsr": {
+    "@std/assert@1.0.12": {
+      "integrity": "08009f0926dda9cbd8bef3a35d3b6a4b964b0ab5c3e140a4e0351fbf34af5b9a",
+      "dependencies": [
+        "jsr:@std/internal"
+      ]
+    },
+    "@std/internal@1.0.6": {
+      "integrity": "9533b128f230f73bd209408bb07a4b12f8d4255ab2a4d22a1fd6d87304aca9a4"
+    }
+  },
+  "npm": {
+    "@llama-flow/core@0.3.4": {}
+  },
+  "workspace": {
+    "dependencies": [
+      "jsr:@std/assert@1",
+      "npm:@llama-flow/core@*"
+    ],
+    "patches": {
+      "npm:@llama-flow/core@0.3.4": {
+        "peerDependencies": [
+          "npm:@modelcontextprotocol/sdk@^1.7.0",
+          "npm:hono@^4.7.4",
+          "npm:next@^15.2.2",
+          "npm:p-retry@^6.2.1",
+          "npm:zod@^3.24.2"
+        ],
+        "peerDependenciesMeta": {
+          "@modelcontextprotocol/sdk": {
+            "optional": true
+          },
+          "hono": {
+            "optional": true
+          },
+          "next": {
+            "optional": true
+          },
+          "p-retry": {
+            "optional": true
+          },
+          "zod": {
+            "optional": true
+          }
+        }
+      }
+    }
+  }
+}

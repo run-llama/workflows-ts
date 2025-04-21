@@ -1,0 +1,9 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./lib/lint-staged",
+    "tsBuildInfoFile": "./lib/lint-staged/.tsbuildinfo",
+    "moduleResolution": "bundler"
+  },
+  "include": ["./lint-staged.config.ts"]
+}

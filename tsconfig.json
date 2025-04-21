@@ -20,6 +20,9 @@
   "include": [],
   "references": [
     {
+      "path": "./tsconfig.lint-staged.json"
+    },
+    {
       "path": "./packages/core/tsconfig.test.json"
     },
     {

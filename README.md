@@ -2,8 +2,9 @@
 
 llama-flow 🌊 is a simple, lightweight workflow engine, in TypeScript.
 
-[![Bundle Size](https://img.shields.io/bundlephobia/min/@llama-flow/core)](https://bundlephobia.com/result?p=@llama-flow/core)
-[![Bundle Size](https://img.shields.io/bundlephobia/minzip/@llama-flow/core)](https://bundlephobia.com/result?p=@llama-flow/core)
+[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz_small.svg)](https://stackblitz.com/github/run-llama/llama-flow/tree/main/demo/browser?file=src%2FApp.tsx)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/run-llama/llama-flow/test.yml?branch=main&style=flat&colorA=000000&colorB=45dff8)](https://github.com/run-llama/llama-flow/actions/workflows/test.yml?query=branch%3Amain)
+[![Bundle Size](https://img.shields.io/bundlephobia/minzip/@llama-flow/core?style=flat&colorA=000000&colorB=45dff8)](https://bundlephobia.com/result?p=@llama-flow/core)
 
 - Minimal core API (<=2kb)
 - 100% Type safe
@@ -19,7 +20,9 @@ yarn add @llama-flow/core
 
 pnpm add @llama-flow/core
 
-deno add jsr:@llama-flow/core
+bun add @llama-flow/core
+
+deno add npm:@llama-flow/core
 ```
 
 ### First, define events
@@ -79,17 +82,19 @@ By default, we provide a simple fan-out utility to run multiple workflows in par
 ```ts
 import { until } from "@llama-flow/core/stream/until";
 import { collect } from "@llama-flow/core/stream/consumer";
+import { filter } from "@llama-flow/core/stream/filter";
 
 let condition = false;
-workflow.handle([startEvent], (start) => {
+workflow.handle([startEvent], async (start) => {
   const { sendEvent, stream } = getContext();
   for (let i = 0; i < 10; i++) {
     sendEvent(convertEvent.with(i));
   }
   // You define the condition to stop the workflow
-  const results = collect(
-    until(stream, () => condition).filter((ev) =>
-      convertStopEvent.includes(ev),
+  const results = await collect(
+    filter(
+      until(stream, () => condition),
+      (ev) => convertStopEvent.includes(ev),
     ),
   );
   console.log(results.length); // 10
