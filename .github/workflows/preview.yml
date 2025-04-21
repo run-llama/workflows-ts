@@ -4,7 +4,7 @@ env:
   VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
   VERCEL_PROJECT_ID: ${{ secrets.LLAMAINDEX_VERCEL_PROJECT_ID }}
   TURBO_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-  TURBO_TEAM: ${{ vars.VERCEL_ORG_ID }}
+  TURBO_TEAM: ${{ vars.TURBO_TEAM }}
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
