@@ -33,7 +33,7 @@ deno add npm:@llama-flow/core
 
 ```ts
 import { OpenAI } from "openai";
-import { createWorkflow, workflowEvent } from '@llama-flow/core';
+import { createWorkflow, workflowEvent } from "@llama-flow/core";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -57,6 +57,158 @@ workflow.handle([stopEvent], (event) => {
   console.log("Response:", event.data);
 });
 
-const { sendEvent, stream } = workflow.createContext()
+const { sendEvent } = workflow.createContext();
 sendEvent(startEvent.with("Hello, LlamaFlow!"));
+```
+
+## Parallel processing with async handlers
+
+Tool calls are a common pattern in LLM applications, where the model generates a call to an external function or API.
+
+### Without LlamaFlow
+
+```ts
+const messages = [{ role: "user", content: "Hello, LlamaFlow!" }];
+while (true) {
+  // too many nested try-catch blocks
+  try {
+    const completion = await openai.chat.completions.create({
+      // ...
+    });
+
+    if (completion.choices[0].message.tool_calls.length > 0) {
+      // no parallel processing
+      for (const toolCall of completion.choices[0].message.tool_calls) {
+        const name = toolCall.function.name;
+        const args = JSON.parse(toolCall.function.arguments);
+        try {
+          const result = callFunction(name, args);
+          messages.push({
+            role: "tool",
+            tool_call_id: toolCall.id,
+            content: result.toString(),
+          });
+        } catch (e) {
+          messages.push({
+            role: "tool",
+            tool_call_id: toolCall.id,
+            content: "ERROR WHILE CALLING FUNCTION" + e.message,
+          });
+        }
+      }
+    } else {
+      break;
+    }
+  } catch (e) {
+    // handle error
+  }
+  // ...
+}
+```
+
+### With LlamaFlow
+
+```ts
+workflow.handle([toolCallEvent], ({ data: { id, name, args } }) => {
+  const { signal, sendEvent } = getContext();
+  signal.onabort = () =>
+    sendEvent(
+      toolCallResultEvent.with({
+        role: "tool",
+        tool_call_id: id,
+        content: "ERROR WHILE CALLING FUNCTION" + signal.reason.message,
+      }),
+    );
+
+  const result = callFunction(name, args);
+  return toolCallResultEvent.with({
+    role: "tool",
+    tool_call_id: id,
+    content: result,
+  });
+});
+```
+
+```ts
+workflow.handle([startEvent], async (event) => {
+  const { sendEvent, stream } = getContext();
+  // ...
+  if (response.choices[0].message.tool_calls.length > 0) {
+    response.choices[0].message.tool_calls.map((toolCall) => {
+      const name = toolCall.function.name;
+      const args = JSON.parse(toolCall.function.arguments);
+      sendEvent(
+        toolCallEvent.with({
+          id: toolCall.id,
+          name,
+          args,
+        }),
+      );
+    });
+    let counter = 0;
+    const results = collect(
+      filter(
+        until(
+          stream,
+          () => counter++ === response.choices[0].message.tool_calls.length,
+        ),
+        toolCallResultEvent,
+      ),
+    );
+    return sendEvent(
+      startEvent.with([...event.data, ...results.map((r) => r.data)]),
+    );
+  }
+  return stopEvent(response.choices[0].message.content);
+});
+```
+
+```ts
+const { sendEvent } = workflow.createContext();
+sendEvent(
+  startEvent.with([
+    {
+      role: "user",
+      content: "Hello, LlamaFlow!",
+    },
+  ]),
+);
+```
+
+## Ship to Production easily
+
+We provide tons of middleware and integrations to make it easy to ship your workflows to production.
+
+### Hono /w Cloudflare Workers
+
+```ts
+import { Hono } from "hono";
+import { createHonoHandler } from "@llama-flow/core/interrupter/hono";
+import { openaiChatWorkflow, startEvent, stopEvent } from "@/lib/workflow";
+
+const app = new Hono();
+
+app.post(
+  "/workflow",
+  createHonoHandler(
+    openaiChatWorkflow,
+    async (ctx) => startEvent.with(ctx.req.json()),
+    stopEvent,
+  ),
+);
+
+export default app;
+```
+
+### Next.js
+
+```ts
+import { createNextHandler } from "@llama-flow/core/interrupter/next";
+import { openaiChatWorkflow, startEvent, stopEvent } from "@/lib/workflows";
+
+export const { GET } = createNextHandler(
+  openaiChatWorkflow,
+  async (req) => startEvent.with(req.body),
+  stopEvent,
+);
 ```
