@@ -181,37 +181,6 @@ sendEvent(
 );
 ```
 
-### Streaming using standard API / third-party libraries
-
-You can use the Web Stream API to handle stream
-
-```ts
-const toolCalls = [];
-stream
-  .pipeThrough(
-    new TransformStream({
-      async transform(event, controller) {
-        if (toolCallResultEvent.include(event)) {
-          controller.enqueue(event);
-        }
-      },
-    }),
-  )
-  .pipeTo(
-    new WritableStream({
-      async write(event) {
-        if (toolCallResultEvent.include(event)) {
-          const { id, content } = event.data;
-          await openai.chat.completions.terminateToolCall({
-            tool_call_id: id,
-            content,
-          });
-        }
-      },
-    }),
-  );
-```
-
 ## Ship to Production easily
 
 We provide tons of [middleware](#) and [integrations](#) to make it easy to ship your workflows to production.
