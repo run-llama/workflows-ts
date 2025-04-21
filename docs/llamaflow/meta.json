@@ -1,6 +1,7 @@
 {
   "title": "Workflows",
-  "description": "Event-driven workflow engine for TypeScript",
+  "description": "Event-driven workflow engine",
+  "root": true,
   "defaultOpen": false,
   "pages": [
     "index",
