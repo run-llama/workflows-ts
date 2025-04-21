@@ -15,7 +15,13 @@ This example requires installing the `openai` provider: `npm i @llamaindex/opena
 
 ```ts
 import { createWorkflow, workflowEvent } from "@llama-flow/core";
-import { Document, VectorStoreIndex, Settings, BaseNode, MetadataMode } from "llamaindex";
+import {
+  Document,
+  VectorStoreIndex,
+  Settings,
+  BaseNode,
+  MetadataMode,
+} from "llamaindex";
 import { OpenAI, OpenAIEmbedding } from "@llamaindex/openai";
 
 // Define events
@@ -28,9 +34,9 @@ const responseEvent = workflowEvent<string>();
 const workflow = createWorkflow();
 
 // Set default global llm
-Settings.llm = new OpenAI({ 
-  model: "gpt-4.1-mini", 
-  temperature: 0.2 
+Settings.llm = new OpenAI({
+  model: "gpt-4.1-mini",
+  temperature: 0.2,
 });
 
 // Set the default global embedModel
@@ -55,31 +61,33 @@ const index = await VectorStoreIndex.fromDocuments(documents);
 workflow.handle([queryEvent], async (event) => {
   const query = event.data;
   console.log(`Processing query: ${query}`);
-  
+
   // Retrieve relevant documents
   const retriever = index.asRetriever();
   const nodes = await retriever.retrieve(query);
-  
+
   return retrieveEvent.with({
     query,
-    nodes: nodes.map(node => node.node),
+    nodes: nodes.map((node) => node.node),
   });
 });
 
 // Handle retrieval results: Generate response
 workflow.handle([retrieveEvent], async (event) => {
   const { query, nodes } = event.data;
-  
+
   // Combine document content as context
-  const context = nodes.map(node => node.getContent(MetadataMode.NONE)).join('\n\n');
-  
+  const context = nodes
+    .map((node) => node.getContent(MetadataMode.NONE))
+    .join("\n\n");
+
   return generateEvent.with({ query, context });
 });
 
 // Handle generation: Produce final response
 workflow.handle([generateEvent], async (event) => {
   const { query, context } = event.data;
-  
+
   // Create a prompt with the context and query
   const prompt = `
 Context information:
@@ -88,10 +96,10 @@ ${context}
 Based on the context information and no other knowledge, answer the following query:
 ${query}
   `;
-  
+
   // Generate response with LLM
   const response = await Settings.llm.complete({ prompt });
-  
+
   return responseEvent.with(response.text);
 });
 
@@ -128,9 +136,9 @@ import { z } from "zod"; // For defining tool parameters
 
 // --- LlamaIndex Settings ---
 // Set default global llm
-Settings.llm = new OpenAI({ 
-  model: "gpt-4.1-mini", 
-  temperature: 0.2 
+Settings.llm = new OpenAI({
+  model: "gpt-4.1-mini",
+  temperature: 0.2,
 });
 
 // Set the default global embedModel
@@ -143,17 +151,19 @@ Settings.embedModel = new OpenAIEmbedding({
 // 1. Define Tools
 // Example Tool 1: Simple Sum Function
 const sumNumbers = tool(
-  ({ a, b }: { a: number; b: number }) => { // Function logic
+  ({ a, b }: { a: number; b: number }) => {
+    // Function logic
     return Promise.resolve(`${a} + ${b} = ${a + b}`); // Agents often expect promises
   },
-  { // Tool metadata
+  {
+    // Tool metadata
     name: "sumNumbers",
     description: "Use this function to calculate the sum of two numbers.",
     parameters: z.object({
       a: z.number().describe("The first number"),
       b: z.number().describe("The second number"),
     }),
-  }
+  },
 );
 
 // Example Tool 2: RAG Query Tool (Needs an index)
@@ -161,9 +171,15 @@ async function createRagTool(): Promise<QueryEngineTool> {
   console.log("[AgentSetup] Creating RAG Tool Index...");
   // Load or define documents for the RAG tool
   const ragDocs = [
-    new Document({ text: "The LlamaFlow workflow engine orchestrates complex tasks." }),
-    new Document({ text: "LlamaIndex agents can use tools to interact with external systems." }),
-    new Document({ text: "San Francisco's budget for 2023-2024 was approximately $14.6 billion." }),
+    new Document({
+      text: "The LlamaFlow workflow engine orchestrates complex tasks.",
+    }),
+    new Document({
+      text: "LlamaIndex agents can use tools to interact with external systems.",
+    }),
+    new Document({
+      text: "San Francisco's budget for 2023-2024 was approximately $14.6 billion.",
+    }),
   ];
   const index = await VectorStoreIndex.fromDocuments(ragDocs);
   const retriever = index.asRetriever({ similarityTopK: 1 });
@@ -175,7 +191,8 @@ async function createRagTool(): Promise<QueryEngineTool> {
     queryEngine: queryEngine, // Pass the query engine instance
     metadata: {
       name: "llama_info_tool",
-      description: "Provides information about LlamaFlow, LlamaIndex Agents, and sometimes specific facts like SF budget figures.",
+      description:
+        "Provides information about LlamaFlow, LlamaIndex Agents, and sometimes specific facts like SF budget figures.",
     },
   });
 }
@@ -187,17 +204,23 @@ async function initializeAgent() {
   console.log("[AgentSetup] Initializing agent...");
   const ragTool = await createRagTool();
   const tools = [sumNumbers, ragTool];
-  llamaAgent = agent({ // Use the agent factory
+  llamaAgent = agent({
+    // Use the agent factory
     tools,
     llm: new OpenAI({ model: "gpt-4o-mini" }), // Explicitly pass LLM if not relying solely on global Settings
     // verbose: true, // Enable verbose logging for debugging agent steps
   });
-  console.log("[AgentSetup] Agent initialized with tools:", tools.map(t => t.metadata.name).join(', '));
+  console.log(
+    "[AgentSetup] Agent initialized with tools:",
+    tools.map((t) => t.metadata.name).join(", "),
+  );
 }
 
 // --- Workflow Definition ---
 const agentQueryEvent = workflowEvent<string>({ debugLabel: "agentQuery" });
-const agentResponseEvent = workflowEvent<string>({ debugLabel: "agentResponse" });
+const agentResponseEvent = workflowEvent<string>({
+  debugLabel: "agentResponse",
+});
 const agentErrorEvent = workflowEvent<Error>({ debugLabel: "agentError" });
 
 const agentWorkflow = createWorkflow();
@@ -205,19 +228,23 @@ const agentWorkflow = createWorkflow();
 // Handle incoming query, run the agent, and return the result or error
 agentWorkflow.handle([agentQueryEvent], async (event) => {
   if (!llamaAgent) {
-    return agentErrorEvent.with(new Error("Agent not initialized. Call initializeAgent() first."));
+    return agentErrorEvent.with(
+      new Error("Agent not initialized. Call initializeAgent() first."),
+    );
   }
   const query = event.data;
   console.log(`[AgentWorkflow] Received query for agent: ${query}`);
   try {
     const response = await llamaAgent.run(query);
     console.log(`[AgentWorkflow] Agent response received.`);
-  
+
     const resultText = JSON.stringify(response.data);
     return agentResponseEvent.with(resultText);
   } catch (error) {
     console.error(`[AgentWorkflow] Error running agent:`, error);
-    return agentErrorEvent.with(error instanceof Error ? error : new Error(String(error)));
+    return agentErrorEvent.with(
+      error instanceof Error ? error : new Error(String(error)),
+    );
   }
 });
 
@@ -257,4 +284,4 @@ The event-driven architecture allows you to:
 4. Scale your applications by isolating resource-intensive steps
 5. Build more resilient systems with better error handling
 
-As you build your own applications, consider how the patterns shown here can be adapted to your specific use cases. 
+As you build your own applications, consider how the patterns shown here can be adapted to your specific use cases.

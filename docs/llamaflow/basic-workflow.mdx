@@ -11,9 +11,9 @@ One of the most powerful features of workflows is the ability to run tasks in pa
 
 ```ts
 import { createWorkflow, workflowEvent, getContext } from "@llama-flow/core";
-import { collect } from '@llama-flow/core/stream/consumer';
-import { until } from '@llama-flow/core/stream/until';
-import { filter } from '@llama-flow/core/stream/filter';
+import { collect } from "@llama-flow/core/stream/consumer";
+import { until } from "@llama-flow/core/stream/until";
+import { filter } from "@llama-flow/core/stream/filter";
 
 // Define events
 const startEvent = workflowEvent<string>();
@@ -44,11 +44,11 @@ workflow.handle([startEvent], (start) => {
       // Filter for resultEvent and stop when all items are processed
       until(
         filter(stream, (event) => resultEvent.include(event)), // Only consider resultEvent
-        () => itemsProcessed === itemsToProcess // Stop condition check
-      )
+        () => itemsProcessed === itemsToProcess, // Stop condition check
+      ),
     );
     // Send the final aggregated result
-    sendEvent(completeEvent.with(results.map(event => event.data)));
+    sendEvent(completeEvent.with(results.map((event) => event.data)));
   })().catch(console.error); // Handle potential errors during collection
 
   // Note: This handler finishes *before* the collection completes.
@@ -58,7 +58,7 @@ workflow.handle([startEvent], (start) => {
 // Process each item
 workflow.handle([processItemEvent], async (event) => {
   // Simulate async work
-  await new Promise(resolve => setTimeout(resolve, Math.random() * 100));
+  await new Promise((resolve) => setTimeout(resolve, Math.random() * 100));
   const processedValue = `Processed: ${event.data}`;
 
   // Crucially, update the shared counter *after* processing
@@ -75,9 +75,9 @@ async function runFanOut() {
 
   for await (const event of stream) {
     if (processItemEvent.include(event)) {
-       console.log(`Processing item: ${event.data}`);
+      console.log(`Processing item: ${event.data}`);
     } else if (resultEvent.include(event)) {
-       console.log(`Result received: ${event.data}`);
+      console.log(`Result received: ${event.data}`);
     } else if (completeEvent.include(event)) {
       console.log("Final aggregated results:", event.data);
       break; // Stop processing the stream
@@ -89,6 +89,7 @@ runFanOut();
 ```
 
 This pattern allows you to:
+
 1. Emit multiple events to be processed in parallel
 2. Collect results as they come in
 3. Complete once all parallel tasks are finished
@@ -99,8 +100,8 @@ You can implement conditional logic in your workflows:
 
 ```ts
 import { createWorkflow, workflowEvent } from "@llama-flow/core";
-import { collect } from '@llama-flow/core/stream/consumer';
-import { until } from '@llama-flow/core/stream/until';
+import { collect } from "@llama-flow/core/stream/consumer";
+import { until } from "@llama-flow/core/stream/until";
 
 const inputEvent = workflowEvent<number>();
 const evenNumberEvent = workflowEvent<string>();
@@ -166,11 +167,12 @@ const resultEvent = workflowEvent<number>();
 
 // Create a workflow with store middleware
 const workflow = withStore(
-  () => ({ // Initializer function
+  () => ({
+    // Initializer function
     count: 0,
     history: [] as number[],
   }),
-  createWorkflow()
+  createWorkflow(),
 );
 
 // Increment the counter
@@ -193,10 +195,10 @@ workflow.handle([incrementEvent], (event) => {
 // Example E2E Run Usage
 async function runWithStore() {
   const { stream, sendEvent } = workflow.createContext();
-  
+
   // Send start event multiple times to see store update
   sendEvent(startEvent.with());
-  sendEvent(startEvent.with()); 
+  sendEvent(startEvent.with());
 
   for await (const event of stream) {
     if (resultEvent.include(event)) {
@@ -225,13 +227,10 @@ const disallowedEvent = workflowEvent<void, "disallowed">();
 
 // Create a workflow with validation middleware
 // Define allowed event paths
-const workflow = withValidation(
-  createWorkflow(), 
-  [
-    [[startEvent], [processEvent]], // startEvent can only lead to processEvent
-    [[processEvent], [resultEvent]], // processEvent can only lead to resultEvent
-  ]
-);
+const workflow = withValidation(createWorkflow(), [
+  [[startEvent], [processEvent]], // startEvent can only lead to processEvent
+  [[processEvent], [resultEvent]], // processEvent can only lead to resultEvent
+]);
 
 // This will pass validation
 workflow.strictHandle([startEvent], (sendEvent, start) => {
@@ -290,7 +289,7 @@ workflow.handle([processEvent], () => {
     console.error("Process aborted:", signal.reason);
     // Clean up resources
   };
-  
+
   // Your processing logic here
 });
 ```
@@ -326,8 +325,8 @@ app.post(
   createHonoHandler(
     workflow,
     async (ctx) => queryEvent.with(await ctx.req.text()),
-    responseEvent
-  )
+    responseEvent,
+  ),
 );
 
 // Start server
@@ -339,5 +338,6 @@ serve(app, ({ port }) => {
 ## Next Steps
 
 Now that you've learned about basic workflow patterns, explore more advanced topics:
+
 - [Streaming with Workflows](./streaming.mdx)
-- [Advanced Event Handling](./advanced-events.mdx) 
+- [Advanced Event Handling](./advanced-events.mdx)

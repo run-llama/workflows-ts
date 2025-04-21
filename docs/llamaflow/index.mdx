@@ -44,8 +44,8 @@ import { workflowEvent } from "@llama-flow/core";
 
 // Define input and output events
 const startEvent = workflowEvent<string>(); // Takes a string input
-const convertEvent = workflowEvent<number>();       // Intermediate event
-const stopEvent = workflowEvent<1 | -1>();  // Final output event, returns 1 or -1
+const convertEvent = workflowEvent<number>(); // Intermediate event
+const stopEvent = workflowEvent<1 | -1>(); // Final output event, returns 1 or -1
 ```
 
 ### 2. Create a workflow and connect events
@@ -89,7 +89,7 @@ sendEvent(startEvent.with("42"));
 const result = await pipeline(stream, async function (source) {
   for await (const event of source) {
     if (stopEvent.include(event)) {
-      return `Result: ${event.data === 1 ? 'positive' : 'negative'}`;
+      return `Result: ${event.data === 1 ? "positive" : "negative"}`;
     }
   }
 });
@@ -99,7 +99,7 @@ console.log(result); // "Result: positive"
 // Alternative: Process the stream manually
 for await (const event of stream) {
   if (stopEvent.include(event)) {
-    console.log(`Result: ${event.data === 1 ? 'positive' : 'negative'}`);
+    console.log(`Result: ${event.data === 1 ? "positive" : "negative"}`);
     break; // Exit the loop
   }
 }
@@ -108,8 +108,8 @@ for await (const event of stream) {
 **Using Stream Utilities:**
 
 ```ts
-import { collect } from '@llama-flow/core/stream/consumer';
-import { until } from '@llama-flow/core/stream/until';
+import { collect } from "@llama-flow/core/stream/consumer";
+import { until } from "@llama-flow/core/stream/until";
 
 // Create a workflow context and send the initial event
 const { stream, sendEvent } = workflow.createContext();
@@ -121,7 +121,7 @@ const allEvents = await collect(until(stream, stopEvent));
 // The last event will be the stopEvent that was requested
 const finalEvent = allEvents[allEvents.length - 1];
 if (stopEvent.include(finalEvent)) {
-  console.log(`Result: ${finalEvent.data === 1 ? 'positive' : 'negative'}`);
+  console.log(`Result: ${finalEvent.data === 1 ? "positive" : "negative"}`);
 }
 ```
 
