@@ -35,7 +35,7 @@ jobs:
     name: Pre Release Doc
     runs-on: ubuntu-latest
     outputs:
-      deploymentUrl: ${{ steps.deploy.outputs.deployment_url }}
+      deployment_url: ${{ steps.deploy.outputs.deployment_url }}
 
     steps:
       - name: Checkout Repo
