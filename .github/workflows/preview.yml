@@ -26,3 +26,60 @@ jobs:
 
       - name: Pre Release
         run: pnpx pkg-pr-new publish --pnpm ./packages/*
+
+  pre_release_doc:
+    name: Pre Release Doc
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+        with:
+          path: llamaflow
+          repository: "${{ github.repository }}"
+          fetch-depth: "1"
+      - name: Checkout LITS
+        uses: actions/checkout@v4
+        with:
+          path: llamaindex
+          repository: "run-llama/LlamaIndexTS"
+          fetch-depth: "1"
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: "llamaflow/package.json"
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: "llamaindex/package.json"
+      - name: Setup Node.js for Llamaflow
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "pnpm"
+          cache-dependency-path: "llamaflow/pnpm-lock.yaml"
+      - name: Setup Node.js for LlamaIndex
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "pnpm"
+          cache-dependency-path: "llamaindex/pnpm-lock.yaml"
+      - name: Install dependencies for llamaflow
+        run: pnpm install
+        working-directory: llamaflow
+      - name: Install dependencies for llamaindex
+        run: pnpm install
+        working-directory: llamaindex
+      - name: Link Llamaflow docs to LlamaIndex
+        run: |
+          pnpm link ${{github.workspace}}/llamaflow/docs
+        working-directory: llamaindex/apps/next
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+      - name: Pull Vercel Environment Information
+        run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+        working-directory: llamaindex
+      - name: Build Project Artifacts
+        run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
+        working-directory: llamaindex
+      - name: Deploy Project Artifacts to Vercel
+        run: vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }}
+        working-directory: llamaindex
