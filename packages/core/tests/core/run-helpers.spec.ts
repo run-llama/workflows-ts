@@ -1,15 +1,6 @@
 import { describe, expect, test, vi } from "vitest";
-import {
-  createWorkflow,
-  eventSource,
-  workflowEvent,
-  type WorkflowEventData,
-} from "@llama-flow/core";
-import {
-  runWorkflow,
-  runAndCollect,
-  runWorkflowWithFilter,
-} from "@llama-flow/core/stream/run";
+import { createWorkflow, eventSource, workflowEvent } from "@llama-flow/core";
+import { runWorkflow, runAndCollect } from "@llama-flow/core/stream/run";
 
 describe("workflow helper functions", () => {
   test("runWorkflow should execute workflow and return the final event", async () => {
