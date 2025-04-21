@@ -49,7 +49,7 @@ jobs:
         with:
           commit_message: "chore: update jsr.json"
           branch: changeset-release/main
-          file_pattern: "**/jsr.json"
+          file_pattern: "**/jsr.json **/CHANGELOG.md"
 #  Blocked by upstream issue: https://github.com/jsr-io/jsr/issues/543
 #
 #  publish:
