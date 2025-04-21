@@ -48,8 +48,8 @@ jobs:
           cache: "pnpm"
       - name: Install dependencies
         run: pnpm install
-      - name: Run tests
-        run: pnpx turbo run build
+      - name: Run build
+        run: pnpx turbo run build --filter="./packages/*"
       - name: Run Deno tests
         run: deno test
         working-directory: ./demo/deno
