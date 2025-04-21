@@ -95,6 +95,7 @@ jobs:
         working-directory: llamaindex
 
   add-comment:
+    name: Add Comment
     runs-on: ubuntu-latest
     needs: pre_release_doc
     permissions:
