@@ -108,6 +108,8 @@ while (true) {
 
 ### With LlamaFlow
 
+LlamaFlow provides abort signals and parallel processing out of the box.
+
 ```ts
 workflow.handle([toolCallEvent], ({ data: { id, name, args } }) => {
   const { signal, sendEvent } = getContext();
@@ -128,6 +130,8 @@ workflow.handle([toolCallEvent], ({ data: { id, name, args } }) => {
   });
 });
 ```
+
+You can collect the results of the tool calls from the stream and send them back to the workflow.
 
 ```ts
 workflow.handle([startEvent], async (event) => {
