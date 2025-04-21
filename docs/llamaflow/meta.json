@@ -1,6 +1,13 @@
 {
-  "title": "LlamaFlow",
-  "description": "Simple, lightweight workflow engine",
+  "title": "Workflows",
+  "description": "Event-driven workflow engine",
   "root": true,
-  "pages": ["---Guide---", "index", "..."]
+  "defaultOpen": false,
+  "pages": [
+    "index",
+    "basic-workflow",
+    "streaming",
+    "advanced-events",
+    "llamaindex-integration"
+  ]
 }

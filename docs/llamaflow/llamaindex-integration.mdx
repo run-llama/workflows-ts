@@ -1,0 +1,287 @@
+---
+title: Integrating with LlamaIndex
+description: Build AI applications by combining Workflows with other LlamaIndex features
+---
+
+This guide demonstrates how to combine the power of the workflow engine with LlamaIndex's retrieval and reasoning capabilities to build sophisticated AI applications.
+
+## Basic RAG Workflow
+
+Let's build a simple Retrieval-Augmented Generation (RAG) workflow:
+
+:::note
+This example requires installing the `openai` provider: `npm i @llamaindex/openai` and setting `OPENAI_API_KEY` in your env vars.
+:::
+
+```ts
+import { createWorkflow, workflowEvent } from "@llama-flow/core";
+import {
+  Document,
+  VectorStoreIndex,
+  Settings,
+  BaseNode,
+  MetadataMode,
+} from "llamaindex";
+import { OpenAI, OpenAIEmbedding } from "@llamaindex/openai";
+
+// Define events
+const queryEvent = workflowEvent<string>();
+const retrieveEvent = workflowEvent<{ query: string; nodes: BaseNode[] }>();
+const generateEvent = workflowEvent<{ query: string; context: string }>();
+const responseEvent = workflowEvent<string>();
+
+// Create workflow
+const workflow = createWorkflow();
+
+// Set default global llm
+Settings.llm = new OpenAI({
+  model: "gpt-4.1-mini",
+  temperature: 0.2,
+});
+
+// Set the default global embedModel
+Settings.embedModel = new OpenAIEmbedding({
+  model: "text-embedding-3-small",
+});
+
+// Sample documents
+const documents = [
+  new Document({
+    text: "LlamaIndex is a data framework for LLM applications to ingest, structure, and access private or domain-specific data.",
+  }),
+  new Document({
+    text: "LlamaIndex workflows are a lightweight workflow engine for TypeScript, designed to create event-driven processes.",
+  }),
+];
+
+// Create vector store index
+const index = await VectorStoreIndex.fromDocuments(documents);
+
+// Handle query: Retrieve relevant documents
+workflow.handle([queryEvent], async (event) => {
+  const query = event.data;
+  console.log(`Processing query: ${query}`);
+
+  // Retrieve relevant documents
+  const retriever = index.asRetriever();
+  const nodes = await retriever.retrieve(query);
+
+  return retrieveEvent.with({
+    query,
+    nodes: nodes.map((node) => node.node),
+  });
+});
+
+// Handle retrieval results: Generate response
+workflow.handle([retrieveEvent], async (event) => {
+  const { query, nodes } = event.data;
+
+  // Combine document content as context
+  const context = nodes
+    .map((node) => node.getContent(MetadataMode.NONE))
+    .join("\n\n");
+
+  return generateEvent.with({ query, context });
+});
+
+// Handle generation: Produce final response
+workflow.handle([generateEvent], async (event) => {
+  const { query, context } = event.data;
+
+  // Create a prompt with the context and query
+  const prompt = `
+Context information:
+${context}
+
+Based on the context information and no other knowledge, answer the following query:
+${query}
+  `;
+
+  // Generate response with LLM
+  const response = await Settings.llm.complete({ prompt });
+
+  return responseEvent.with(response.text);
+});
+
+// Execute the workflow
+const { stream, sendEvent } = workflow.createContext();
+sendEvent(queryEvent.with("What is LlamaIndex?"));
+
+// Process the stream
+for await (const event of stream) {
+  if (responseEvent.include(event)) {
+    console.log("Final response:", event.data);
+    break;
+  }
+}
+```
+
+## Building an Tool Calling Agent
+
+Workflows can orchestrate calls to LlamaIndex Agents, which can use tools (like functions or other query engines). This example adapts the agent from `examples/11_rag.ts`.
+
+```ts
+import { createWorkflow, workflowEvent } from "@llama-flow/core";
+import {
+  Settings,
+  Document,
+  VectorStoreIndex,
+  agent, // Import the agent factory
+  tool, // Import the tool factory
+  QueryEngineTool, // Specific tool type for query engines
+} from "llamaindex";
+import { OpenAI, OpenAIEmbedding } from "@llamaindex/openai";
+// import { SimpleDirectoryReader } from "@llamaindex/readers/directory"; // If loading from files
+import { z } from "zod"; // For defining tool parameters
+
+// --- LlamaIndex Settings ---
+// Set default global llm
+Settings.llm = new OpenAI({
+  model: "gpt-4.1-mini",
+  temperature: 0.2,
+});
+
+// Set the default global embedModel
+Settings.embedModel = new OpenAIEmbedding({
+  model: "text-embedding-3-small",
+});
+
+// --- Agent Setup ---
+
+// 1. Define Tools
+// Example Tool 1: Simple Sum Function
+const sumNumbers = tool(
+  ({ a, b }: { a: number; b: number }) => {
+    // Function logic
+    return Promise.resolve(`${a} + ${b} = ${a + b}`); // Agents often expect promises
+  },
+  {
+    // Tool metadata
+    name: "sumNumbers",
+    description: "Use this function to calculate the sum of two numbers.",
+    parameters: z.object({
+      a: z.number().describe("The first number"),
+      b: z.number().describe("The second number"),
+    }),
+  },
+);
+
+// Example Tool 2: RAG Query Tool (Needs an index)
+async function createRagTool(): Promise<QueryEngineTool> {
+  console.log("[AgentSetup] Creating RAG Tool Index...");
+  // Load or define documents for the RAG tool
+  const ragDocs = [
+    new Document({
+      text: "The LlamaFlow workflow engine orchestrates complex tasks.",
+    }),
+    new Document({
+      text: "LlamaIndex agents can use tools to interact with external systems.",
+    }),
+    new Document({
+      text: "San Francisco's budget for 2023-2024 was approximately $14.6 billion.",
+    }),
+  ];
+  const index = await VectorStoreIndex.fromDocuments(ragDocs);
+  const retriever = index.asRetriever({ similarityTopK: 1 });
+  const queryEngine = index.asQueryEngine({ retriever }); // Create a query engine
+
+  console.log("[AgentSetup] RAG Tool Index ready.");
+  // Create the QueryEngineTool
+  return new QueryEngineTool({
+    queryEngine: queryEngine, // Pass the query engine instance
+    metadata: {
+      name: "llama_info_tool",
+      description:
+        "Provides information about LlamaFlow, LlamaIndex Agents, and sometimes specific facts like SF budget figures.",
+    },
+  });
+}
+
+// 2. Create the Agent
+let llamaAgent: ReturnType<typeof agent>; // Declare agent variable
+
+async function initializeAgent() {
+  console.log("[AgentSetup] Initializing agent...");
+  const ragTool = await createRagTool();
+  const tools = [sumNumbers, ragTool];
+  llamaAgent = agent({
+    // Use the agent factory
+    tools,
+    llm: new OpenAI({ model: "gpt-4o-mini" }), // Explicitly pass LLM if not relying solely on global Settings
+    // verbose: true, // Enable verbose logging for debugging agent steps
+  });
+  console.log(
+    "[AgentSetup] Agent initialized with tools:",
+    tools.map((t) => t.metadata.name).join(", "),
+  );
+}
+
+// --- Workflow Definition ---
+const agentQueryEvent = workflowEvent<string>({ debugLabel: "agentQuery" });
+const agentResponseEvent = workflowEvent<string>({
+  debugLabel: "agentResponse",
+});
+const agentErrorEvent = workflowEvent<Error>({ debugLabel: "agentError" });
+
+const agentWorkflow = createWorkflow();
+
+// Handle incoming query, run the agent, and return the result or error
+agentWorkflow.handle([agentQueryEvent], async (event) => {
+  if (!llamaAgent) {
+    return agentErrorEvent.with(
+      new Error("Agent not initialized. Call initializeAgent() first."),
+    );
+  }
+  const query = event.data;
+  console.log(`[AgentWorkflow] Received query for agent: ${query}`);
+  try {
+    const response = await llamaAgent.run(query);
+    console.log(`[AgentWorkflow] Agent response received.`);
+
+    const resultText = JSON.stringify(response.data);
+    return agentResponseEvent.with(resultText);
+  } catch (error) {
+    console.error(`[AgentWorkflow] Error running agent:`, error);
+    return agentErrorEvent.with(
+      error instanceof Error ? error : new Error(String(error)),
+    );
+  }
+});
+
+// --- Workflow Execution ---
+async function runAgentWorkflow() {
+  await initializeAgent(); // Ensure agent is ready
+
+  const { stream, sendEvent } = agentWorkflow.createContext();
+  const query = "What is LlamaFlow and what is 15 + 27?";
+  console.log(`Sending query to agent workflow: ${query}`);
+  sendEvent(agentQueryEvent.with(query));
+
+  // Process the stream
+  for await (const event of stream) {
+    console.log(`[Stream] Event: ${event}`);
+    if (agentResponseEvent.include(event)) {
+      console.log("Agent Response:", event.data);
+    }
+    if (agentErrorEvent.include(event)) {
+      console.error("Agent Error:", event.data.message);
+    }
+  }
+}
+
+runAgentWorkflow();
+```
+
+## Conclusion
+
+By combining the lightweight, event-driven workflow engine with LlamaIndex's powerful document indexing and querying capabilities, you can build sophisticated AI applications with clean, maintainable code.
+
+The event-driven architecture allows you to:
+
+1. Break complex processes into manageable steps
+2. Create reusable components for common AI workflows
+3. Easily debug and monitor each phase of execution
+4. Scale your applications by isolating resource-intensive steps
+5. Build more resilient systems with better error handling
+
+As you build your own applications, consider how the patterns shown here can be adapted to your specific use cases.

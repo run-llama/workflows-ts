@@ -1,5 +1,14 @@
 name: Publish Preview
 on: [pull_request]
+env:
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.LLAMAINDEX_VERCEL_PROJECT_ID }}
+  TURBO_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+  TURBO_TEAM: ${{ vars.TURBO_TEAM }}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   pre_release:
@@ -26,3 +35,121 @@ jobs:
 
       - name: Pre Release
         run: pnpx pkg-pr-new publish --pnpm ./packages/*
+
+  pre_release_doc:
+    name: Pre Release Doc
+    runs-on: ubuntu-latest
+    outputs:
+      deployment_url: ${{ steps.deploy.outputs.deployment_url }}
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+        with:
+          path: llamaflow
+          repository: "${{ github.repository }}"
+          fetch-depth: "1"
+      - name: Checkout LITS
+        uses: actions/checkout@v4
+        with:
+          path: llamaindex
+          repository: "run-llama/LlamaIndexTS"
+          fetch-depth: "1"
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: "llamaflow/package.json"
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: "llamaindex/package.json"
+      - name: Setup Node.js for Llamaflow
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "pnpm"
+          cache-dependency-path: "llamaflow/pnpm-lock.yaml"
+      - name: Setup Node.js for LlamaIndex
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "pnpm"
+          cache-dependency-path: "llamaindex/pnpm-lock.yaml"
+      - name: Install dependencies for llamaflow
+        run: pnpm install
+        working-directory: llamaflow
+      - name: Install dependencies for llamaindex
+        run: pnpm install
+        working-directory: llamaindex
+      - name: Link Llamaflow docs to LlamaIndex
+        run: |
+          pnpm link ${{github.workspace}}/llamaflow/docs
+        working-directory: llamaindex/apps/next
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+      - name: Pull Vercel Environment Information
+        run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+        working-directory: llamaindex
+      - name: Build Project Artifacts
+        run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
+        working-directory: llamaindex
+      - name: Deploy Project Artifacts to Vercel
+        id: deploy
+        run: |
+          vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }} > deploy.log
+          URL=$(cat deploy.log | grep -o 'https://[^ ]*.llamaindex.ai' | head -n1)
+          echo "deployment_url=$URL" >> $GITHUB_OUTPUT
+        working-directory: llamaindex
+
+  add-comment:
+    name: Add Comment
+    runs-on: ubuntu-latest
+    needs: pre_release_doc
+    permissions:
+      issues: write
+      pull-requests: write
+    steps:
+      - name: Comment URL to PR
+        uses: actions/github-script@v6
+        id: comment-deployment-url-script
+        env:
+          DEPLOYMENT_URL: ${{ needs.pre_release_doc.outputs.deployment_url }}
+        with:
+          script: |
+            // Get pull requests that are open for current ref.
+            const pullRequests = await github.rest.pulls.list({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                state: 'open',
+                head: `${context.repo.owner}:${context.ref.replace('refs/heads/', '')}`
+            })
+
+            // Set issue number for following calls from context (if on pull request event) or from above variable.
+            const issueNumber = context.issue.number || pullRequests.data[0].number
+
+            // Retrieve existing bot comments for the PR
+            const {data: comments} = await github.rest.issues.listComments({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issueNumber,
+            })
+            const botComment = comments.find(comment => {
+                return comment.user.type === 'Bot' && comment.body.includes('Deployed at')
+            })
+
+            const output = "Deployed at " + process.env.DEPLOYMENT_URL
+
+            // If we have a comment, update it, otherwise create a new one
+            if (botComment) {
+                github.rest.issues.updateComment({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    comment_id: botComment.id,
+                    body: output
+                })
+            } else {
+                github.rest.issues.createComment({
+                    issue_number: issueNumber,
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    body: output
+                })
+            }
