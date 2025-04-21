@@ -45,6 +45,18 @@ workflow.handle([booleanEvent], (event) => {
     value: event.data ? 100 : 0
   });
 });
+
+// Run the workflow
+const { stream, sendEvent } = workflow.createContext();
+
+sendEvent(textEvent.with("Hello, world!"));
+
+for await (const event of stream) {
+  if (complexEvent.include(event)) {
+    console.log(event.data);
+    break;
+  }
+}
 ```
 
 ### Event Branching and Merging
@@ -55,70 +67,144 @@ You can create complex event flows with branching and merging patterns:
 import { createWorkflow, workflowEvent, getContext } from "@llama-flow/core";
 import { collect } from '@llama-flow/core/stream/consumer';
 import { until } from '@llama-flow/core/stream/until';
+import { filter } from '@llama-flow/core/stream/filter';
+import { pipeline } from "node:stream/promises";
 
-// Define events for a data processing pipeline
-const inputEvent = workflowEvent<string>();
-const validateEvent = workflowEvent<string>();
-const processEvent = workflowEvent<string>();
-const errorEvent = workflowEvent<Error>();
-const resultEvent = workflowEvent<string>();
-const completeEvent = workflowEvent<string[]>();
+// Define events for a data processing pipeline with branching and merging
+const startEvent = workflowEvent<string[], "start">();
+const itemEvent = workflowEvent<string, "item">();
+const validEvent = workflowEvent<string, "valid">();
+const invalidEvent = workflowEvent<string, "invalid">();
+const processedValidEvent = workflowEvent<string, "processedValid">();
+const processedInvalidEvent = workflowEvent<string, "processedInvalid">();
+const resultEvent = workflowEvent<string[], "result">();
 
 // Create workflow
 const workflow = createWorkflow();
 
-// Branch based on input validation
-workflow.handle([inputEvent], (event) => {
-  if (event.data && event.data.trim().length > 0) {
-    return validateEvent.with(event.data.trim());
+// Initial handler: branch out to process multiple items
+workflow.handle([startEvent], (event) => {
+  const { sendEvent } = getContext();
+  
+  // Fan out: emit an itemEvent for each input item
+  console.log(`Received ${event.data.length} items to process`);
+  for (const item of event.data) {
+    sendEvent(itemEvent.with(item));
+  }
+  
+  // No return here - this handler just fans out events
+});
+
+// Branch based on item validation
+workflow.handle([itemEvent], (event) => {
+  const item = event.data;
+  console.log(`Validating item: ${item}`);
+  
+  // Branch: send to different paths based on condition
+  if (item && item.length >= 3) {
+    return validEvent.with(item);
   } else {
-    return errorEvent.with(new Error("Empty input"));
+    return invalidEvent.with(item || "[empty]");
   }
 });
 
-// Process valid inputs
-workflow.handle([validateEvent], (event) => {
-  return processEvent.with(event.data.toUpperCase());
+// Process valid items
+workflow.handle([validEvent], (event) => {
+  const item = event.data;
+  console.log(`Processing valid item: ${item}`);
+  return processedValidEvent.with(`✓ ${item.toUpperCase()}`);
 });
 
-// Handle processing
-workflow.handle([processEvent], (event) => {
-  return resultEvent.with(`Processed: ${event.data}`);
+// Process invalid items
+workflow.handle([invalidEvent], (event) => {
+  const item = event.data;
+  console.log(`Processing invalid item: ${item}`);
+  return processedInvalidEvent.with(`✗ ${item}`);
 });
 
-// Handle errors
-workflow.handle([errorEvent], (event) => {
-  return resultEvent.with(`Error: ${event.data.message}`);
-});
-
-// Merge results: collect multiple results into a single completion event
-workflow.handle([inputEvent], (start) => {
-  const { sendEvent, stream } = getContext();
+// Merge handler: collect results from both processing paths
+workflow.handle([startEvent], async (event) => {
+  const { stream } = getContext();
+  const totalItems = event.data.length;
   
-  // Process all inputs
-  const inputs = start.data.split(',').map(s => s.trim());
-  inputs.forEach(input => sendEvent(inputEvent.with(input)));
+  console.log(`Setting up merger to collect ${totalItems} processed results`);
   
-  // Collect all results
+  // Merge: collect results from both processing paths
   const results = await collect(
-    until(stream, result => resultEvent.include(result))
-      .filter(ev => resultEvent.include(ev))
-      .take(inputs.length)
+    until(
+      filter(
+        stream,
+        (ev) => processedValidEvent.include(ev) || processedInvalidEvent.include(ev)
+      ),
+      () => {
+        // Stop when we've collected the expected number of results
+        return results.length >= totalItems;
+      }
+    )
   );
   
-  return completeEvent.with(results.map(r => r.data));
+  // Extract and sort the data from collected events
+  const processedResults = results.map(event => event.data);
+  
+  // The valid items (with ✓) first, then invalid items (with ✗)
+  processedResults.sort();
+  
+  return resultEvent.with(processedResults);
 });
+
+// Example usage
+async function runBranchingMergingWorkflow() {
+  const { stream, sendEvent } = workflow.createContext();
+  const items = ["apple", "b", "cherry", "", "elderberry", "fig"];
+  
+  console.log("Starting workflow with items:", items);
+  sendEvent(startEvent.with(items));
+  
+  // Process the stream using pipeline to get the final result
+  const result = await pipeline(stream, async function* (source) {
+    for await (const event of source) {
+      if (validEvent.include(event) || invalidEvent.include(event)) {
+        console.log(`Branched event with data: ${event.data}`);
+      }
+      else if (processedValidEvent.include(event) || processedInvalidEvent.include(event)) {
+        console.log(`Processed event with data: ${event.data}`);
+      }
+      else if (resultEvent.include(event)) {
+        console.log("Merged results:", event.data);
+        yield event.data;
+        return; // Stop processing
+      }
+    }
+  });
+  
+  return result;
+}
+
+runBranchingMergingWorkflow();
 ```
+
+In this branching and merging example:
+
+1. We start with a list of items and fan out to process each one individually
+2. Each item branches to either the valid or invalid path based on its length
+3. Different processing is applied to each branch
+4. Finally, we merge the results from both branches back into a single resulting array
+
+This pattern is useful for parallel processing with different business logic for different categories of inputs.
 
 ## Event Filtering and Transformation
 
 You can filter and transform events to build sophisticated data processing pipelines:
 
 ```ts
-import { createWorkflow, workflowEvent } from "@llama-flow/core";
+import { createWorkflow, workflowEvent, getContext } from "@llama-flow/core";
+import { collect } from '@llama-flow/core/stream/consumer';
+import { until } from '@llama-flow/core/stream/until';
+import { filter } from '@llama-flow/core/stream/filter';
 
 // Define events
 const dataEvent = workflowEvent<number>();
+const initEvent = workflowEvent<number>();
 const evenEvent = workflowEvent<number>();
 const oddEvent = workflowEvent<number>();
 const transformedEvent = workflowEvent<string>();
@@ -147,82 +233,48 @@ workflow.handle([oddEvent], (event) => {
 });
 
 // Collect and organize results
-workflow.handle([dataEvent], (start) => {
-  const { sendEvent, stream } = getContext();
-  
+workflow.handle([initEvent], async (event) => {
+  const { stream, sendEvent } = getContext();
+
   // Generate a sequence of numbers
-  for (let i = 1; i <= 10; i++) {
+  for (let i = 1; i <= event.data; i++) {
     sendEvent(dataEvent.with(i));
   }
   
   // Collect transformed events
+  let numResults = 0;
   const results = await collect(
-    until(stream)
-      .filter(ev => transformedEvent.include(ev))
-      .take(10)
+    until(
+      filter(
+        stream,
+        (ev) => transformedEvent.include(ev)
+      ),
+      () => {
+        numResults++;
+        return numResults >= event.data;
+      }
+    )
   );
   
   return resultEvent.with(results.map(r => r.data));
 });
-```
 
-## Working with `withTraceEvents` Middleware
-
-The `withTraceEvents` middleware adds powerful tracing capabilities to your workflows:
-
-```ts
-import { 
-  createWorkflow, 
-  workflowEvent,
-  withTraceEvents,
-  runOnce,
-  createHandlerDecorator
-} from "@llama-flow/core";
-
-// Define events
-const startEvent = workflowEvent<string>();
-const processEvent = workflowEvent<string>();
-const resultEvent = workflowEvent<string>();
-
-// Create workflow with tracing
-const workflow = withTraceEvents(createWorkflow());
-
-// Create a custom handler decorator that logs execution time
-const measureTime = createHandlerDecorator({
-  debugLabel: "measureTime",
-  getInitialValue: () => performance.now(),
-  onBeforeHandler: (handler, context, startTime) => {
-    console.log(`Starting handler execution at ${new Date().toISOString()}`);
-    return handler;
-  },
-  onAfterHandler: (result, context, startTime) => {
-    const duration = performance.now() - startTime;
-    console.log(`Handler executed in ${duration.toFixed(2)}ms`);
-    return startTime; // Return the initial value for next execution
-  }
-});
-
-// Run a specific handler only once
-workflow.handle(
-  [startEvent],
-  runOnce((event) => {
-    console.log("This handler will only run once per workflow context");
-    return processEvent.with(event.data);
-  })
-);
-
-// Measure the execution time of this handler
-workflow.handle(
-  [processEvent],
-  measureTime((event) => {
-    // Simulate processing time
-    const start = Date.now();
-    while (Date.now() - start < 100) {
-      // Busy wait for 100ms
+// Example usage
+async function runFilterTransformWorkflow() {
+  const { stream, sendEvent } = workflow.createContext();
+  
+  sendEvent(initEvent.with(10));
+  
+  // Process the stream to get the final result
+  for await (const event of stream) {
+    if (resultEvent.include(event)) {
+      console.log("Results:", event.data);
+      return event.data;
     }
-    return resultEvent.with(`Processed: ${event.data}`);
-  })
-);
+  }
+}
+
+runFilterTransformWorkflow();
 ```
 
 ### Debugging with Substreams
@@ -230,12 +282,19 @@ workflow.handle(
 You can use the `substream` feature to debug specific event flows:
 
 ```ts
-import { createWorkflow, workflowEvent, withTraceEvents } from "@llama-flow/core";
+import { createWorkflow, workflowEvent, getContext } from "@llama-flow/core";
+import { withTraceEvents } from "@llama-flow/core/middleware/trace-events";
 
 // Define events
-const queryEvent = workflowEvent<string>();
-const fetchEvent = workflowEvent<string>();
-const resultEvent = workflowEvent<string>();
+const queryEvent = workflowEvent<string>({
+  debugLabel: "query",
+});
+const fetchEvent = workflowEvent<string>({
+  debugLabel: "fetch",
+});
+const resultEvent = workflowEvent<string>({
+  debugLabel: "result",
+});
 
 // Create workflow with tracing
 const workflow = withTraceEvents(createWorkflow());
@@ -254,7 +313,7 @@ workflow.handle([queryEvent], (event) => {
   // Listen for results in the substream
   (async () => {
     for await (const event of substream) {
-      console.log(`Event in substream: ${event.type}`);
+      console.log(`Event in substream: ${event}`);
     }
   })();
   
@@ -267,6 +326,21 @@ workflow.handle([fetchEvent], (event) => {
   // Actual fetch logic would go here
   return resultEvent.with(`Results for: ${event.data}`);
 });
+
+async function run() {
+  const { stream, sendEvent } = workflow.createContext();
+
+  sendEvent(queryEvent.with("Hello"));
+
+  for await (const event of stream) {
+    if (resultEvent.include(event)) {
+      console.log(`Result: ${event.data}`);
+      break;
+    }
+  }
+}
+
+run();
 ```
 
 ## Advanced Validation and Type Safety
@@ -274,14 +348,15 @@ workflow.handle([fetchEvent], (event) => {
 The `withValidation` middleware ensures your workflow connections are both type-safe and runtime-safe:
 
 ```ts
-import { createWorkflow, workflowEvent, withValidation } from "@llama-flow/core";
+import { createWorkflow, workflowEvent } from "@llama-flow/core";
+import { withValidation } from "@llama-flow/core/middleware/validation";
 
 // Define events with explicit types
-const inputEvent = workflowEvent<string, "input">();
-const validateEvent = workflowEvent<string, "validate">();
-const processEvent = workflowEvent<string, "process">();
-const resultEvent = workflowEvent<string, "result">();
-const errorEvent = workflowEvent<Error, "error">({
+const inputEvent = workflowEvent<string>();
+const validateEvent = workflowEvent<string>();
+const processEvent = workflowEvent<string>();
+const resultEvent = workflowEvent<string>();
+const errorEvent = workflowEvent<Error>({
   debugLabel: "errorEvent" // Add debug labels for better error messages
 });
 
@@ -330,90 +405,12 @@ workflow.strictHandle([errorEvent], (sendEvent, event) => {
 });
 ```
 
-## Creating Custom Middleware
-
-You can create your own middleware to extend the workflow capabilities:
-
-```ts
-import { createWorkflow, workflowEvent } from "@llama-flow/core";
-
-// Create a logging middleware
-function withLogging(workflow) {
-  const originalHandle = workflow.handle;
-  
-  workflow.handle = function(eventTypes, handler) {
-    return originalHandle.call(workflow, eventTypes, async function(...args) {
-      const eventType = eventTypes.map(e => e.name || 'AnonymousEvent').join(',');
-      console.log(`[${new Date().toISOString()}] Handling ${eventType}`);
-      
-      try {
-        const result = await handler(...args);
-        console.log(`[${new Date().toISOString()}] Completed ${eventType}`);
-        return result;
-      } catch (error) {
-        console.error(`[${new Date().toISOString()}] Error in ${eventType}:`, error);
-        throw error;
-      }
-    });
-  };
-  
-  return workflow;
-}
-
-// Create a retry middleware
-function withRetry(maxRetries = 3, workflow) {
-  const originalHandle = workflow.handle;
-  
-  workflow.handle = function(eventTypes, handler) {
-    return originalHandle.call(workflow, eventTypes, async function(...args) {
-      let lastError;
-      
-      for (let attempt = 1; attempt <= maxRetries; attempt++) {
-        try {
-          return await handler(...args);
-        } catch (error) {
-          lastError = error;
-          console.warn(`Attempt ${attempt}/${maxRetries} failed:`, error);
-          
-          if (attempt < maxRetries) {
-            // Exponential backoff
-            await new Promise(resolve => 
-              setTimeout(resolve, Math.pow(2, attempt - 1) * 100)
-            );
-          }
-        }
-      }
-      
-      throw lastError;
-    });
-  };
-  
-  return workflow;
-}
-
-// Use the custom middleware
-const workflow = withRetry(3, withLogging(createWorkflow()));
-
-// Define events
-const startEvent = workflowEvent<string>();
-const resultEvent = workflowEvent<string>();
-
-// Add handlers
-workflow.handle([startEvent], (event) => {
-  // This handler might fail but will be retried
-  if (Math.random() < 0.7) {
-    throw new Error("Random failure");
-  }
-  return resultEvent.with(`Processed: ${event.data}`);
-});
-```
-
 ## Integrating with External Systems
 
 You can extend your workflows to integrate with external systems:
 
 ```ts
-import { createWorkflow, workflowEvent } from "@llama-flow/core";
+import { createWorkflow, workflowEvent, getContext } from "@llama-flow/core";
 
 // Define events
 const fetchEvent = workflowEvent<string>();
@@ -438,7 +435,7 @@ workflow.handle([fetchEvent], async (event) => {
     const data = await response.json();
     return successEvent.with(data);
   } catch (error) {
-    if (error.name === 'AbortError') {
+    if (error instanceof Error && error.name === 'AbortError') {
       return failureEvent.with(new Error('Request was aborted'));
     }
     return failureEvent.with(error instanceof Error ? error : new Error(String(error)));
@@ -460,7 +457,7 @@ workflow.handle([dbQueryEvent], async (event) => {
       
     return dbResultEvent.with(results);
   } catch (error) {
-    return failureEvent.with(error);
+    return failureEvent.with(error instanceof Error ? error : new Error(String(error)));
   } finally {
     await db.close();
   }
@@ -473,7 +470,6 @@ LlamaIndex workflows excel at managing complex asynchronous patterns:
 
 ```ts
 import { createWorkflow, workflowEvent, getContext } from "@llama-flow/core";
-import { collect } from '@llama-flow/core/stream/consumer';
 import { until } from '@llama-flow/core/stream/until';
 
 // Events for an orchestration workflow
@@ -496,7 +492,7 @@ workflow.handle([orchestrateEvent], async (event) => {
   
   // Track progress
   let completed = 0;
-  const results = {};
+  const results: Record<string, string> = {};
   
   // Process task completion and progress events
   for await (const event of until(stream, () => completed === tasks.length)) {
