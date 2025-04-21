@@ -15,7 +15,7 @@ LlamaIndex workflows are designed from the ground up to work with streaming data
 Every workflow context provides a stream of events:
 
 ```ts
-import { createWorkflow, workflowEvent } from "@llama-flow/core";
+import { createWorkflow, workflowEvent, getContext } from "@llama-flow/core";
 
 // Define events
 const startEvent = workflowEvent<string>();
@@ -56,7 +56,9 @@ for await (const event of stream) {
 Workflows provide utility functions to make working with streams easier:
 
 ```ts
-import { createWorkflow, workflowEvent, until, collect } from "@llama-flow/core";
+import { createWorkflow, workflowEvent, getContext } from "@llama-flow/core";
+import { collect } from '@llama-flow/core/stream/consumer';
+import { until } from '@llama-flow/core/stream/until';
 
 const startEvent = workflowEvent<void>();
 const progressEvent = workflowEvent<number>();
@@ -80,7 +82,7 @@ const { stream, sendEvent } = workflow.createContext();
 sendEvent(startEvent.with());
 
 // Collect all events until resultEvent is encountered
-const events = await collect(until(stream, (event) => resultEvent.include(event)));
+const events = await collect(until(stream, resultEvent));
 
 // Filter only progress events
 const progressEvents = events.filter(event => progressEvent.include(event));
@@ -92,7 +94,7 @@ console.log(`Received ${progressEvents.length} progress updates`);
 You can conditionally process events and even stop the stream early:
 
 ```ts
-import { createWorkflow, workflowEvent } from "@llama-flow/core";
+import { createWorkflow, workflowEvent, getContext } from "@llama-flow/core";
 
 const startEvent = workflowEvent<number>();
 const dataEvent = workflowEvent<number>();
@@ -143,7 +145,7 @@ Workflow streams can be easily integrated with UI frameworks like React to creat
 ```tsx
 // In a React component
 import { useEffect, useState } from 'react';
-import { createWorkflow, workflowEvent } from "@llama-flow/core";
+import { createWorkflow, workflowEvent, getContext } from "@llama-flow/core";
 
 function StreamingComponent() {
   const [updates, setUpdates] = useState([]);
@@ -154,12 +156,12 @@ function StreamingComponent() {
     const startEvent = workflowEvent<void>();
     const updateEvent = workflowEvent<string>();
     const completeEvent = workflowEvent<void>();
-    
+
     const workflow = createWorkflow();
-    
+
     workflow.handle([startEvent], () => {
-      const { sendEvent } = getContext();
-      
+      const { sendEvent, signal } = getContext();
+
       // Simulate async updates
       const intervals = [
         setTimeout(() => sendEvent(updateEvent.with("First update")), 500),
@@ -167,17 +169,18 @@ function StreamingComponent() {
         setTimeout(() => sendEvent(updateEvent.with("Final update")), 1500),
         setTimeout(() => sendEvent(completeEvent.with()), 2000)
       ];
-      
-      // Cleanup function
-      getContext().signal.onabort = () => {
+
+      // Cleanup function using the signal
+      signal.onabort = () => {
+        console.log("Workflow context aborted, clearing timeouts.");
         intervals.forEach(clearTimeout);
       };
     });
-    
+
     // Run the workflow
-    const { stream, sendEvent } = workflow.createContext();
+    const { stream, sendEvent, abort } = workflow.createContext();
     sendEvent(startEvent.with());
-    
+
     // Process events
     const processEvents = async () => {
       for await (const event of stream) {
@@ -194,7 +197,8 @@ function StreamingComponent() {
     
     // Cleanup
     return () => {
-      // The workflow will be aborted when the component unmounts
+      console.log("Component unmounting, aborting workflow context.");
+      abort(); // Call abort on cleanup
     };
   }, []);
   
@@ -217,7 +221,7 @@ function StreamingComponent() {
 Workflows are also suitable for implementing Server-Sent Events:
 
 ```ts
-import { createWorkflow, workflowEvent } from "@llama-flow/core";
+import { createWorkflow, workflowEvent, getContext } from "@llama-flow/core";
 import express from 'express';
 
 // Define events
@@ -228,18 +232,18 @@ const dataEvent = workflowEvent<string>();
 const workflow = createWorkflow();
 
 workflow.handle([startEvent], () => {
-  const { sendEvent } = getContext();
-  
+  const { sendEvent, signal } = getContext();
+
   // Send periodic updates
-  const intervals = [
-    setInterval(() => {
-      sendEvent(dataEvent.with(`Update: ${new Date().toISOString()}`));
-    }, 1000)
-  ];
-  
-  // Cleanup
-  getContext().signal.onabort = () => {
-    intervals.forEach(clearInterval);
+  const intervalId = setInterval(() => { // Store single interval ID
+    sendEvent(dataEvent.with(`Update: ${new Date().toISOString()}`));
+  }, 1000);
+
+
+  // Cleanup using the signal
+  signal.onabort = () => {
+    console.log("Workflow context aborted, clearing interval.");
+    clearInterval(intervalId);
   };
 });
 
@@ -253,12 +257,13 @@ app.get('/events', (req, res) => {
   res.setHeader('Connection', 'keep-alive');
   
   // Run workflow
-  const { stream, sendEvent } = workflow.createContext();
+  const { stream, sendEvent, abort } = workflow.createContext();
   sendEvent(startEvent.with());
-  
+
   // Handle client disconnect
   req.on('close', () => {
-    // This will trigger the abort signal in the workflow
+    console.log("Client disconnected, aborting workflow context.");
+    abort(); // Abort the context when client closes connection
   });
   
   // Process and send events
@@ -276,96 +281,9 @@ app.listen(3000, () => {
 });
 ```
 
-## Advanced Techniques
-
-### Flow Control
-
-You can implement flow control with backpressure in your streaming workflows:
-
-```ts
-import { createWorkflow, workflowEvent } from "@llama-flow/core";
-
-// This example shows how to process items with controlled concurrency
-const processItems = async (items, maxConcurrency = 3) => {
-  const startEvent = workflowEvent<string[]>();
-  const processItemEvent = workflowEvent<string>();
-  const itemProcessedEvent = workflowEvent<string>();
-  const resultEvent = workflowEvent<string[]>();
-  
-  const workflow = createWorkflow();
-  
-  // Handler to process individual items
-  workflow.handle([processItemEvent], async (event) => {
-    // Simulate processing time
-    await new Promise(resolve => setTimeout(resolve, 100));
-    return itemProcessedEvent.with(`Processed: ${event.data}`);
-  });
-  
-  // Main workflow handler
-  workflow.handle([startEvent], async (event) => {
-    const { sendEvent, stream } = getContext();
-    const results = [];
-    
-    // Process with controlled concurrency
-    const items = event.data;
-    let inProgress = 0;
-    let itemIndex = 0;
-    
-    // Start initial batch of items
-    while (inProgress < maxConcurrency && itemIndex < items.length) {
-      sendEvent(processItemEvent.with(items[itemIndex++]));
-      inProgress++;
-    }
-    
-    // Process items and collect results
-    for await (const event of stream) {
-      if (itemProcessedEvent.include(event)) {
-        results.push(event.data);
-        inProgress--;
-        
-        // Add next item if available
-        if (itemIndex < items.length) {
-          sendEvent(processItemEvent.with(items[itemIndex++]));
-          inProgress++;
-        } else if (inProgress === 0) {
-          // All done
-          break;
-        }
-      }
-    }
-    
-    return resultEvent.with(results);
-  });
-  
-  // Run the workflow
-  const { stream, sendEvent } = workflow.createContext();
-  sendEvent(startEvent.with(items));
-  
-  // Wait for final result
-  for await (const event of stream) {
-    if (resultEvent.include(event)) {
-      return event.data;
-    }
-  }
-  
-  return [];
-};
-
-// Usage
-const results = await processItems(
-  Array.from({ length: 20 }, (_, i) => `Item ${i}`)
-);
-console.log(results);
-```
-
-This pattern allows you to:
-1. Process large datasets without overwhelming system resources
-2. Control the level of concurrency
-3. Process data as it becomes available
-4. Create efficient data pipelines
-
 ## Next Steps
 
 Now that you've learned about streaming with workflows, explore more advanced topics:
+
 - [Advanced Event Handling](./advanced-events.mdx)
 - [Integration Workflows with other LlamaIndex features](./llamaindex-integration.mdx)
