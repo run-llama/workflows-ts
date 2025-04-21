@@ -95,7 +95,7 @@ jobs:
         id: deploy
         run: |
           vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }} > deploy.log
-          URL=$(cat deploy.log | grep -o 'https://[^ ]*.vercel.app' | head -n1)
+          URL=$(cat deploy.log | grep -o 'https://[^ ]*.llamaindex.ai' | head -n1)
           echo "deployment_url=$URL" >> $GITHUB_OUTPUT
         working-directory: llamaindex
 
