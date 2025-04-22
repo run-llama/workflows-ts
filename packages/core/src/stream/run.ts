@@ -62,3 +62,32 @@ export async function runAndCollect<Input, Output>(
   // Collect all events until the output event
   return await collect(until(stream, outputEvent));
 }
+
+/**
+ * Runs a workflow with a specified input event and returns an async iterable stream of all events
+ * until a specified output event is encountered.
+ *
+ * This allows processing events one by one without collecting them all upfront.
+ *
+ * @example
+ * ```ts
+ * const eventStream = runStream(workflow, startEvent.with("42"), stopEvent);
+ * for await (const event of eventStream) {
+ *   console.log(`Processing event: ${event}`);
+ *   // Do something with each event as it arrives
+ * }
+ * ```
+ */
+export function runStream<Input, Output>(
+  workflow: Workflow,
+  inputEvent: WorkflowEventData<Input>,
+  outputEvent: WorkflowEvent<Output>,
+): AsyncIterable<WorkflowEventData<any>> {
+  const { stream, sendEvent } = workflow.createContext();
+
+  // Send the initial event
+  sendEvent(inputEvent);
+
+  // Return the stream that runs until the output event is encountered
+  return until(stream, outputEvent);
+}
