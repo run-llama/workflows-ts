@@ -4,6 +4,11 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+patchedDependencies:
+  graphviz-builder:
+    hash: 4f1750ab76e6ef9344f2a323942c88b136c27fd05dfc80f17a02fa278adac451
+    path: patches/graphviz-builder.patch
+
 importers:
 
   .:
@@ -246,6 +251,9 @@ importers:
       '@viz-js/viz':
         specifier: ^3.12.0
         version: 3.12.0
+      graphviz-builder:
+        specifier: ^0.1.1
+        version: 0.1.1(patch_hash=4f1750ab76e6ef9344f2a323942c88b136c27fd05dfc80f17a02fa278adac451)
     devDependencies:
       '@types/node':
         specifier: ^22.14.1
@@ -2424,6 +2432,10 @@ packages:
 
   graceful-fs@4.2.11:
     resolution: {integrity: sha512-RbJ5/jmFcNNCcDV5o9eTnBLJ/HszWV0P73bc+Ff4nS/rJj+YaS6IGyiOL0VoBYX+l1Wrl3k63h/KrH+nhJ0XvQ==}
+
+  graphviz-builder@0.1.1:
+    resolution: {integrity: sha512-4pzfUc6v6DiWk/e7arrzxAn6UTb03XgN30sd1YKiYgUUwR00ZH+fU9ZZy4yh+jkNh9iZjRwlaX/C6/U2wPTEUA==}
+    engines: {node: '>=10'}
 
   handlebars@4.7.8:
     resolution: {integrity: sha512-vafaFqs8MZkRrSX7sFVUdo3ap/eNiLnb4IakshzvP56X5Nr1iGKAIqdX6tMlm6HcNRIkr6AxO5jFEoJzzpT8aQ==}
@@ -6007,6 +6019,8 @@ snapshots:
 
   graceful-fs@4.2.11: {}
 
+  graphviz-builder@0.1.1(patch_hash=4f1750ab76e6ef9344f2a323942c88b136c27fd05dfc80f17a02fa278adac451): {}
+
   handlebars@4.7.8:
     dependencies:
       minimist: 1.2.8
@@ -7155,7 +7169,7 @@ snapshots:
   terser@5.39.0:
     dependencies:
       '@jridgewell/source-map': 0.3.6
-      acorn: 8.14.0
+      acorn: 8.14.1
       commander: 2.20.3
       source-map-support: 0.5.21
 
@@ -7477,7 +7491,7 @@ snapshots:
       '@webassemblyjs/ast': 1.14.1
       '@webassemblyjs/wasm-edit': 1.14.1
       '@webassemblyjs/wasm-parser': 1.14.1
-      acorn: 8.14.0
+      acorn: 8.14.1
       browserslist: 4.24.5
       chrome-trace-event: 1.0.4
       enhanced-resolve: 5.18.1
