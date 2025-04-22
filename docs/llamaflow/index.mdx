@@ -6,7 +6,7 @@ description: LlamaIndex Workflows is a simple and lightweight engine for JavaScr
 LlamaIndex Workflow (LlamaFlow) is a library for streaming event-driven programming in JavaScript and TypeScript.
 It provides a simple and lightweight orchestration solution for building complex workflows with minimal boilerplate.
 
-It combines [event-driven](#) programming, [directed graphs](#), and [streaming](#) to create a flexible and efficient way to handle data processing tasks.
+It combines [event-driven](#) programming, [async context](#) and [streaming](#) to create a flexible and efficient way to handle data processing tasks.
 
 The essential concepts of LlamaFlow are:
 
@@ -48,7 +48,7 @@ const workflow = createWorkflow();
 
 workflow.handle([startEvent], async (event) => {
   const response = await openai.chat.completions.create({
-    model: "gpt-3.5-turbo",
+    // ...
     messages: [{ role: "user", content: event.data }],
   });
 
