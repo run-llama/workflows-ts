@@ -72,6 +72,28 @@ import { collect } from "@llama-flow/core/stream/consumer";
 const allEvents = await collect(until(stream, stopEvent));
 ```
 
+### Helper Functions for Common Tasks
+
+There are helper functions to make working with workflows even simpler:
+
+```ts
+import {
+  runWorkflow,
+  runAndCollect,
+  runWorkflowWithFilter,
+} from "@llama-flow/core/stream/run";
+
+// Run workflow and get final result
+const result = await runWorkflow(workflow, startEvent.with("42"), stopEvent);
+
+// Run workflow and collect all events
+const allEvents = await runAndCollect(
+  workflow,
+  startEvent.with("42"),
+  stopEvent,
+);
+```
+
 ### Fan-out (Parallelism)
 
 By default, we provide a simple fan-out utility to run multiple workflows in parallel
