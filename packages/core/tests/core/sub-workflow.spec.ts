@@ -4,7 +4,7 @@ import {
   eventSource,
   getContext,
   workflowEvent,
-} from "@llama-flow/core";
+} from "../../src";
 import { promiseHandler } from "@llama-flow/core/interrupter/promise";
 import { collect } from "@llama-flow/core/stream/consumer";
 import { until } from "@llama-flow/core/stream/until";

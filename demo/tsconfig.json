@@ -3,8 +3,9 @@
     "target": "esnext",
     "module": "esnext",
     "esModuleInterop": true,
-    "moduleResolution": "node16",
-    "types": ["DOM", "DOM.AsyncIterable", "DOM.Iterable", "esnext"],
+    "moduleResolution": "bundler",
+    "lib": ["DOM", "DOM.AsyncIterable", "DOM.Iterable", "esnext"],
+    "types": ["node"],
     "forceConsistentCasingInFileNames": true,
     "strict": true,
     "skipLibCheck": true

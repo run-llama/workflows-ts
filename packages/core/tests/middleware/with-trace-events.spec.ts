@@ -1,5 +1,5 @@
 import { describe, test, vi, expectTypeOf, type Mock, expect } from "vitest";
-import { createWorkflow, getContext, workflowEvent } from "@llama-flow/core";
+import { createWorkflow, getContext, workflowEvent } from "../../src";
 import {
   withTraceEvents,
   runOnce,

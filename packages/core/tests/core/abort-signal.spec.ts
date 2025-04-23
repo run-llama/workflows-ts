@@ -1,5 +1,5 @@
 import { describe, expect, test, vi } from "vitest";
-import { createWorkflow, getContext, workflowEvent } from "@llama-flow/core";
+import { createWorkflow, getContext, workflowEvent } from "../../src";
 
 describe("abort signal", () => {
   test("basic", () => {

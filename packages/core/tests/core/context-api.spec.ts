@@ -5,7 +5,7 @@ import {
   getContext,
   workflowEvent,
   type WorkflowEventData,
-} from "@llama-flow/core";
+} from "../../src";
 import { until } from "@llama-flow/core/stream/until";
 import { collect, nothing } from "@llama-flow/core/stream/consumer";
 

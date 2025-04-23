@@ -130,12 +130,6 @@ dist
 .yarn/install-state.gz
 .pnp.*
 
-packages/core/core
-packages/core/async-context
-packages/core/interrupter
-packages/core/middleware
-packages/core/util
-packages/core/stream
 packages/core/README.md
 
 lib

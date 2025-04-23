@@ -6,7 +6,7 @@ import type { RequestHandlerExtra } from "@modelcontextprotocol/sdk/shared/proto
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 
 const requestHandlerExtraAsyncLocalStorage =
-  createAsyncContext<RequestHandlerExtra>();
+  createAsyncContext<RequestHandlerExtra<any, any>>();
 
 export const getReqHandlerExtra = () => {
   const extra = requestHandlerExtraAsyncLocalStorage.getStore();
@@ -26,7 +26,7 @@ export function mcpTool<
   stop: WorkflowEvent<Stop>,
 ): (
   args: Start,
-  extra: RequestHandlerExtra,
+  extra: RequestHandlerExtra<any, any>,
 ) => CallToolResult | Promise<CallToolResult> {
   return async (args, extra) =>
     requestHandlerExtraAsyncLocalStorage.run(extra, async () => {

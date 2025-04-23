@@ -1,5 +1,5 @@
 import { describe, expect, test, vi, afterEach } from "vitest";
-import { createWorkflow, workflowEvent } from "@llama-flow/core";
+import { createWorkflow, workflowEvent } from "../../src";
 import { withValidation } from "@llama-flow/core/middleware/validation";
 import { find } from "@llama-flow/core/stream/find";
 import { promiseHandler } from "@llama-flow/core/interrupter/promise";

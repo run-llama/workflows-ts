@@ -4,7 +4,7 @@
     "outDir": "./lib",
     "tsBuildInfoFile": "./lib/.tsbuildinfo",
     "paths": {
-      "@llama-flow/core": ["./src/core/index.ts"],
+      "@llama-flow/core": ["./src/index.ts"],
       "@llama-flow/core/async-context": ["./src/async-context/index.ts"],
       "@llama-flow/core/interrupter/*": ["./src/interrupter/*.ts"],
       "@llama-flow/core/middleware/*": ["./src/middleware/*.ts"],

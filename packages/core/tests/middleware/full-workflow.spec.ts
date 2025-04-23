@@ -4,7 +4,7 @@ import {
   eventSource,
   type WorkflowEvent,
   type WorkflowEventData,
-} from "@llama-flow/core";
+} from "../../src";
 import { withStore } from "@llama-flow/core/middleware/store";
 import { withTraceEvents } from "@llama-flow/core/middleware/trace-events";
 import { withValidation } from "@llama-flow/core/middleware/validation";

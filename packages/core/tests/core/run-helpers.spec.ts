@@ -4,8 +4,8 @@ import {
   eventSource,
   getContext,
   workflowEvent,
-} from "@llama-flow/core";
-import type { WorkflowEventData } from "@llama-flow/core";
+} from "../../src";
+import type { WorkflowEventData } from "../../src";
 import {
   runWorkflow,
   runAndCollect,

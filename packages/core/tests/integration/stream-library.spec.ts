@@ -6,7 +6,7 @@ import {
   createWorkflow,
   getContext,
   type WorkflowEventData,
-} from "@llama-flow/core";
+} from "../../src";
 import { until } from "@llama-flow/core/stream/until";
 
 describe("node:stream", () => {

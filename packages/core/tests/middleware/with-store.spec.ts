@@ -1,5 +1,5 @@
 import { describe, expect, test, vi } from "vitest";
-import { createWorkflow, workflowEvent } from "@llama-flow/core";
+import { createWorkflow, workflowEvent } from "../../src";
 import { withStore } from "@llama-flow/core/middleware/store";
 
 describe("with store", () => {

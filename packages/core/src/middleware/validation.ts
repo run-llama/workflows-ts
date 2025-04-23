@@ -4,7 +4,40 @@ import {
   type Workflow,
   type WorkflowEvent,
   type WorkflowEventData,
+  type WorkflowMutatorIdentifier,
 } from "@llama-flow/core";
+
+type Write<T, U> = Omit<T, keyof U> & U;
+
+type WithValidationWorkflow<W, V> = Write<W, ValidationWorkflow<W, V>>;
+
+type ValidationWorkflow<W, V> = W extends {
+  createContext(): infer Context;
+}
+  ? V extends [inputs: WorkflowEvent<any>[], output: WorkflowEvent<any>[]][]
+    ? {
+        createContext(): Write<
+          Context,
+          {
+            safeSendEvent: (...events: WorkflowEventData<any>[]) => void;
+          }
+        >;
+        strictHandle: <
+          const AcceptEvents extends WorkflowEvent<any>[],
+          Result extends ReturnType<WorkflowEvent<any>["with"]> | void,
+        >(
+          accept: AcceptEvents,
+          handler: ValidationHandler<V, AcceptEvents, Result>,
+        ) => void;
+      }
+    : never
+  : never;
+
+declare module "../workflow" {
+  interface WorkflowMutators<W, A> {
+    "@llama-flow/core/validation": WithValidationWorkflow<W, A>;
+  }
+}
 
 export type ValidationHandler<
   Validation extends [
@@ -30,31 +63,12 @@ export type ValidationHandler<
   }
 ) => Result | Promise<Result>;
 
-export type WithValidationWorkflow<
-  Validation extends [
-    inputs: WorkflowEvent<any>[],
-    output: WorkflowEvent<any>[],
-  ][],
-> = {
-  strictHandle<
-    const AcceptEvents extends WorkflowEvent<any>[],
-    Result extends ReturnType<WorkflowEvent<any>["with"]> | void,
-  >(
-    accept: AcceptEvents,
-    handler: ValidationHandler<Validation, AcceptEvents, Result>,
-  ): void;
-};
-
-export function withValidation<
+function withValidationImpl<
   const Validation extends [
     inputs: WorkflowEvent<any>[],
     outputs: WorkflowEvent<any>[],
   ][],
-  WorkflowLike extends Workflow,
->(
-  workflow: WorkflowLike,
-  validation: Validation,
-): WithValidationWorkflow<Validation> & WorkflowLike {
+>(workflow: Workflow, validation: Validation) {
   const createSafeSendEvent = (...events: WorkflowEventData<any>[]) => {
     const outputs = validation
       .filter(([inputs]) =>
@@ -81,7 +95,13 @@ export function withValidation<
   };
   return {
     ...workflow,
-    strictHandle: (accept, handler) => {
+    strictHandle: <
+      const AcceptEvents extends WorkflowEvent<any>[],
+      Result extends ReturnType<WorkflowEvent<any>["with"]> | void,
+    >(
+      accept: AcceptEvents,
+      handler: ValidationHandler<Validation, AcceptEvents, Result>,
+    ) => {
       const wrappedHandler: Handler<WorkflowEvent<any>[], any> = (
         ...events
       ) => {
@@ -106,3 +126,16 @@ export function withValidation<
     },
   };
 }
+
+type Validation = <
+  const Validation extends [
+    inputs: WorkflowEvent<any>[],
+    outputs: WorkflowEvent<any>[],
+  ][],
+  Mps extends [WorkflowMutatorIdentifier, unknown][] = [],
+>(
+  initializer: Workflow<Mps>,
+  validation: Validation,
+) => Workflow<[...Mps, ["@llama-flow/core/validation", Validation]]>;
+
+export const withValidation = withValidationImpl as unknown as Validation;

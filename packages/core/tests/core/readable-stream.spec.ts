@@ -1,11 +1,7 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
-import { getContext, type Workflow } from "@llama-flow/core";
-import { createWorkflow } from "@llama-flow/core";
-import {
-  eventSource,
-  workflowEvent,
-  type WorkflowEventData,
-} from "@llama-flow/core";
+import { getContext, type Workflow } from "../../src";
+import { createWorkflow } from "../../src";
+import { eventSource, workflowEvent, type WorkflowEventData } from "../../src";
 import { until } from "@llama-flow/core/stream/until";
 import { collect, nothing } from "@llama-flow/core/stream/consumer";
 
