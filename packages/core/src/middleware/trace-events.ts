@@ -5,13 +5,13 @@ import {
   type WorkflowEvent,
   type WorkflowEventData,
 } from "@llama-flow/core";
-import { isPromiseLike } from "../core/utils";
+import { isPromiseLike } from "../utils";
 import {
   createHandlerDecorator,
   decoratorRegistry,
 } from "./trace-events/create-handler-decorator";
 import { runOnce } from "./trace-events/run-once";
-import type { HandlerContext } from "../core/context";
+import type { HandlerContext } from "../context";
 
 type TracingContext = Record<string, unknown>;
 
