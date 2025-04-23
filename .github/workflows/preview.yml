@@ -94,7 +94,7 @@ jobs:
       - name: Deploy Project Artifacts to Vercel
         id: deploy
         run: |
-          vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }} > deploy.log
+          vercel deploy --prebuilt --archive=tgz --token=${{ secrets.VERCEL_TOKEN }} > deploy.log
           URL=$(cat deploy.log | grep -o 'https://[^ ]*.llamaindex.ai' | head -n1)
           echo "deployment_url=$URL" >> $GITHUB_OUTPUT
         working-directory: llamaindex
