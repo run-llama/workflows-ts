@@ -148,6 +148,9 @@ importers:
       rimraf:
         specifier: ^6.0.1
         version: 6.0.1
+      rxjs:
+        specifier: ^7.8.2
+        version: 7.8.2
       stream-chain:
         specifier: ^3.4.0
         version: 3.4.0
