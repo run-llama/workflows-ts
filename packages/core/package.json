@@ -40,21 +40,17 @@
         "default": "./async-context/index.js"
       }
     },
-    "./interrupter/hono": {
-      "types": "./interrupter/hono.d.ts",
-      "default": "./interrupter/hono.js"
+    "./hono": {
+      "types": "./hono.d.ts",
+      "default": "./hono.js"
     },
-    "./interrupter/mcp": {
-      "types": "./interrupter/mcp.d.ts",
-      "default": "./interrupter/mcp.js"
+    "./mcp": {
+      "types": "./mcp.d.ts",
+      "default": "./mcp.js"
     },
-    "./interrupter/next": {
-      "types": "./interrupter/next.d.ts",
-      "default": "./interrupter/next.js"
-    },
-    "./interrupter/promise": {
-      "types": "./interrupter/promise.d.ts",
-      "default": "./interrupter/promise.js"
+    "./next": {
+      "types": "./next.d.ts",
+      "default": "./next.js"
     },
     "./middleware/store": {
       "types": "./middleware/store.d.ts",

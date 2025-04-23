@@ -31,8 +31,8 @@ export default defineConfig([
   },
   // Interrupter APIs
   {
-    entry: ["src/interrupter/*.ts"],
-    outDir: "interrupter",
+    entry: ["src/*.ts"],
+    outDir: "dist",
     format: ["esm"],
     external: [
       "next",

@@ -4,7 +4,7 @@ import type {
   WorkflowEvent,
   WorkflowEventData,
 } from "@llama-flow/core";
-import { promiseHandler } from "./promise";
+import { runWorkflow } from "./stream/run";
 
 export const createHonoHandler = <Start, Stop>(
   workflow: Workflow,
@@ -20,7 +20,7 @@ export const createHonoHandler = <Start, Stop>(
     };
   }
   return async (c) => {
-    const stop = await promiseHandler(workflow, await getStart(c), stopEvent);
+    const stop = await runWorkflow(workflow, await getStart(c), stopEvent);
     return wrapStopEvent(c, stop.data);
   };
 };
