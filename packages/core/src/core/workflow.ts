@@ -1,7 +1,7 @@
 import { type WorkflowEvent, type WorkflowEventData } from "./event";
 import { createContext, type Handler, type WorkflowContext } from "./context";
 
-export type Workflow<Mis extends [] = [], Mos extends [] = []> = {
+export type Workflow = {
   handle<
     const AcceptEvents extends WorkflowEvent<any>[],
     Result extends ReturnType<WorkflowEvent<any>["with"]> | void,
@@ -9,30 +9,10 @@ export type Workflow<Mis extends [] = [], Mos extends [] = []> = {
     accept: AcceptEvents,
     handler: Handler<AcceptEvents, Result>,
   ): void;
-  createContext(): Mutate<WorkflowContext, Mis>;
-  $$workflowMutators?: Mos;
+  createContext(): WorkflowContext;
 };
 
-type Mutate<S, Ms> = number extends Ms["length" & keyof Ms]
-  ? S
-  : Ms extends []
-    ? S
-    : Ms extends [[infer Mi, infer Ma], ...infer Mrs]
-      ? Mutate<WorkflowMutators<S, Ma>[Mi & WorkflowMutatorIdentifier], Mrs>
-      : never;
-
-export interface WorkflowMutators<S, A> {}
-export type WorkflowMutatorIdentifier = keyof WorkflowMutators<
-  unknown,
-  unknown
->;
-
-export type WorkflowCreator<
-  Mis extends [] = [],
-  Mos extends [] = [],
-> = () => Workflow<Mis, Mos>;
-
-export const createWorkflow: WorkflowCreator = (): Workflow => {
+export const createWorkflow = (): Workflow => {
   const config = {
     steps: new Map<
       WorkflowEvent<any>[],

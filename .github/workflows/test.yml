@@ -68,3 +68,20 @@ jobs:
         run: pnpm install
       - name: Run lint
         run: pnpm run lint
+  type:
+    name: Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "pnpm"
+      - name: Install dependencies
+        run: pnpm install
+      - name: Run build
+        run: pnpx turbo run build --filter="./packages/*"
+      - name: Run type check
+        run: pnpm run typecheck
