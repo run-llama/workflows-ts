@@ -1,5 +1,4 @@
 ---
-"demo": patch
 "@llama-flow/core": patch
 ---
 
