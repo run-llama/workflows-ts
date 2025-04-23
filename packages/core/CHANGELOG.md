@@ -1,5 +1,11 @@
 # @llama-flow/core
 
+## 0.3.7
+
+### Patch Changes
+
+- 78b3141: feat: move third party to top-level
+
 ## 0.3.6
 
 ### Patch Changes
