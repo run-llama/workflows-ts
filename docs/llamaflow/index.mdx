@@ -1,128 +1,179 @@
 ---
-title: Getting Started with Workflows
-description: Learn how to use LlamaIndex's lightweight workflow engine for TypeScript
+title: LlamaIndex Workflows
+description: LlamaIndex Workflows is a simple and lightweight engine for JavaScript and TypeScript apps.
 ---
 
-Workflows are a simple and lightweight engine for TypeScript. Built with ❤️ by LlamaIndex.
+LlamaIndex Workflow (LlamaFlow) is a library for streaming event-driven programming in JavaScript and TypeScript.
+It provides a simple and lightweight orchestration solution for building complex workflows with minimal boilerplate.
 
-- Minimal core API (\<\=2kb)
-- 100% Type safe
-- Event-driven, stream oriented programming
-- Support for multiple JS runtimes/frameworks
+It combines [event-driven](#) programming, [async context](#) and [streaming](#) to create a flexible and efficient way to handle data processing tasks.
 
-## Installation
+The essential concepts of LlamaFlow are:
 
-Install the package directly:
+- **Events**: are the core building blocks of LlamaFlow. They represent data that flows through the system.
+- **Handlers**: are functions that process events and can produce new events.
+- **Context**: is the environment in which events are processed. It provides access to the event stream and allows sending new events.
+- **Workflow**: is the collection of events, handlers, and context that define the processing logic.
+
+## Getting Started
 
 ```shell
 npm i @llama-flow/core
 
-# or with yarn
 yarn add @llama-flow/core
 
-# or with pnpm
 pnpm add @llama-flow/core
+
+bun add @llama-flow/core
+
+deno add npm:@llama-flow/core
 ```
 
-## Key Concepts
+## First Example
 
-- **Events**: Data carriers that flow through the workflow
-- **Handlers**: Functions that process events and emit new events
-- **Workflow**: Connects events and handlers together
-- **Context**: Runtime environment for a workflow execution
-
-## Basic Usage
-
-Let's build a simple workflow that processes a text input:
-
-### 1. Define events
-
-First, we need to define the events that will flow through our workflow:
+With [workflowEvent](#) and [createWorkflow](#), you can create a simple workflow that processes events.
 
 ```ts
-import { workflowEvent } from "@llama-flow/core";
+import { OpenAI } from "openai";
+import { createWorkflow, workflowEvent } from "@llama-flow/core";
 
-// Define input and output events
-const startEvent = workflowEvent<string>(); // Takes a string input
-const convertEvent = workflowEvent<number>(); // Intermediate event
-const stopEvent = workflowEvent<1 | -1>(); // Final output event, returns 1 or -1
-```
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
 
-### 2. Create a workflow and connect events
-
-Next, we'll create our workflow and define how events are processed:
-
-```ts
-import { createWorkflow } from "@llama-flow/core";
+const startEvent = workflowEvent<string>();
+const stopEvent = workflowEvent<string>();
 
 const workflow = createWorkflow();
 
-// Handle the start event: convert the string to a number
-workflow.handle([startEvent], (start) => {
-  return convertEvent.with(Number.parseInt(start.data, 10));
+workflow.handle([startEvent], async (event) => {
+  const response = await openai.chat.completions.create({
+    // ...
+    messages: [{ role: "user", content: event.data }],
+  });
+
+  return stopEvent(response.choices[0].message.content);
 });
 
-// Handle the convert event: determine if number is positive or negative
-workflow.handle([convertEvent], (convert) => {
-  return stopEvent.with(convert.data > 0 ? 1 : -1);
+workflow.handle([stopEvent], (event) => {
+  console.log("Response:", event.data);
 });
+
+const { sendEvent } = workflow.createContext();
+sendEvent(startEvent.with("Hello, LlamaFlow!"));
 ```
 
-### 3. Run the workflow
+## Parallel processing with async handlers
 
-Finally, we can execute our workflow. You can process the event stream directly or use utilities.
+Tool calls are a common pattern in LLM applications, where the model generates a call to an external function or API.
 
-**Using `node:stream/promises`:**
+### With LlamaFlow
 
-:::note
-This may require setting `"lib": ["ES2022", "DOM", "DOM.Iterable", "DOM.AsyncIterable"],` and `"module": "NodeNext"` or similar in your `tsconfig.json` to use top-level `await` and `pipeline`.
-:::
+LlamaFlow provides [abort signals](#) and [parallel processing](#) out of the box.
 
 ```ts
-import { pipeline } from "node:stream/promises";
+workflow.handle([toolCallEvent], ({ data: { id, name, args } }) => {
+  const { signal, sendEvent } = getContext();
+  signal.onabort = () =>
+    sendEvent(
+      toolCallResultEvent.with({
+        role: "tool",
+        tool_call_id: id,
+        content: "ERROR WHILE CALLING FUNCTION" + signal.reason.message,
+      }),
+    );
 
-// Create a workflow context and send the initial event
-const { stream, sendEvent } = workflow.createContext();
-sendEvent(startEvent.with("42"));
-
-// Process the stream using pipeline to find the stopEvent
-const result = await pipeline(stream, async function (source) {
-  for await (const event of source) {
-    if (stopEvent.include(event)) {
-      return `Result: ${event.data === 1 ? "positive" : "negative"}`;
-    }
-  }
+  const result = callFunction(name, args);
+  return toolCallResultEvent.with({
+    role: "tool",
+    tool_call_id: id,
+    content: result,
+  });
 });
-
-console.log(result); // "Result: positive"
-
-// Alternative: Process the stream manually
-for await (const event of stream) {
-  if (stopEvent.include(event)) {
-    console.log(`Result: ${event.data === 1 ? "positive" : "negative"}`);
-    break; // Exit the loop
-  }
-}
 ```
 
-**Using Stream Utilities:**
+You can collect the results of the tool calls from the stream and send them back to the workflow.
 
 ```ts
-import { collect } from "@llama-flow/core/stream/consumer";
-import { until } from "@llama-flow/core/stream/until";
-
-// Create a workflow context and send the initial event
-const { stream, sendEvent } = workflow.createContext();
-sendEvent(startEvent.with("42"));
-
-// Collect all events until we get a stopEvent
-const allEvents = await collect(until(stream, stopEvent));
-
-// The last event will be the stopEvent that was requested
-const finalEvent = allEvents[allEvents.length - 1];
-if (stopEvent.include(finalEvent)) {
-  console.log(`Result: ${finalEvent.data === 1 ? "positive" : "negative"}`);
-}
+workflow.handle([startEvent], async (event) => {
+  const { sendEvent, stream } = getContext();
+  // ...
+  if (response.choices[0].message.tool_calls.length > 0) {
+    response.choices[0].message.tool_calls.map((toolCall) => {
+      const name = toolCall.function.name;
+      const args = JSON.parse(toolCall.function.arguments);
+      sendEvent(
+        toolCallEvent.with({
+          id: toolCall.id,
+          name,
+          args,
+        }),
+      );
+    });
+    let counter = 0;
+    const results = collect(
+      filter(
+        until(
+          stream,
+          () => counter++ === response.choices[0].message.tool_calls.length,
+        ),
+        toolCallResultEvent,
+      ),
+    );
+    return sendEvent(
+      startEvent.with([...event.data, ...results.map((r) => r.data)]),
+    );
+  }
+  return stopEvent(response.choices[0].message.content);
+});
 ```
 
-Ready to learn more? Check out our [detailed examples](./basic-workflow.mdx) to see workflows in action!
+```ts
+const { sendEvent } = workflow.createContext();
+sendEvent(
+  startEvent.with([
+    {
+      role: "user",
+      content: "Hello, LlamaFlow!",
+    },
+  ]),
+);
+```
+
+## Ship to Production easily
+
+We provide tons of [middleware](#) and [integrations](#) to make it easy to ship your workflows to production.
+
+### Hono /w Cloudflare Workers
+
+```ts
+import { Hono } from "hono";
+import { createHonoHandler } from "@llama-flow/core/interrupter/hono";
+import { openaiChatWorkflow, startEvent, stopEvent } from "@/lib/workflow";
+
+const app = new Hono();
+
+app.post(
+  "/workflow",
+  createHonoHandler(
+    openaiChatWorkflow,
+    async (ctx) => startEvent.with(ctx.req.json()),
+    stopEvent,
+  ),
+);
+
+export default app;
+```
+
+### Next.js
+
+```ts
+import { createNextHandler } from "@llama-flow/core/interrupter/next";
+import { openaiChatWorkflow, startEvent, stopEvent } from "@/lib/workflows";
+
+export const { GET } = createNextHandler(
+  openaiChatWorkflow,
+  async (req) => startEvent.with(req.body),
+  stopEvent,
+);
+```
