@@ -5,7 +5,7 @@ import {
   getContext,
   workflowEvent,
 } from "@llama-flow/core";
-import { promiseHandler } from "@llama-flow/core/interrupter/promise";
+import { runWorkflow } from "@llama-flow/core/stream/run";
 import { collect } from "@llama-flow/core/stream/consumer";
 import { until } from "@llama-flow/core/stream/until";
 
@@ -23,9 +23,9 @@ describe("sub workflow", () => {
         sendEvent(stopEvent.with());
       });
       await Promise.all([
-        promiseHandler(subWorkflow, startEvent.with(), stopEvent),
-        promiseHandler(subWorkflow, startEvent.with(), stopEvent),
-        promiseHandler(subWorkflow, startEvent.with(), stopEvent),
+        runWorkflow(subWorkflow, startEvent.with(), stopEvent),
+        runWorkflow(subWorkflow, startEvent.with(), stopEvent),
+        runWorkflow(subWorkflow, startEvent.with(), stopEvent),
       ]).then((evt) => sendEvent(...evt));
       sendEvent(haltEvent.with());
     });

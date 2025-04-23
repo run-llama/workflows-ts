@@ -1,7 +1,7 @@
 import { createAsyncContext } from "@llama-flow/core/async-context";
 import { z, type ZodRawShape, type ZodTypeAny } from "zod";
 import type { Workflow, WorkflowEvent } from "@llama-flow/core";
-import { promiseHandler } from "./promise";
+import { runWorkflow } from "./stream/run";
 import type { RequestHandlerExtra } from "@modelcontextprotocol/sdk/shared/protocol.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 
@@ -30,7 +30,7 @@ export function mcpTool<
 ) => CallToolResult | Promise<CallToolResult> {
   return async (args, extra) =>
     requestHandlerExtraAsyncLocalStorage.run(extra, async () => {
-      const { data } = await promiseHandler(workflow, start.with(args), stop);
+      const { data } = await runWorkflow(workflow, start.with(args), stop);
       return data;
     });
 }

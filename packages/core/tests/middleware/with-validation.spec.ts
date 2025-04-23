@@ -2,7 +2,7 @@ import { describe, expect, test, vi, afterEach } from "vitest";
 import { createWorkflow, workflowEvent } from "@llama-flow/core";
 import { withValidation } from "@llama-flow/core/middleware/validation";
 import { find } from "@llama-flow/core/stream/find";
-import { promiseHandler } from "@llama-flow/core/interrupter/promise";
+import { runWorkflow } from "@llama-flow/core/stream/run";
 
 describe("with directed graph", () => {
   const consoleWarnMock = vi
@@ -69,7 +69,7 @@ describe("with directed graph", () => {
       sendEvent(stopEvent.with(1));
     });
 
-    const result = await promiseHandler(workflow, startEvent.with(), stopEvent);
+    const result = await runWorkflow(workflow, startEvent.with(), stopEvent);
     expect(result.data).toBe(1);
   });
 });
