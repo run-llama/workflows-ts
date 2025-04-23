@@ -41,16 +41,20 @@
       }
     },
     "./hono": {
-      "types": "./hono.d.ts",
-      "default": "./hono.js"
+      "types": "./dist/hono.d.ts",
+      "default": "./dist/hono.js"
     },
     "./mcp": {
-      "types": "./mcp.d.ts",
-      "default": "./mcp.js"
+      "types": "./dist/mcp.d.ts",
+      "default": "./dist/mcp.js"
     },
     "./next": {
-      "types": "./next.d.ts",
-      "default": "./next.js"
+      "types": "./dist/next.d.ts",
+      "default": "./dist/next.js"
+    },
+    "./observable": {
+      "types": "./dist/observable.d.ts",
+      "default": "./dist/observable.js"
     },
     "./middleware/store": {
       "types": "./middleware/store.d.ts",
@@ -111,6 +115,7 @@
     "next": "^15.3.1",
     "p-retry": "^6.2.1",
     "rimraf": "^6.0.1",
+    "rxjs": "^7.8.2",
     "stream-chain": "^3.4.0",
     "tsdown": "^0.9.1",
     "typescript": "^5.8.3",
@@ -121,6 +126,7 @@
     "hono": "^4.7.4",
     "next": "^15.2.2",
     "p-retry": "^6.2.1",
+    "rxjs": "^7.8.2",
     "zod": "^3.24.2"
   },
   "license": "MIT",
@@ -135,6 +141,9 @@
       "optional": true
     },
     "p-retry": {
+      "optional": true
+    },
+    "rxjs": {
       "optional": true
     },
     "zod": {

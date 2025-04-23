@@ -3,7 +3,7 @@
     "target": "esnext",
     "module": "esnext",
     "esModuleInterop": true,
-    "moduleResolution": "node16",
+    "moduleResolution": "bundler",
     "types": ["DOM", "DOM.AsyncIterable", "DOM.Iterable", "esnext"],
     "forceConsistentCasingInFileNames": true,
     "strict": true,

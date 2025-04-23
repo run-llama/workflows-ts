@@ -3,18 +3,21 @@ import {
   messageEvent,
   startEvent,
 } from "../workflows/file-parse-agent.js";
-import { from, filter } from "rxjs";
+import { filter, map } from "rxjs";
 import { eventSource } from "@llama-flow/core";
-import type { WorkflowEventData } from "@llama-flow/core";
+import { toObservable } from "@llama-flow/core/observable";
 
 const directory = "..";
 
 const { stream, sendEvent } = fileParseWorkflow.createContext();
 
-from(stream as unknown as AsyncIterable<WorkflowEventData<any>>)
-  .pipe(filter((ev) => eventSource(ev) === messageEvent))
-  .subscribe((ev) => {
-    console.log(ev.data);
+toObservable(stream)
+  .pipe(
+    filter((ev) => eventSource(ev) === messageEvent),
+    map((ev) => ev.data),
+  )
+  .subscribe((data) => {
+    console.log(data);
   });
 
 sendEvent(startEvent.with(directory));
