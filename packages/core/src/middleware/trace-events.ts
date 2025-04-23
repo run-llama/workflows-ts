@@ -5,48 +5,13 @@ import {
   type WorkflowEvent,
   type WorkflowEventData,
 } from "@llama-flow/core";
-import { isPromiseLike } from "../utils";
+import { isPromiseLike } from "../core/utils";
 import {
   createHandlerDecorator,
   decoratorRegistry,
 } from "./trace-events/create-handler-decorator";
 import { runOnce } from "./trace-events/run-once";
-import type { HandlerContext } from "../context";
-
-type Write<T, U> = Omit<T, keyof U> & U;
-
-type WithTraceEventsWorkflow<W> = Write<W, TraceEventsWorkflow<W>>;
-
-type TraceEventsWorkflow<W> = W extends {
-  handle<
-    const AcceptEvents extends WorkflowEvent<any>[],
-    Result extends ReturnType<WorkflowEvent<any>["with"]> | void,
-  >(
-    accept: AcceptEvents,
-    handler: Handler<AcceptEvents, Result>,
-  ): void;
-}
-  ? {
-      handle<
-        const AcceptEvents extends WorkflowEvent<any>[],
-        Result extends ReturnType<WorkflowEvent<any>["with"]> | void,
-        Fn extends Handler<AcceptEvents, Result>,
-      >(
-        accept: AcceptEvents,
-        handler: Fn,
-      ): HandlerRef<AcceptEvents, Result, Fn>;
-      substream<T extends WorkflowEventData<any>>(
-        eventData: WorkflowEventData<any>,
-        stream: ReadableStream<T>,
-      ): ReadableStream<T>;
-    }
-  : never;
-
-declare module "../workflow" {
-  interface WorkflowMutators<W, A> {
-    "@llama-flow/core/trace-events": WithTraceEventsWorkflow<W>;
-  }
-}
+import type { HandlerContext } from "../core/context";
 
 type TracingContext = Record<string, unknown>;
 

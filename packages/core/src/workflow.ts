@@ -1,44 +1,18 @@
 import { type WorkflowEvent, type WorkflowEventData } from "./event";
 import { createContext, type Handler, type WorkflowContext } from "./context";
 
-type WorkflowMutate<W, Ms> = number extends Ms["length" & keyof Ms]
-  ? W
-  : Ms extends []
-    ? W
-    : Ms extends [[infer Mi, infer Ma], ...infer Mrs]
-      ? WorkflowMutate<
-          WorkflowMutators<W, Ma>[Mi & WorkflowMutatorIdentifier],
-          Mrs
-        >
-      : never;
+export type Workflow = {
+  handle<
+    const AcceptEvents extends WorkflowEvent<any>[],
+    Result extends ReturnType<WorkflowEvent<any>["with"]> | void,
+  >(
+    accept: AcceptEvents,
+    handler: Handler<AcceptEvents, Result>,
+  ): void;
+  createContext(): WorkflowContext;
+};
 
-export interface WorkflowMutators<W, A> {}
-
-export type Workflow<Wis extends [WorkflowMutatorIdentifier, unknown][] = []> =
-  WorkflowMutate<
-    {
-      handle<
-        const AcceptEvents extends WorkflowEvent<any>[],
-        Result extends ReturnType<WorkflowEvent<any>["with"]> | void,
-      >(
-        accept: AcceptEvents,
-        handler: Handler<AcceptEvents, Result>,
-      ): void;
-      createContext(): WorkflowContext;
-    },
-    Wis
-  >;
-
-export type WorkflowMutatorIdentifier = keyof WorkflowMutators<
-  unknown,
-  unknown
->;
-
-export type WorkflowCreator<
-  Wis extends [WorkflowMutatorIdentifier, unknown][] = [],
-> = () => Workflow<Wis>;
-
-export const createWorkflow: WorkflowCreator = (): Workflow => {
+export const createWorkflow = (): Workflow => {
   const config = {
     steps: new Map<
       WorkflowEvent<any>[],
