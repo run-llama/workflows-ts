@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { serve } from "@hono/node-server";
-import { createHonoHandler } from "@llama-flow/core/interrupter/hono";
+import { createHonoHandler } from "@llama-flow/core/hono";
 import {
   toolCallWorkflow,
   startEvent,

@@ -1,11 +1,11 @@
-import { promiseHandler } from "@llama-flow/core/interrupter/promise";
+import { runWorkflow } from "@llama-flow/core/stream/run";
 import {
   toolCallWorkflow,
   startEvent,
   stopEvent,
 } from "../workflows/tool-call-agent.js";
 
-promiseHandler(
+runWorkflow(
   toolCallWorkflow,
   startEvent.with("what is weather today, im in san francisco"),
   stopEvent,
