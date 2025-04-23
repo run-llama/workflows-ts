@@ -1,10 +1,5 @@
 // workflow
-export {
-  createWorkflow,
-  type Workflow,
-  type WorkflowCreator,
-  type WorkflowMutatorIdentifier,
-} from "./workflow";
+export { createWorkflow, type Workflow } from "./workflow";
 // context
 export { getContext, type WorkflowContext, type Handler } from "./context";
 // event system
