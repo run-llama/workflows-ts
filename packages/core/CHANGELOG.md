@@ -1,5 +1,11 @@
 # @llama-flow/core
 
+## 0.3.9
+
+### Patch Changes
+
+- 8f1738a: fix: browser dist
+
 ## 0.3.8
 
 ### Patch Changes
