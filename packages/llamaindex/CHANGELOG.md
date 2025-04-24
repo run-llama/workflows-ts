@@ -1,5 +1,11 @@
 # @llama-flow/llamaindex
 
+## 0.0.8
+
+### Patch Changes
+
+- 0fee991: fix: export more types from core
+
 ## 0.0.7
 
 ### Patch Changes
