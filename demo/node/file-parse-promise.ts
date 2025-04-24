@@ -1,4 +1,4 @@
-import { promiseHandler } from "@llama-flow/core/interrupter/promise";
+import { runWorkflow } from "@llama-flow/core/stream/run";
 import {
   fileParseWorkflow,
   startEvent,
@@ -7,7 +7,7 @@ import {
 
 const directory = "..";
 
-promiseHandler(fileParseWorkflow, startEvent.with(directory), stopEvent).then(
+runWorkflow(fileParseWorkflow, startEvent.with(directory), stopEvent).then(
   () => {
     console.log("r", fileParseWorkflow.getStore().output);
   },

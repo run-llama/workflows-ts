@@ -1,9 +1,9 @@
-import { Suspense } from "react";
 import reactLogo from "./assets/react.svg";
 import llamaindexLogo from "/llamaindex.svg";
 import "./App.css";
 import { createWorkflow, getContext, workflowEvent } from "@llama-flow/core";
-import { promiseHandler } from "@llama-flow/core/interrupter/promise";
+import { runWorkflow } from "@llama-flow/core/stream/run";
+import { Suspense } from "react";
 
 const startEvent = workflowEvent();
 const stopEvent = workflowEvent<string>();
@@ -17,7 +17,7 @@ workflow.handle([startEvent], () => {
   }, 1000);
 });
 
-const promise = promiseHandler(workflow, startEvent.with(), stopEvent);
+const promise = runWorkflow(workflow, startEvent.with(), stopEvent);
 
 function App() {
   return (

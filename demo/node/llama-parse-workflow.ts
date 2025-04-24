@@ -3,9 +3,9 @@ import {
   startEvent,
   stopEvent,
 } from "../workflows/llama-parse-workflow.js";
-import { promiseHandler } from "@llama-flow/core/interrupter/promise";
+import { runWorkflow } from "@llama-flow/core/stream/run";
 
-promiseHandler(
+runWorkflow(
   llamaParseWorkflow,
   startEvent.with({
     inputFile: process.argv[2],

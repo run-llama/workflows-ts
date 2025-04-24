@@ -91,6 +91,10 @@
     "./stream/until": {
       "types": "./stream/until.d.ts",
       "default": "./stream/until.js"
+    },
+    "./stream/run": {
+      "types": "./stream/run.d.ts",
+      "default": "./stream/run.js"
     }
   },
   "files": [

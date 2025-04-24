@@ -4,9 +4,20 @@
     "module": "esnext",
     "esModuleInterop": true,
     "moduleResolution": "bundler",
-    "types": ["DOM", "DOM.AsyncIterable", "DOM.Iterable", "esnext"],
+    "outDir": "./lib",
+    "tsBuildInfoFile": "./lib/.tsbuildinfo",
+    "lib": ["DOM", "DOM.AsyncIterable", "DOM.Iterable", "esnext"],
     "forceConsistentCasingInFileNames": true,
     "strict": true,
     "skipLibCheck": true
-  }
+  },
+  "include": ["hono", "node", "workflows"],
+  "references": [
+    {
+      "path": "./browser/tsconfig.json"
+    },
+    {
+      "path": "./cloudflare/tsconfig.json"
+    }
+  ]
 }

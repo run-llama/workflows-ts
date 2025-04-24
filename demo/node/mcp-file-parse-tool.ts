@@ -1,4 +1,4 @@
-import { mcpTool } from "@llama-flow/core/interrupter/mcp";
+import { mcpTool } from "@llama-flow/core/mcp";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { fileParseWorkflow } from "../workflows/file-parse-agent.js";

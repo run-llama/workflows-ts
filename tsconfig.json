@@ -20,6 +20,9 @@
   "include": [],
   "references": [
     {
+      "path": "./demo/tsconfig.json"
+    },
+    {
       "path": "./tsconfig.lint-staged.json"
     },
     {
