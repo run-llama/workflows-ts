@@ -1,5 +1,11 @@
 # @llama-flow/llamaindex
 
+## 0.0.9
+
+### Patch Changes
+
+- 06f64cb: feat: exactly same API with llamaindex workflow v2
+
 ## 0.0.8
 
 ### Patch Changes
