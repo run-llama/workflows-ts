@@ -3,7 +3,18 @@
   "version": "0.0.6",
   "type": "module",
   "description": "LlamaIndex binding for llama-flow",
+  "main": "dist/index.cjs",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
   "scripts": {
+    "build": "bunchee",
     "test": "vitest run"
   },
   "files": [
@@ -20,5 +31,8 @@
   },
   "publishConfig": {
     "access": "public"
+  },
+  "devDependencies": {
+    "bunchee": "^6.5.1"
   }
 }
