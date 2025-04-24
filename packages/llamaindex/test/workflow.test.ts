@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { startEvent, stopEvent, Workflow, workflowEvent } from "../src";
+import { StartEvent, StopEvent, Workflow, WorkflowEvent } from "../src";
 
 describe("workflow basic", () => {
   test("basic usage", async () => {
@@ -13,13 +13,13 @@ describe("workflow basic", () => {
     >();
     workflow.addStep(
       {
-        inputs: [startEvent],
+        inputs: [StartEvent<string>],
       },
       async ({ data }, start) => {
         expect(start.data).toBe("start");
         expect(data.bar).toBe(42);
         expect(data.foo).toBe("foo");
-        return stopEvent.with("stopped");
+        return new StopEvent("stopped");
       },
     );
 
@@ -42,13 +42,13 @@ describe("workflow basic", () => {
 
     workflow.addStep(
       {
-        inputs: [startEvent],
+        inputs: [StartEvent],
       },
       async ({ data, sendEvent }, start) => {
         expect(start.data).toBe("start");
         expect(data.bar).toBe(42);
         expect(data.foo).toBe("foo");
-        sendEvent(stopEvent.with("stopped"));
+        sendEvent(new StopEvent("stopped"));
       },
     );
 
@@ -69,20 +69,20 @@ describe("workflow basic", () => {
       string
     >();
 
-    const aEvent = workflowEvent<number>();
-    const bEvent = workflowEvent<number>();
+    class aEvent extends WorkflowEvent<number> {}
+    class bEvent extends WorkflowEvent<number> {}
 
     workflow.addStep(
       {
-        inputs: [startEvent],
+        inputs: [StartEvent],
       },
       async ({ data, sendEvent }, start) => {
         expect(start.data).toBe("start");
         expect(data.bar).toBe(42);
         expect(data.foo).toBe("foo");
-        sendEvent(aEvent.with(1));
+        sendEvent(new aEvent(1));
         setTimeout(() => {
-          sendEvent(bEvent.with(2));
+          sendEvent(new bEvent(2));
         }, 100);
       },
     );
@@ -94,7 +94,7 @@ describe("workflow basic", () => {
       async ({ data }, a, b) => {
         expect(a.data).toBe(1);
         expect(b.data).toBe(2);
-        return stopEvent.with("stopped");
+        return new StopEvent("stopped");
       },
     );
 
