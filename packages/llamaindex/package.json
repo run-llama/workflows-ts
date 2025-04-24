@@ -1,6 +1,6 @@
 {
   "name": "@llama-flow/llamaindex",
-  "version": "0.0.9",
+  "version": "0.0.10",
   "type": "module",
   "description": "LlamaIndex binding for llama-flow",
   "main": "dist/index.cjs",

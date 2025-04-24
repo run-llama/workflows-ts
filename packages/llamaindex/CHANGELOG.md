@@ -1,5 +1,11 @@
 # @llama-flow/llamaindex
 
+## 0.0.10
+
+### Patch Changes
+
+- 9559817: fix: llamaindex workflow edge cases
+
 ## 0.0.9
 
 ### Patch Changes
