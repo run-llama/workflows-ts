@@ -1,5 +1,11 @@
 # @llama-flow/llamaindex
 
+## 0.0.11
+
+### Patch Changes
+
+- afcd9ab: fix(llamaindex): `workflow.run` returns event & context data
+
 ## 0.0.10
 
 ### Patch Changes
