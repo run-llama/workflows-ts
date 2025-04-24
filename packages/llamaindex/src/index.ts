@@ -10,7 +10,12 @@ import { until } from "@llama-flow/core/stream/until";
 import { collect } from "@llama-flow/core/stream/consumer";
 import { withStore } from "@llama-flow/core/middleware/store";
 
-export { workflowEvent } from "@llama-flow/core";
+export {
+  workflowEvent,
+  type WorkflowEventData,
+  type WorkflowEvent,
+  type InferWorkflowEventData,
+} from "@llama-flow/core";
 
 export type StepContext<T = unknown> = ReturnType<typeof getContext> & {
   get data(): T;
