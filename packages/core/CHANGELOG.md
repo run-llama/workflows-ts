@@ -1,5 +1,11 @@
 # @llama-flow/core
 
+## 0.3.8
+
+### Patch Changes
+
+- 89abee2: fix: module exports
+
 ## 0.3.7
 
 ### Patch Changes
