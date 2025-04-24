@@ -5,7 +5,6 @@ import {
   workflowEvent,
   getContext,
 } from "@llama-flow/core";
-import { until } from "@llama-flow/core/stream/until";
 import { collect } from "@llama-flow/core/stream/consumer";
 import { withStore } from "@llama-flow/core/middleware/store";
 
@@ -83,7 +82,7 @@ export class StopEvent<T = string> extends WorkflowEvent<T> {
 export class Workflow<ContextData, Start, Stop> {
   #workflow = withStore((data: ContextData) => data, createWorkflow());
 
-  addStep<AcceptEvents extends (typeof WorkflowEvent<any>)[]>(
+  addStep<const AcceptEvents extends (typeof WorkflowEvent<any>)[]>(
     parameters: {
       inputs: AcceptEvents;
     },
@@ -126,32 +125,76 @@ export class Workflow<ContextData, Start, Stop> {
               return contextData;
             },
           },
-          ...(events as Parameters<
-            Handler<AcceptEvents, WorkflowEvent<any> | void>
-          >),
+          ...(events.map((e) => coreEventWeakMap.get(e)!) as any),
         );
         if (result instanceof Promise) {
           return result.then((result) =>
             result instanceof WorkflowEvent
-              ? eventWeakMap.get(result.constructor)!.with(result.data)
+              ? eventDataWeakMap.get(result)!
               : undefined,
           );
         } else {
           return result instanceof WorkflowEvent
-            ? eventWeakMap.get(result.constructor)!.with(result.data)
+            ? eventDataWeakMap.get(result)!
             : undefined;
         }
       },
     );
   }
 
-  async run(start: Start, context?: ContextData): Promise<Stop> {
+  run(
+    start: Start,
+    context?: ContextData,
+  ): Promise<Stop> & AsyncIterable<WorkflowEvent<any>> {
     const { sendEvent, stream } = this.#workflow.createContext(context!);
     const startEvent = new StartEvent(start);
     const coreStartEvent = eventDataWeakMap.get(startEvent)!;
     sendEvent(coreStartEvent);
+    if (!eventWeakMap.has(StopEvent)) {
+      eventWeakMap.set(
+        StopEvent,
+        workflowEvent({
+          debugLabel: StopEvent.name,
+        }),
+      );
+    }
     const stopEvent = eventWeakMap.get(StopEvent)!;
-    const events = await collect(until(stream, stopEvent));
-    return events.at(-1)!.data;
+
+    const result = stream.pipeThrough<WorkflowEvent<any>>(
+      new TransformStream({
+        transform: (event, controller) => {
+          const ev = coreEventWeakMap.get(event)!;
+          controller.enqueue(ev);
+          if (stopEvent.include(event)) {
+            controller.terminate();
+          }
+        },
+      }),
+    );
+    Object.assign(result, {
+      then: async (resolve: any, reject: any) => {
+        try {
+          const events = await collect(result);
+          resolve(events.at(-1)!.data as Stop);
+        } catch (error) {
+          reject(error);
+        }
+      },
+      catch: async (reject: any) => {
+        try {
+          await collect(result);
+        } catch (error) {
+          reject(error);
+        }
+      },
+      finally: async (resolve: any) => {
+        try {
+          await collect(result);
+        } finally {
+          resolve();
+        }
+      },
+    });
+    return result as any;
   }
 }

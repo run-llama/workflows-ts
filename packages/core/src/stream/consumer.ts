@@ -1,5 +1,3 @@
-import type { WorkflowEventData } from "@llama-flow/core";
-
 /**
  * A no-op function that consumes a stream of events and does nothing with them.
  *
@@ -7,10 +5,10 @@ import type { WorkflowEventData } from "@llama-flow/core";
  * or `getContext()`, it's infinite and will never finish
  */
 export const nothing = async (
-  stream: ReadableStream<WorkflowEventData<any>>,
+  stream: ReadableStream<unknown>,
 ): Promise<void> => {
   await stream.pipeTo(
-    new WritableStream<WorkflowEventData<any>>({
+    new WritableStream<unknown>({
       write: () => {
         // no-op
       },
@@ -24,12 +22,10 @@ export const nothing = async (
  * Do not collect the raw stream from `workflow.createContext()`
  * or getContext()`, it's infinite and will never finish.
  */
-export const collect = async (
-  stream: ReadableStream<WorkflowEventData<any>>,
-): Promise<WorkflowEventData<any>[]> => {
-  const events: WorkflowEventData<any>[] = [];
+export const collect = async <T>(stream: ReadableStream<T>): Promise<T[]> => {
+  const events: T[] = [];
   await stream.pipeTo(
-    new WritableStream<WorkflowEventData<any>>({
+    new WritableStream<T>({
       write: (event) => {
         events.push(event);
       },
