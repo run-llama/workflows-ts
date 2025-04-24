@@ -63,7 +63,7 @@ describe("workflow basic", () => {
 
     expect(generateJoke).toHaveBeenCalledTimes(1);
     expect(critiqueJoke).toHaveBeenCalledTimes(1);
-    expect(result).toBe("stop");
+    expect(result.data).toBe("stop");
   });
 
   test("run workflow with multiple in-degree", async () => {
@@ -94,7 +94,7 @@ describe("workflow basic", () => {
     );
 
     const result = await jokeFlow.run("pirates");
-    expect(result).toBe("The analysis is insightful and helpful.");
+    expect(result.data).toBe("The analysis is insightful and helpful.");
   });
 
   test("run workflow with object-based StartEvent and StopEvent", async () => {
@@ -127,7 +127,7 @@ describe("workflow basic", () => {
     const result = await objectFlow.run({ name: "Alice", age: 30 });
 
     expect(processObject).toHaveBeenCalledTimes(1);
-    expect(result.result).toEqual({
+    expect(result.data.result).toEqual({
       greeting: "Hello Alice, you are 30 years old!",
     });
   });
@@ -166,7 +166,7 @@ describe("workflow basic", () => {
     expect(step1).toHaveBeenCalledTimes(1);
     expect(step2).toHaveBeenCalledTimes(1);
     expect(duration).toBeLessThan(200);
-    expect(result).toBe("Step 2 completed");
+    expect(result.data).toBe("Step 2 completed");
   });
 
   test("sendEvent", async () => {
@@ -207,7 +207,7 @@ describe("workflow basic", () => {
     );
 
     const result = await myWorkflow.run("start");
-    expect(result).toBe("query result");
+    expect(result.data).toBe("query result");
   });
 
   test("allow output with send event", async () => {
@@ -220,8 +220,8 @@ describe("workflow basic", () => {
         context.sendEvent(new StopEvent(`Hello ${ev.data}!`));
       },
     );
-    const result = myFlow.run("world");
-    expect(await result).toBe("Hello world!");
+    const result = await myFlow.run("world");
+    expect(result.data).toBe("Hello world!");
   });
 });
 
@@ -239,7 +239,7 @@ describe("workflow event loop", () => {
     );
 
     const result = await jokeFlow.run("world");
-    expect(result).toBe("Hello world!");
+    expect(result.data).toBe("Hello world!");
   });
 
   test("branch", async () => {
@@ -306,14 +306,14 @@ describe("workflow event loop", () => {
 
     {
       const result = await myFlow.run("world");
-      expect(result).toMatch(/Branch B2: world/);
+      expect(result.data).toMatch(/Branch B2: world/);
     }
 
     control = true;
 
     {
       const result = await myFlow.run("world");
-      expect(result).toMatch(/Branch A2: world/);
+      expect(result.data).toMatch(/Branch A2: world/);
     }
 
     {
@@ -401,7 +401,7 @@ describe("workflow event loop", () => {
     );
 
     const result = await myFlow.run("world");
-    expect(result).toBe("STOP");
+    expect(result.data).toBe("STOP");
     expect(fn).toHaveBeenCalledTimes(1);
 
     // streaming events will allow to consume event even stop event is reached
@@ -425,6 +425,23 @@ describe("workflow event loop", () => {
     );
 
     const result = await myFlow.run("world", { name: "Alice" });
-    expect(result).toBe("Hello Alice!");
+    expect(result.data).toBe("Hello Alice!");
+  });
+
+  test("run and get context", async () => {
+    type MyContext = { name: string };
+    const myFlow = new Workflow<MyContext, string, string>();
+    myFlow.addStep(
+      {
+        inputs: [StartEvent<string>],
+      },
+      async ({ data }, _: StartEvent) => {
+        return new StopEvent(`Hello ${data.name}!`);
+      },
+    );
+
+    const context = myFlow.run("world", { name: "Alice" });
+    expect((await context).data).toBe("Hello Alice!");
+    expect(context.data.name).toBe("Alice");
   });
 });
