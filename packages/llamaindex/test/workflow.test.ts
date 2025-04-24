@@ -27,7 +27,7 @@ describe("workflow basic", () => {
       foo: "foo",
       bar: 42,
     });
-    expect(result).toBe("stopped");
+    expect(result.data).toBe("stopped");
   });
 
   test("sendEvent", async () => {
@@ -56,7 +56,7 @@ describe("workflow basic", () => {
       foo: "foo",
       bar: 42,
     });
-    expect(result).toBe("stopped");
+    expect(result.data).toBe("stopped");
   });
 
   test("sendEvent with merge", async () => {
@@ -102,6 +102,6 @@ describe("workflow basic", () => {
       foo: "foo",
       bar: 42,
     });
-    expect(result).toBe("stopped");
+    expect(result.data).toBe("stopped");
   });
 });

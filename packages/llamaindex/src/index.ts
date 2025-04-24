@@ -145,8 +145,13 @@ export class Workflow<ContextData, Start, Stop> {
   run(
     start: Start,
     context?: ContextData,
-  ): Promise<Stop> & AsyncIterable<WorkflowEvent<any>> {
-    const { sendEvent, stream } = this.#workflow.createContext(context!);
+  ): Promise<StopEvent<Stop>> &
+    AsyncIterable<WorkflowEvent<any>> & {
+      get data(): ContextData;
+    } {
+    const { sendEvent, stream, getStore } = this.#workflow.createContext(
+      context!,
+    );
     const startEvent = new StartEvent(start);
     const coreStartEvent = eventDataWeakMap.get(startEvent)!;
     sendEvent(coreStartEvent);
@@ -175,7 +180,7 @@ export class Workflow<ContextData, Start, Stop> {
       then: async (resolve: any, reject: any) => {
         try {
           const events = await collect(result);
-          resolve(events.at(-1)!.data as Stop);
+          resolve(events.at(-1)!);
         } catch (error) {
           reject(error);
         }
@@ -193,6 +198,9 @@ export class Workflow<ContextData, Start, Stop> {
         } finally {
           resolve();
         }
+      },
+      get data() {
+        return getStore();
       },
     });
     return result as any;
