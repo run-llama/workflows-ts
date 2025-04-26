@@ -46,6 +46,9 @@ export function getSubscribers<Args extends any[], R>(
   return __internal__subscribesSourcemap.get(subscribable)!;
 }
 
+/**
+ * @internal
+ */
 export function createSubscribable<Args extends any[], R>(): Subscribable<
   Args,
   R
