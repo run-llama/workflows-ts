@@ -111,15 +111,15 @@ export class WorkflowStream<Event extends WorkflowEvent<any>> {
     return this.#stream.getReader();
   }
 
-  pipeThrough<T extends Event>(
-    transform: ReadableWritablePair<
-      ReturnType<T["with"]>,
-      ReturnType<Event["with"]>
-    >,
+  pipeThrough<T = WorkflowEventData<any>>(
+    transform: ReadableWritablePair<T, ReturnType<Event["with"]>>,
     options?: StreamPipeOptions,
-  ): WorkflowStream<T> {
-    const stream = this.#stream.pipeThrough(transform, options);
-    return new WorkflowStream(this.#subscribable, stream);
+  ): WorkflowStream<WorkflowEvent<any>> {
+    const stream = this.#stream.pipeThrough(transform, options) as any;
+    return new WorkflowStream(
+      this.#subscribable,
+      stream,
+    ) as WorkflowStream<any>;
   }
 
   pipeTo(
