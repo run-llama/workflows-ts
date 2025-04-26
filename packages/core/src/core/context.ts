@@ -8,6 +8,7 @@ import {
   type Subscribable,
 } from "./utils";
 import { createAsyncContext } from "@llama-flow/core/async-context";
+import { WorkflowStream } from "./stream";
 
 export type Handler<
   AcceptEvents extends WorkflowEvent<any>[],
@@ -53,7 +54,7 @@ export type ContextNext = (
 ) => void;
 
 export type WorkflowContext = {
-  get stream(): ReadableStream<WorkflowEventData<any>>;
+  get stream(): WorkflowStream<WorkflowEvent<any>>;
   get signal(): AbortSignal;
   sendEvent: (...events: WorkflowEventData<any>[]) => void;
 
@@ -198,7 +199,7 @@ export const createContext = ({
   ): WorkflowContext => ({
     get stream() {
       let unsubscribe: () => void;
-      return new ReadableStream({
+      const stream = new ReadableStream({
         start: async (controller) => {
           unsubscribe =
             rootWorkflowContext.__internal__call_send_event.subscribe(
@@ -220,6 +221,13 @@ export const createContext = ({
           }
         },
       });
+      return new WorkflowStream(
+        rootWorkflowContext.__internal__call_send_event as unknown as Subscribable<
+          [event: WorkflowEventData<any>],
+          void
+        >,
+        stream,
+      );
     },
     get signal() {
       return handlerContext.abortController.signal;
