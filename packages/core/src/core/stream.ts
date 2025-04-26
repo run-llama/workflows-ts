@@ -48,11 +48,11 @@ export class WorkflowStream<Event extends WorkflowEvent<any>> {
     return this.#stream.getReader();
   }
 
-  pipeThrough<T>(
+  pipeThrough<T = WorkflowEventData<any>>(
     transform: ReadableWritablePair<T, ReturnType<Event["with"]>>,
     options?: StreamPipeOptions,
   ): ReadableStream<T> {
-    return this.#stream.pipeThrough(transform, options) as ReadableStream<T>;
+    return this.#stream.pipeThrough(transform, options);
   }
 
   pipeTo(
