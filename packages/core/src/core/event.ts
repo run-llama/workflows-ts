@@ -17,13 +17,21 @@ export type WorkflowEventData<Data, DebugLabel extends string = string> = {
 } & { readonly [opaqueSymbol]: DebugLabel };
 
 export type WorkflowEvent<Data, DebugLabel extends string = string> = {
+  /**
+   * This is the label used for debugging purposes.
+   */
   debugLabel?: DebugLabel;
+  /**
+   * This is the unique identifier for the event, which is used for sharing cross the network boundaries.
+   */
+  readonly uniqueId: string;
   with(data: Data): WorkflowEventData<Data, DebugLabel>;
   include(event: unknown): event is WorkflowEventData<Data, DebugLabel>;
 } & { readonly [opaqueSymbol]: DebugLabel };
 
 export type WorkflowEventConfig<DebugLabel extends string = string> = {
   debugLabel?: DebugLabel;
+  uniqueId?: string;
 };
 
 export const workflowEvent = <Data = void, DebugLabel extends string = string>(
@@ -67,6 +75,20 @@ export const workflowEvent = <Data = void, DebugLabel extends string = string>(
 
   Object.defineProperty(event, "displayName", {
     value: event?.debugLabel ?? `WorkflowEvent<${l1}>`,
+  });
+
+  let uniqueId = config?.uniqueId;
+
+  Object.defineProperty(event, "uniqueId", {
+    get: () => {
+      if (!uniqueId) {
+        uniqueId = crypto.randomUUID();
+      }
+      return uniqueId;
+    },
+    set: () => {
+      throw new Error("uniqueId is readonly");
+    },
   });
 
   event.toString = () => config?.debugLabel ?? `WorkflowEvent<${l1}>`;
