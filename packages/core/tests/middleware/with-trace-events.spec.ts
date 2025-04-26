@@ -1,5 +1,10 @@
 import { describe, test, vi, expectTypeOf, type Mock, expect } from "vitest";
-import { createWorkflow, getContext, workflowEvent } from "@llama-flow/core";
+import {
+  createWorkflow,
+  getContext,
+  workflowEvent,
+  type WorkflowEventData,
+} from "@llama-flow/core";
 import {
   withTraceEvents,
   runOnce,
@@ -297,7 +302,7 @@ describe("get event origins", () => {
     const { stream, sendEvent } = workflow.createContext();
     sendEvent(startEvent.with("initial data"));
 
-    const result = await pipeline(stream, async function (source) {
+    await pipeline(stream, async function (source) {
       for await (const event of source) {
         if (stopEvent.include(event)) {
           return `Result: ${event.data}`;

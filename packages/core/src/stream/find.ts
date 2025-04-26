@@ -1,10 +1,14 @@
-import type { WorkflowEvent, WorkflowEventData } from "@llama-flow/core";
+import {
+  type WorkflowEvent,
+  type WorkflowEventData,
+  WorkflowStream,
+} from "@llama-flow/core";
 
 /**
  * Consume a stream of events with a given event and time.
  */
 export async function find<T>(
-  stream: ReadableStream<WorkflowEventData<any>>,
+  stream: ReadableStream<WorkflowEventData<any>> | WorkflowStream,
   event: WorkflowEvent<T>,
 ): Promise<WorkflowEventData<T>> {
   const reader = stream.getReader();

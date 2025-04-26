@@ -3,7 +3,7 @@
   "specifiers": {
     "jsr:@std/assert@1": "1.0.12",
     "jsr:@std/internal@^1.0.6": "1.0.6",
-    "npm:@llama-flow/core@*": "0.3.4"
+    "npm:@llama-flow/core@*": "0.3.9"
   },
   "jsr": {
     "@std/assert@1.0.12": {
@@ -17,7 +17,7 @@
     }
   },
   "npm": {
-    "@llama-flow/core@0.3.4": {}
+    "@llama-flow/core@0.3.9": {}
   },
   "workspace": {
     "dependencies": [
@@ -25,12 +25,13 @@
       "npm:@llama-flow/core@*"
     ],
     "patches": {
-      "npm:@llama-flow/core@0.3.4": {
+      "npm:@llama-flow/core@0.3.9": {
         "peerDependencies": [
           "npm:@modelcontextprotocol/sdk@^1.7.0",
           "npm:hono@^4.7.4",
           "npm:next@^15.2.2",
           "npm:p-retry@^6.2.1",
+          "npm:rxjs@^7.8.2",
           "npm:zod@^3.24.2"
         ],
         "peerDependenciesMeta": {
@@ -44,6 +45,9 @@
             "optional": true
           },
           "p-retry": {
+            "optional": true
+          },
+          "rxjs": {
             "optional": true
           },
           "zod": {

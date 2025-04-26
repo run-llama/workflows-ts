@@ -1,10 +1,14 @@
-import type { WorkflowEventData } from "@llama-flow/core";
+import type {
+  WorkflowEvent,
+  WorkflowEventData,
+  WorkflowStream,
+} from "@llama-flow/core";
 
 export function filter<
   Event extends WorkflowEventData<any>,
   Final extends Event,
 >(
-  stream: ReadableStream<Event>,
+  stream: ReadableStream<Event> | WorkflowStream,
   cond: (event: Event) => event is Final,
 ): ReadableStream<Final> {
   return stream.pipeThrough(
@@ -15,5 +19,5 @@ export function filter<
         }
       },
     }),
-  );
+  ) as ReadableStream<Final>;
 }

@@ -11,3 +11,5 @@ export {
   type WorkflowEventConfig,
   type InferWorkflowEventData,
 } from "./event";
+// stream
+export { WorkflowStream } from "./stream";

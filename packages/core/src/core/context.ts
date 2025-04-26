@@ -54,7 +54,7 @@ export type ContextNext = (
 ) => void;
 
 export type WorkflowContext = {
-  get stream(): WorkflowStream<WorkflowEvent<any>>;
+  get stream(): WorkflowStream;
   get signal(): AbortSignal;
   sendEvent: (...events: WorkflowEventData<any>[]) => void;
 

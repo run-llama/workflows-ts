@@ -5,7 +5,7 @@ Deno.test(function workflowRun() {
   const { sendEvent, stream } = workflow.createContext();
   sendEvent(startEvent.with());
   stream
-    .pipeThrough(
+    .pipeThrough<string>(
       new TransformStream({
         transform: (event, controller) => {
           if (endEvent.include(event)) {

@@ -1,4 +1,8 @@
-import type { WorkflowEvent, WorkflowEventData } from "@llama-flow/core";
+import {
+  type WorkflowEvent,
+  type WorkflowEventData,
+  WorkflowStream,
+} from "@llama-flow/core";
 
 const isWorkflowEvent = (value: unknown): value is WorkflowEvent<any> =>
   value != null &&
@@ -7,15 +11,15 @@ const isWorkflowEvent = (value: unknown): value is WorkflowEvent<any> =>
   "include" in value;
 
 export function until(
-  stream: ReadableStream<WorkflowEventData<any>>,
+  stream: ReadableStream<WorkflowEventData<any>> | WorkflowStream,
   cond: (event: WorkflowEventData<any>) => boolean | Promise<boolean>,
 ): ReadableStream<WorkflowEventData<any>>;
 export function until<Stop>(
-  stream: ReadableStream<WorkflowEventData<any>>,
+  stream: ReadableStream<WorkflowEventData<any>> | WorkflowStream,
   cond: WorkflowEvent<Stop>,
 ): ReadableStream<WorkflowEventData<any> | WorkflowEventData<Stop>>;
 export function until(
-  stream: ReadableStream<WorkflowEventData<any>>,
+  stream: ReadableStream<WorkflowEventData<any>> | WorkflowStream,
   cond:
     | ((event: WorkflowEventData<any>) => boolean | Promise<boolean>)
     | WorkflowEvent<any>,

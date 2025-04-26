@@ -4,6 +4,7 @@ import {
   type WorkflowEventData as CoreWorkflowEventData,
   workflowEvent,
   getContext,
+  WorkflowStream,
 } from "@llama-flow/core";
 import { collect } from "@llama-flow/core/stream/consumer";
 import { withStore } from "@llama-flow/core/middleware/store";
@@ -19,7 +20,7 @@ type Handler<
 
 export type StepContext<T = unknown> = {
   sendEvent: (event: WorkflowEvent<any>) => void;
-  get stream(): ReadableStream<WorkflowEvent<any>>;
+  get stream(): WorkflowStream;
   get data(): T;
 };
 
@@ -113,7 +114,7 @@ export class Workflow<ContextData, Start, Stop> {
               context.sendEvent(coreEvent);
             },
             get stream() {
-              return context.stream.pipeThrough<WorkflowEvent<any>>(
+              return context.stream.pipeThrough(
                 new TransformStream({
                   transform: (event, controller) => {
                     controller.enqueue(coreEventWeakMap.get(event)!);
