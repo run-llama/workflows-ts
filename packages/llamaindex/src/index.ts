@@ -20,7 +20,7 @@ type Handler<
 
 export type StepContext<T = unknown> = {
   sendEvent: (event: WorkflowEvent<any>) => void;
-  get stream(): WorkflowStream<CoreWorkflowEvent<any>>;
+  get stream(): WorkflowStream;
   get data(): T;
 };
 

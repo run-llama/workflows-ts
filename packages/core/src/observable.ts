@@ -1,8 +1,8 @@
 import { Observable } from "rxjs";
-import type { WorkflowEventData } from "@llama-flow/core";
+import { type WorkflowEventData, WorkflowStream } from "@llama-flow/core";
 
 export const toObservable = (
-  stream: ReadableStream<WorkflowEventData<any>>,
+  stream: ReadableStream<WorkflowEventData<any>> | WorkflowStream,
 ): Observable<WorkflowEventData<any>> => {
   return new Observable((subscriber) => {
     const reader = stream.getReader();

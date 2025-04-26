@@ -5,46 +5,50 @@ import {
 } from "./event";
 import { createSubscribable, type Subscribable } from "./utils";
 
-export class WorkflowStream<Event extends WorkflowEvent<any>> {
-  #stream: ReadableStream<ReturnType<Event["with"]>>;
+export class WorkflowStream
+  implements
+    AsyncIterable<WorkflowEventData<any>>,
+    ReadableStream<WorkflowEventData<any>>
+{
+  #stream: ReadableStream<WorkflowEventData<any>>;
 
-  #subscribable: Subscribable<[event: ReturnType<Event["with"]>], void>;
+  #subscribable: Subscribable<[event: WorkflowEventData<any>], void>;
 
-  on<T extends Event>(
-    event: T,
-    handler: (event: ReturnType<T["with"]>) => void,
+  on(
+    event: WorkflowEvent<any>,
+    handler: (event: WorkflowEventData<any>) => void,
   ): () => void {
     return this.#subscribable.subscribe((ev) => {
       if (event.include(ev)) {
-        handler(ev as ReturnType<T["with"]>);
+        handler(ev);
       }
     });
   }
 
   constructor(
-    subscribable: Subscribable<[event: ReturnType<Event["with"]>], void>,
-    stream: ReadableStream<ReturnType<Event["with"]>>,
+    subscribable: Subscribable<[event: WorkflowEventData<any>], void>,
+    stream: ReadableStream<WorkflowEventData<any>>,
   ) {
     this.#subscribable = subscribable;
     this.#stream = stream;
   }
 
-  static fromResponse<Event extends WorkflowEvent<any>>(
+  static fromResponse(
     response: Response,
-    eventMap: Record<string, Event>,
-  ): WorkflowStream<Event> {
+    eventMap: Record<string, WorkflowEvent<any>>,
+  ): WorkflowStream {
     const body = response.body;
     if (!body) {
       throw new Error("Response body is not readable");
     }
     const subscribable = createSubscribable<
-      [event: ReturnType<Event["with"]>],
+      [event: WorkflowEventData<any>],
       void
     >();
     const events = Object.values(eventMap);
     const stream = body
       .pipeThrough(new TextDecoderStream())
-      .pipeThrough<ReturnType<Event["with"]>>(
+      .pipeThrough<WorkflowEventData<any>>(
         new TransformStream({
           transform: (chunk, controller) => {
             const eventData = JSON.parse(chunk) as {
@@ -55,9 +59,9 @@ export class WorkflowStream<Event extends WorkflowEvent<any>> {
               (e) => e.uniqueId === eventData.uniqueId,
             );
             if (targetEvent) {
-              const ev = targetEvent.with(eventData.data) as ReturnType<
-                Event["with"]
-              >;
+              const ev = targetEvent.with(
+                eventData.data,
+              ) as WorkflowEventData<any>;
               subscribable.publish(ev);
               controller.enqueue(ev);
             }
@@ -92,7 +96,7 @@ export class WorkflowStream<Event extends WorkflowEvent<any>> {
   }
 
   [Symbol.asyncIterator](): ReadableStreamAsyncIterator<
-    ReturnType<Event["with"]>
+    WorkflowEventData<any>
   > {
     return this.#stream[Symbol.asyncIterator]();
   }
@@ -103,33 +107,32 @@ export class WorkflowStream<Event extends WorkflowEvent<any>> {
 
   // make type compatible with Web ReadableStream API
   getReader(options: { mode: "byob" }): ReadableStreamBYOBReader;
-  getReader(): ReadableStreamDefaultReader<ReturnType<Event["with"]>>;
+  getReader(): ReadableStreamDefaultReader<WorkflowEventData<any>>;
   getReader(
     options?: ReadableStreamGetReaderOptions,
-  ): ReadableStreamReader<ReturnType<Event["with"]>>;
+  ): ReadableStreamReader<WorkflowEventData<any>>;
   getReader(): any {
     return this.#stream.getReader();
   }
 
+  // @ts-expect-error
   pipeThrough<T = WorkflowEventData<any>>(
-    transform: ReadableWritablePair<T, ReturnType<Event["with"]>>,
+    transform: ReadableWritablePair<T, WorkflowEventData<any>>,
     options?: StreamPipeOptions,
-  ): WorkflowStream<WorkflowEvent<any>> {
+  ): WorkflowStream {
     const stream = this.#stream.pipeThrough(transform, options) as any;
-    return new WorkflowStream(
-      this.#subscribable,
-      stream,
-    ) as WorkflowStream<any>;
+    return new WorkflowStream(this.#subscribable, stream);
   }
 
   pipeTo(
-    destination: WritableStream<ReturnType<Event["with"]>>,
+    destination: WritableStream<WorkflowEventData<any>>,
     options?: StreamPipeOptions,
   ): Promise<void> {
     return this.#stream.pipeTo(destination, options);
   }
 
-  tee(): [WorkflowStream<Event>, WorkflowStream<Event>] {
+  // @ts-expect-error
+  tee(): [WorkflowStream, WorkflowStream] {
     const [l, r] = this.#stream.tee();
     return [
       new WorkflowStream(this.#subscribable, l),
@@ -139,7 +142,7 @@ export class WorkflowStream<Event extends WorkflowEvent<any>> {
 
   values(
     options?: ReadableStreamIteratorOptions,
-  ): ReadableStreamAsyncIterator<ReturnType<Event["with"]>> {
+  ): ReadableStreamAsyncIterator<WorkflowEventData<any>> {
     return this.#stream.values(options);
   }
 }
