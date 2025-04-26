@@ -5,7 +5,7 @@ import {
 } from "./event";
 import { createSubscribable, type Subscribable } from "./utils";
 
-export class WorkflowStream
+export class WorkflowStream<R = any>
   implements
     AsyncIterable<WorkflowEventData<any>>,
     ReadableStream<WorkflowEventData<any>>
@@ -71,7 +71,9 @@ export class WorkflowStream
     return new WorkflowStream(subscribable, stream);
   }
 
-  toResponse(init?: ResponseInit): Response {
+  toResponse(
+    init?: ResponseInit,
+  ): R extends WorkflowEventData<any> ? Response : never {
     return new Response(
       this.#stream
         .pipeThrough(
@@ -88,7 +90,7 @@ export class WorkflowStream
         )
         .pipeThrough(new TextEncoderStream()),
       init,
-    );
+    ) as any;
   }
 
   get locked() {
@@ -116,18 +118,24 @@ export class WorkflowStream
   }
 
   // @ts-expect-error
-  pipeThrough<T = WorkflowEventData<any>>(
-    transform: ReadableWritablePair<T, WorkflowEventData<any>>,
+  pipeThrough<T>(
+    transform: ReadableWritablePair<T, R>,
     options?: StreamPipeOptions,
-  ): WorkflowStream {
-    const stream = this.#stream.pipeThrough(transform, options) as any;
+  ): WorkflowStream<T> {
+    const stream = this.#stream.pipeThrough(
+      // @ts-expect-error
+      transform,
+      options,
+    ) as any;
     return new WorkflowStream(this.#subscribable, stream);
   }
 
+  // @ts-expect-error
   pipeTo(
-    destination: WritableStream<WorkflowEventData<any>>,
+    destination: WritableStream<R>,
     options?: StreamPipeOptions,
   ): Promise<void> {
+    // @ts-expect-error
     return this.#stream.pipeTo(destination, options);
   }
 
