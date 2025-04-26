@@ -3,7 +3,7 @@ import type { Subscribable } from "./utils";
 
 export class WorkflowStream<Event extends WorkflowEvent<any>> {
   #subscribable: Subscribable<[event: WorkflowEventData<any>], void>;
-  #stream: ReadableStream<Event>;
+  #stream: ReadableStream<ReturnType<Event["with"]>>;
 
   on<T extends Event>(
     event: T,
@@ -18,7 +18,7 @@ export class WorkflowStream<Event extends WorkflowEvent<any>> {
 
   constructor(
     subscribable: Subscribable<[event: WorkflowEventData<any>], void>,
-    stream: ReadableStream<Event>,
+    stream: ReadableStream<ReturnType<Event["with"]>>,
   ) {
     this.#subscribable = subscribable;
     this.#stream = stream;
@@ -28,7 +28,9 @@ export class WorkflowStream<Event extends WorkflowEvent<any>> {
     return this.#stream.locked;
   }
 
-  [Symbol.asyncIterator](): ReadableStreamAsyncIterator<Event> {
+  [Symbol.asyncIterator](): ReadableStreamAsyncIterator<
+    ReturnType<Event["with"]>
+  > {
     return this.#stream[Symbol.asyncIterator]();
   }
 
@@ -36,31 +38,41 @@ export class WorkflowStream<Event extends WorkflowEvent<any>> {
     return this.#stream.cancel(reason);
   }
 
-  getReader(): ReadableStreamDefaultReader<Event> {
-    return this.#stream.getReader() as ReadableStreamDefaultReader<Event>;
+  // make type compatible with Web ReadableStream API
+  getReader(options: { mode: "byob" }): ReadableStreamBYOBReader;
+  getReader(): ReadableStreamDefaultReader<ReturnType<Event["with"]>>;
+  getReader(
+    options?: ReadableStreamGetReaderOptions,
+  ): ReadableStreamReader<ReturnType<Event["with"]>>;
+  getReader(): any {
+    return this.#stream.getReader();
   }
 
   pipeThrough<T>(
-    transform: ReadableWritablePair<T, Event>,
+    transform: ReadableWritablePair<T, ReturnType<Event["with"]>>,
     options?: StreamPipeOptions,
   ): ReadableStream<T> {
     return this.#stream.pipeThrough(transform, options) as ReadableStream<T>;
   }
 
   pipeTo(
-    destination: WritableStream<Event>,
+    destination: WritableStream<ReturnType<Event["with"]>>,
     options?: StreamPipeOptions,
   ): Promise<void> {
     return this.#stream.pipeTo(destination, options);
   }
 
-  tee(): [ReadableStream<Event>, ReadableStream<Event>] {
-    return this.#stream.tee() as [ReadableStream<Event>, ReadableStream<Event>];
+  tee(): [WorkflowStream<Event>, WorkflowStream<Event>] {
+    const [l, r] = this.#stream.tee();
+    return [
+      new WorkflowStream(this.#subscribable, l),
+      new WorkflowStream(this.#subscribable, r),
+    ];
   }
 
   values(
     options?: ReadableStreamIteratorOptions,
-  ): ReadableStreamAsyncIterator<Event> {
-    return this.#stream.values(options) as ReadableStreamAsyncIterator<Event>;
+  ): ReadableStreamAsyncIterator<ReturnType<Event["with"]>> {
+    return this.#stream.values(options);
   }
 }
