@@ -11,15 +11,15 @@ const isWorkflowEvent = (value: unknown): value is WorkflowEvent<any> =>
   "include" in value;
 
 export function until(
-  stream: WorkflowStream,
+  stream: WorkflowStream | ReadableStream<WorkflowEventData<any>>,
   cond: (event: WorkflowEventData<any>) => boolean | Promise<boolean>,
 ): WorkflowStream;
 export function until<Stop>(
-  stream: WorkflowStream,
+  stream: WorkflowStream | ReadableStream<WorkflowEventData<any>>,
   cond: WorkflowEvent<Stop>,
 ): WorkflowStream;
 export function until(
-  stream: WorkflowStream,
+  stream: WorkflowStream | ReadableStream<WorkflowEventData<any>>,
   cond:
     | ((event: WorkflowEventData<any>) => boolean | Promise<boolean>)
     | WorkflowEvent<any>,
