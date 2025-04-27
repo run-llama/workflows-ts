@@ -1,5 +1,27 @@
 # @llama-flow/core
 
+## 0.3.10
+
+### Patch Changes
+
+- f59679a: feat: add `event.uniqueId`
+- f3206a9: fix: use `subscribable` as the source of truth
+- 80066d0: feat: add `WorkflowStream.fromResponse/toResponse` API
+- 2a18aca: feat: `stream.on` API
+
+  ```ts
+  workflow.handle([startEvent], () => {
+    const { sendEvent } = getContext();
+    sendEvent(messageEvent.with("Hello World"));
+  });
+
+  const { stream, sendEvent } = workflow.createContext();
+  const unsubscribe = stream.on(messageEvent, (event) => {
+    expect(event.data).toBe("Hello World");
+  });
+  sendEvent(startEvent.with());
+  ```
+
 ## 0.3.9
 
 ### Patch Changes
