@@ -1,18 +1,11 @@
-import type {
-  WorkflowEvent,
-  WorkflowEventData,
-  WorkflowStream,
-} from "@llama-flow/core";
+import type { WorkflowEventData, WorkflowStream } from "@llama-flow/core";
 
-export function filter<
-  Event extends WorkflowEventData<any>,
-  Final extends Event,
->(
-  stream: ReadableStream<Event> | WorkflowStream<Event>,
-  cond: (event: Event) => event is Final,
-): ReadableStream<Final> | WorkflowStream<Final> {
+export function filter(
+  stream: WorkflowStream,
+  cond: (event: WorkflowEventData<any>) => boolean,
+): WorkflowStream {
   return stream.pipeThrough(
-    new TransformStream<Event, Final>({
+    new TransformStream({
       transform(event, controller) {
         if (cond(event)) {
           controller.enqueue(event);
