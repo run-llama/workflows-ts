@@ -27,10 +27,42 @@ export class WorkflowStream<R = any>
 
   constructor(
     subscribable: Subscribable<[event: WorkflowEventData<any>], void>,
-    stream: ReadableStream<WorkflowEventData<any>>,
+    rootStream: ReadableStream<WorkflowEventData<any>> | null,
   ) {
     this.#subscribable = subscribable;
-    this.#stream = stream;
+    let unsubscribe: () => void;
+    this.#stream =
+      rootStream ??
+      new ReadableStream<WorkflowEventData<any>>({
+        start: (controller) => {
+          unsubscribe = subscribable.subscribe((event) => {
+            controller.enqueue(event);
+          });
+        },
+        cancel: () => {
+          unsubscribe();
+        },
+      });
+  }
+
+  static fromReadableStream(
+    stream: ReadableStream<WorkflowEventData<any>>,
+  ): WorkflowStream {
+    const subscribable = createSubscribable<
+      [event: WorkflowEventData<any>],
+      void
+    >();
+    return new WorkflowStream(
+      subscribable,
+      stream.pipeThrough(
+        new TransformStream<WorkflowEventData<any>>({
+          transform: (event, controller) => {
+            subscribable.publish(event);
+            controller.enqueue(event);
+          },
+        }),
+      ),
+    );
   }
 
   static fromResponse(
@@ -46,29 +78,31 @@ export class WorkflowStream<R = any>
       void
     >();
     const events = Object.values(eventMap);
-    const stream = body
-      .pipeThrough(new TextDecoderStream())
-      .pipeThrough<WorkflowEventData<any>>(
-        new TransformStream({
-          transform: (chunk, controller) => {
-            const eventData = JSON.parse(chunk) as {
-              data: ReturnType<WorkflowEvent<any>["with"]>;
-              uniqueId: string;
-            };
-            const targetEvent = events.find(
-              (e) => e.uniqueId === eventData.uniqueId,
-            );
-            if (targetEvent) {
-              const ev = targetEvent.with(
-                eventData.data,
-              ) as WorkflowEventData<any>;
-              subscribable.publish(ev);
-              controller.enqueue(ev);
-            }
-          },
-        }),
-      );
-    return new WorkflowStream(subscribable, stream);
+    return new WorkflowStream(
+      subscribable,
+      body
+        .pipeThrough(new TextDecoderStream())
+        .pipeThrough<WorkflowEventData<any>>(
+          new TransformStream({
+            transform: (chunk, controller) => {
+              const eventData = JSON.parse(chunk) as {
+                data: ReturnType<WorkflowEvent<any>["with"]>;
+                uniqueId: string;
+              };
+              const targetEvent = events.find(
+                (e) => e.uniqueId === eventData.uniqueId,
+              );
+              if (targetEvent) {
+                const ev = targetEvent.with(
+                  eventData.data,
+                ) as WorkflowEventData<any>;
+                subscribable.publish(ev);
+                controller.enqueue(ev);
+              }
+            },
+          }),
+        ),
+    );
   }
 
   toResponse(
