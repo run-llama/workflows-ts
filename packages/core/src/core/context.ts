@@ -198,36 +198,23 @@ export const createContext = ({
     handlerContext: HandlerContext,
   ): WorkflowContext => ({
     get stream() {
-      let unsubscribe: () => void;
-      const stream = new ReadableStream({
-        start: async (controller) => {
-          unsubscribe =
-            rootWorkflowContext.__internal__call_send_event.subscribe(
-              (newEvent: WorkflowEventData<any>) => {
-                let currentEventContext = eventContextWeakMap.get(newEvent);
-                while (currentEventContext) {
-                  if (currentEventContext === handlerContext) {
-                    controller.enqueue(newEvent);
-                    break;
-                  }
-                  currentEventContext = currentEventContext.prev;
-                }
-              },
-            );
-        },
-        cancel: () => {
-          if (unsubscribe) {
-            unsubscribe();
+      const subscribable = createSubscribable<
+        [event: WorkflowEventData<any>],
+        void
+      >();
+      rootWorkflowContext.__internal__call_send_event.subscribe(
+        (newEvent: WorkflowEventData<any>) => {
+          let currentEventContext = eventContextWeakMap.get(newEvent);
+          while (currentEventContext) {
+            if (currentEventContext === handlerContext) {
+              subscribable.publish(newEvent);
+              break;
+            }
+            currentEventContext = currentEventContext.prev;
           }
         },
-      });
-      return new WorkflowStream(
-        rootWorkflowContext.__internal__call_send_event as unknown as Subscribable<
-          [event: WorkflowEventData<any>],
-          void
-        >,
-        stream,
       );
+      return new WorkflowStream(subscribable, null);
     },
     get signal() {
       return handlerContext.abortController.signal;
