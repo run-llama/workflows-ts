@@ -1,26 +1,22 @@
 import type { Context, Handler } from "hono";
-import type {
-  Workflow,
-  WorkflowEvent,
-  WorkflowEventData,
+import {
+  type Workflow,
+  type WorkflowEventData,
+  WorkflowStream,
 } from "@llama-flow/core";
-import { runWorkflow } from "./stream/run";
 
 export const createHonoHandler = <Start, Stop>(
   workflow: Workflow,
-  getStart: (
+  initEvent: (
     c: Context,
-  ) => WorkflowEventData<Start> | Promise<WorkflowEventData<Start>>,
-  stopEvent: WorkflowEvent<Stop>,
-  wrapStopEvent?: (c: Context, stop: Stop) => Response,
+    sendEvent: (...events: WorkflowEventData<any>[]) => void,
+  ) => void | Promise<void>,
+  handleStream: (stream: WorkflowStream) => WorkflowStream,
 ): Handler => {
-  if (!wrapStopEvent) {
-    wrapStopEvent = (c, stop) => {
-      return c.json(stop as any);
-    };
-  }
-  return async (c) => {
-    const stop = await runWorkflow(workflow, await getStart(c), stopEvent);
-    return wrapStopEvent(c, stop.data);
+  return async (ctx) => {
+    const { stream, sendEvent } = workflow.createContext();
+    await initEvent(ctx, sendEvent);
+    const resultStream = handleStream(stream);
+    return resultStream.toResponse();
   };
 };

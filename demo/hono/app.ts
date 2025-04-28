@@ -6,6 +6,8 @@ import {
   startEvent,
   stopEvent,
 } from "../workflows/tool-call-agent.js";
+import { until } from "@llama-flow/core/stream/until";
+import { filter } from "@llama-flow/core/stream/filter";
 
 const app = new Hono();
 
@@ -13,8 +15,11 @@ app.post(
   "/workflow",
   createHonoHandler(
     toolCallWorkflow,
-    async (ctx) => startEvent.with(await ctx.req.text()),
-    stopEvent,
+    async (ctx, sendEvent) => {
+      sendEvent(startEvent.with(await ctx.req.text()));
+    },
+    (stream) =>
+      filter(until(stream, stopEvent), (event) => stopEvent.include(event)),
   ),
 );
 

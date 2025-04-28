@@ -157,6 +157,8 @@ Workflow can be used as middleware in any server framework, like `express`, `hon
 import { Hono } from "hono";
 import { serve } from "@hono/node-server";
 import { createHonoHandler } from "@llama-flow/core/interrupter/hono";
+import { filter } from "@llama-flow/core/stream/filter";
+import { until } from "@llama-flow/core/stream/until";
 import {
   agentWorkflow,
   startEvent,
@@ -168,9 +170,12 @@ const app = new Hono();
 app.post(
   "/workflow",
   createHonoHandler(
-    agentWorkflow,
-    async (ctx) => startEvent(await ctx.req.text()),
-    stopEvent,
+    toolCallWorkflow,
+    async (ctx, sendEvent) => {
+      sendEvent(startEvent.with(await ctx.req.text()));
+    },
+    (stream) =>
+      filter(until(stream, stopEvent), (event) => stopEvent.include(event)),
   ),
 );
 

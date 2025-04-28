@@ -2,6 +2,9 @@ import { Hono } from "hono";
 import { createWorkflow, workflowEvent } from "@llama-flow/core";
 import { createHonoHandler } from "@llama-flow/core/hono";
 import { html } from "hono/html";
+import { toolCallWorkflow } from "../../workflows/tool-call-agent";
+import { filter } from "@llama-flow/core/stream/filter";
+import { until } from "@llama-flow/core/stream/until";
 
 const app = new Hono();
 
@@ -16,9 +19,12 @@ workflow.handle([startEvent], ({ data }) => {
 app.post(
   "/workflow",
   createHonoHandler(
-    workflow,
-    async (ctx) => startEvent.with(await ctx.req.text()),
-    stopEvent,
+    toolCallWorkflow,
+    async (ctx, sendEvent) => {
+      sendEvent(startEvent.with(await ctx.req.text()));
+    },
+    (stream) =>
+      filter(until(stream, stopEvent), (event) => stopEvent.include(event)),
   ),
 );
 
