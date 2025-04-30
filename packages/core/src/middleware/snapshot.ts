@@ -105,7 +105,7 @@ export function withSnapshot<Workflow extends WorkflowCore>(
     Set<HandlerContext>
   >();
 
-  const createRunSnapshot = (context: WorkflowContext): RunSnapshotFn => {
+  const createSnapshotFn = (context: WorkflowContext): RunSnapshotFn => {
     return async function snapshotHandler() {
       if (isContextLocked(context)) {
         throw new Error(
@@ -226,7 +226,7 @@ export function withSnapshot<Workflow extends WorkflowCore>(
       return workflow.handle(events, handler);
     },
     resume(
-      onRequestEvent: (event: WorkflowEvent<any>) => void | Promise<void>,
+      onRequest: (event: WorkflowEvent<any>) => void | Promise<void>,
       data: any[],
       serializable: Omit<SnapshotData, "unrecoverableQueue">,
     ): any {
@@ -243,15 +243,11 @@ export function withSnapshot<Workflow extends WorkflowCore>(
         }),
       );
       context.sendEvent(...events);
-      if (!Reflect.has(context, "snapshot")) {
-        Object.defineProperty(context, "snapshot", {
-          value: createRunSnapshot(context),
-        });
-      }
 
       let lazyInitStream: WorkflowStream | null = null;
       return {
         ...context,
+        snapshot: createSnapshotFn(context),
         get stream() {
           if (!lazyInitStream) {
             lazyInitStream = stream.pipeThrough(
@@ -259,7 +255,7 @@ export function withSnapshot<Workflow extends WorkflowCore>(
                 transform: (event, controller) => {
                   if (snapshotEvent.include(event)) {
                     const data = event.data;
-                    onRequestEvent(data);
+                    onRequest(data);
                   } else {
                     // ignore snapshot event from stream
                     controller.enqueue(event);
@@ -273,19 +269,15 @@ export function withSnapshot<Workflow extends WorkflowCore>(
       };
     },
     createContext(
-      onRequestEvent: (event: WorkflowEvent<any>) => void | Promise<void>,
+      onRequest: (event: WorkflowEvent<any>) => void | Promise<void>,
     ): any {
       const context = workflow.createContext();
       initContext(context);
       const stream = context.stream;
-      if (!Reflect.has(context, "snapshot")) {
-        Object.defineProperty(context, "snapshot", {
-          value: createRunSnapshot(context),
-        });
-      }
       let lazyInitStream: WorkflowStream | null = null;
       return {
         ...context,
+        snapshot: createSnapshotFn(context),
         get stream() {
           if (!lazyInitStream) {
             lazyInitStream = stream.pipeThrough(
@@ -293,7 +285,7 @@ export function withSnapshot<Workflow extends WorkflowCore>(
                 transform: (event, controller) => {
                   if (snapshotEvent.include(event)) {
                     const data = event.data;
-                    onRequestEvent(data);
+                    onRequest(data);
                   } else {
                     // ignore snapshot event from stream
                     controller.enqueue(event);
