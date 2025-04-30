@@ -192,12 +192,12 @@ workflow.handle([incrementEvent], (increment) => {
 // Run the workflow
 async function runWithState() {
   const { sendEvent, state } = workflow.createContext();
-  
+
   // Send start event multiple times to see state update
   sendEvent(startEvent.with());
   sendEvent(startEvent.with());
   sendEvent(startEvent.with());
-  
+
   // The state persists across events
   console.log("Final count:", state.count);
   console.log("Final history:", state.history);
@@ -209,10 +209,12 @@ runWithState();
 You can also create a state with input:
 
 ```ts
-const { withState } = createStatefulMiddleware((input: { initialCount: number }) => ({
-  count: input.initialCount,
-  history: [input.initialCount],
-}));
+const { withState } = createStatefulMiddleware(
+  (input: { initialCount: number }) => ({
+    count: input.initialCount,
+    history: [input.initialCount],
+  }),
+);
 
 const workflow = withState(createWorkflow());
 const { state } = workflow.createContext({ initialCount: 10 });

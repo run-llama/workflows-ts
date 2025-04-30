@@ -4,7 +4,7 @@
   "exports": {
     ".": "./src/core/index.ts",
     "./async-context": "./src/async-context/index.ts",
-    "./middleware/store": "./src/middleware/store.ts",
+    "./middleware/state": "./src/middleware/state.ts",
     "./middleware/trace-events": "./src/middleware/trace-events.ts",
     "./middleware/validation": "./src/middleware/validation.ts",
     "./util/p-retry": "./src/util/p-retry.ts",
