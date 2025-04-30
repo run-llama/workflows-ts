@@ -194,27 +194,31 @@ export const createContext = ({
         }
       });
   };
+  let stream: WorkflowStream | null = null;
   const createWorkflowContext = (
     handlerContext: HandlerContext,
   ): WorkflowContext => ({
     get stream() {
-      const subscribable = createSubscribable<
-        [event: WorkflowEventData<any>],
-        void
-      >();
-      rootWorkflowContext.__internal__call_send_event.subscribe(
-        (newEvent: WorkflowEventData<any>) => {
-          let currentEventContext = eventContextWeakMap.get(newEvent);
-          while (currentEventContext) {
-            if (currentEventContext === handlerContext) {
-              subscribable.publish(newEvent);
-              break;
+      if (!stream) {
+        const subscribable = createSubscribable<
+          [event: WorkflowEventData<any>],
+          void
+        >();
+        rootWorkflowContext.__internal__call_send_event.subscribe(
+          (newEvent: WorkflowEventData<any>) => {
+            let currentEventContext = eventContextWeakMap.get(newEvent);
+            while (currentEventContext) {
+              if (currentEventContext === handlerContext) {
+                subscribable.publish(newEvent);
+                break;
+              }
+              currentEventContext = currentEventContext.prev;
             }
-            currentEventContext = currentEventContext.prev;
-          }
-        },
-      );
-      return new WorkflowStream<WorkflowEventData<any>>(subscribable, null);
+          },
+        );
+        stream = new WorkflowStream(subscribable, null);
+      }
+      return stream;
     },
     get signal() {
       return handlerContext.abortController.signal;

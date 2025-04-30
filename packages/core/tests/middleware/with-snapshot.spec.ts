@@ -1,6 +1,13 @@
 import { describe, expect, test, vi } from "vitest";
 import { withSnapshot, request } from "@llama-flow/core/middleware/snapshot";
-import { createWorkflow, getContext, workflowEvent } from "@llama-flow/core";
+import {
+  createWorkflow,
+  eventSource,
+  getContext,
+  workflowEvent,
+} from "@llama-flow/core";
+import { collect } from "@llama-flow/core/stream/consumer";
+import { until } from "@llama-flow/core/stream/until";
 
 const startEvent = workflowEvent({
   debugLabel: "start",
@@ -10,6 +17,9 @@ const messageEvent = workflowEvent<string>({
 });
 const humanResponseEvent = workflowEvent<string>({
   debugLabel: "human-response",
+});
+const stopEvent = workflowEvent({
+  debugLabel: "stop",
 });
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -23,19 +33,30 @@ describe("with snapshot - snapshot API", () => {
 
     workflow.handle([humanResponseEvent], ({ data }) => {
       expect(data).toBe("hello world");
+      return stopEvent.with();
     });
 
     const { sendEvent, snapshot } = workflow.createContext();
     sendEvent(startEvent.with());
-    const [req, se] = await snapshot();
+    const [req, sd] = await snapshot();
     expect(req.length).toBe(1);
     expect(req[0]!).toBe(humanResponseEvent);
-    expect(se).toMatchInlineSnapshot(`
+    expect(sd).toMatchInlineSnapshot(`
       {
+        "missing": [
+          1,
+        ],
         "queue": [],
+        "unrecoverableQueue": [],
         "version": "@@@0,,4~,,@@1,,7~,,",
       }
     `);
+
+    // recover
+    const { stream } = workflow.recoverContext(["hello world"], sd);
+    const events = await collect(until(stream, stopEvent));
+    expect(events.length).toBe(2);
+    expect(events.map(eventSource)).toEqual([humanResponseEvent, stopEvent]);
   });
 
   test("single handler (async)", async () => {
@@ -46,19 +67,30 @@ describe("with snapshot - snapshot API", () => {
 
     workflow.handle([humanResponseEvent], ({ data }) => {
       expect(data).toBe("hello world");
+      return stopEvent.with();
     });
 
     const { sendEvent, snapshot } = workflow.createContext();
     sendEvent(startEvent.with());
-    const [req, se] = await snapshot();
+    const [req, sd] = await snapshot();
     expect(req.length).toBe(1);
     expect(req[0]!).toBe(humanResponseEvent);
-    expect(se).toMatchInlineSnapshot(`
+    expect(sd).toMatchInlineSnapshot(`
       {
+        "missing": [
+          1,
+        ],
         "queue": [],
+        "unrecoverableQueue": [],
         "version": "@@@0,,4~,,@@1,,7~,,",
       }
     `);
+
+    // recover
+    const { stream } = workflow.recoverContext(["hello world"], sd);
+    const events = await collect(until(stream, stopEvent));
+    expect(events.length).toBe(2);
+    expect(events.map(eventSource)).toEqual([humanResponseEvent, stopEvent]);
   });
 
   test("single handler (timer)", async () => {
@@ -70,19 +102,30 @@ describe("with snapshot - snapshot API", () => {
 
     workflow.handle([humanResponseEvent], ({ data }) => {
       expect(data).toBe("hello world");
+      return stopEvent.with();
     });
 
     const { sendEvent, snapshot } = workflow.createContext();
     sendEvent(startEvent.with());
-    const [req, se] = await snapshot();
+    const [req, sd] = await snapshot();
     expect(req.length).toBe(1);
     expect(req[0]!).toBe(humanResponseEvent);
-    expect(se).toMatchInlineSnapshot(`
+    expect(sd).toMatchInlineSnapshot(`
       {
+        "missing": [
+          1,
+        ],
         "queue": [],
+        "unrecoverableQueue": [],
         "version": "@@@0,,4~,,@@1,,7~,,",
       }
     `);
+
+    // recover
+    const { stream } = workflow.recoverContext(["hello world"], sd);
+    const events = await collect(until(stream, stopEvent));
+    expect(events.length).toBe(2);
+    expect(events.map(eventSource)).toEqual([humanResponseEvent, stopEvent]);
   });
 
   test("multiple message in the queue", async () => {
@@ -97,28 +140,40 @@ describe("with snapshot - snapshot API", () => {
 
     workflow.handle([humanResponseEvent], ({ data }) => {
       expect(data).toBe("hello world");
+      return stopEvent.with();
     });
 
     const { sendEvent, snapshot } = workflow.createContext();
     sendEvent(startEvent.with());
-    const [req, se] = await snapshot();
+    const [req, sd] = await snapshot();
     expect(req.length).toBe(1);
     expect(req[0]!).toBe(humanResponseEvent);
-    expect(se).toMatchInlineSnapshot(`
+    // messageEvent is not in the queue, because it's not in any handler
+    expect(sd).toMatchInlineSnapshot(`
       {
-        "queue": [
-          {
-            "data": "1",
-            "type": "message",
-          },
-          {
-            "data": "2",
-            "type": "message",
-          },
+        "missing": [
+          1,
+        ],
+        "queue": [],
+        "unrecoverableQueue": [
+          [
+            "1",
+            2,
+          ],
+          [
+            "2",
+            2,
+          ],
         ],
         "version": "@@@0,,4~,,@@1,,7~,,",
       }
     `);
+
+    // recover
+    const { stream } = workflow.recoverContext(["hello world"], sd);
+    const events = await collect(until(stream, stopEvent));
+    expect(events.length).toBe(2);
+    expect(events.map(eventSource)).toEqual([humanResponseEvent, stopEvent]);
   });
 
   test("multiple requests in the response", async () => {
@@ -133,19 +188,30 @@ describe("with snapshot - snapshot API", () => {
 
     workflow.handle([humanResponseEvent], ({ data }) => {
       expect(data).toBe("hello world");
+      return stopEvent.with();
     });
 
     const { sendEvent, snapshot } = workflow.createContext();
     sendEvent(startEvent.with());
-    const [req, se] = await snapshot();
+    const [req, sd] = await snapshot();
     expect(req.length).toBe(2);
     expect(req[0]!).toBe(humanResponseEvent);
-    expect(se).toMatchInlineSnapshot(`
+    expect(sd).toMatchInlineSnapshot(`
       {
+        "missing": [
+          1,
+          1,
+        ],
         "queue": [],
+        "unrecoverableQueue": [],
         "version": "@@@0,,4~,,@@0,,7~,,@@1,,10~,,",
       }
     `);
+    // recover
+    const { stream } = workflow.recoverContext(["hello world"], sd);
+    const events = await collect(until(stream, stopEvent));
+    expect(events.length).toBe(2);
+    expect(events.map(eventSource)).toEqual([humanResponseEvent, stopEvent]);
   });
 
   test("cannot handle setTimeout without ", async () => {
@@ -167,7 +233,9 @@ describe("with snapshot - snapshot API", () => {
     expect(req.length).toBe(0);
     expect(se).toMatchInlineSnapshot(`
       {
+        "missing": [],
         "queue": [],
+        "unrecoverableQueue": [],
         "version": "@@@0,,4~,,",
       }
     `);
