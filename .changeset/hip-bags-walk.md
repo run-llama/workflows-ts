@@ -38,8 +38,8 @@ const { withStore, getContext } = createStoreMiddleware(() => ({
 const workflow = withStore(createWorkflow());
 
 workflow.handle([], () => {
-  const { store } = getContext()
-})
+  const { store } = getContext();
+});
 
 // Access store via context.store
 const { store } = getContext();
