@@ -224,7 +224,7 @@ context.
 ```ts
 import { createStatefulMiddleware } from "@llama-flow/core/middleware/state";
 
-const { withState } = createStatefulMiddleware(() => ({
+const { withState, getContext } = createStatefulMiddleware(() => ({
   pendingTasks: new Set<Promise<unknown>>(),
 }));
 
