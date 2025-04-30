@@ -32,7 +32,7 @@ type CreateState<State, Input, Context extends WorkflowContext> = {
   withState: WithState<State, Input>;
 };
 
-export function createStateMiddleware<
+export function createStatefulMiddleware<
   State,
   Input = void,
   Context extends WorkflowContext = WorkflowContext,

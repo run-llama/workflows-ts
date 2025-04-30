@@ -216,23 +216,23 @@ for [Async Context](https://github.com/tc39/proposal-async-context) to solve thi
 
 ## Middleware
 
-### `withStore`
+### `withState`
 
-Adding a `store` property to the workflow context, which returns a store object, each store is linked to the workflow
+Adding a `state` property to the workflow context, which returns a state object, each state is linked to the workflow
 context.
 
 ```ts
-import { createStoreMiddleware } from "@llama-flow/core/middleware/store";
+import { createStatefulMiddleware } from "@llama-flow/core/middleware/state";
 
-const { withStore } = createStoreMiddleware(() => ({
+const { withState } = createStatefulMiddleware(() => ({
   pendingTasks: new Set<Promise<unknown>>(),
 }));
 
-const workflow = withStore(createWorkflow());
+const workflow = withState(createWorkflow());
 
 workflow.handle([startEvent], () => {
-  const { store } = getContext();
-  store.pendingTasks.add(
+  const { state } = getContext();
+  state.pendingTasks.add(
     new Promise((resolve) => {
       setTimeout(() => {
         resolve();
@@ -241,18 +241,18 @@ workflow.handle([startEvent], () => {
   );
 });
 
-const { store } = workflow.createContext();
+const { state } = workflow.createContext();
 ```
 
-You can also create a store with input:
+You can also create a state with input:
 
 ```ts
-const { withStore } = createStoreMiddleware((input: { id: string }) => ({
+const { withState } = createStatefulMiddleware((input: { id: string }) => ({
   id: input.id,
 }));
 
-const workflow = withStore(createWorkflow());
-const { store } = workflow.createContext({ id: "1" });
+const workflow = withState(createWorkflow());
+const { state } = workflow.createContext({ id: "1" });
 ```
 
 ### `withValidation`

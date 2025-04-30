@@ -153,71 +153,69 @@ run(43);
 
 LlamaIndex workflows provide middleware that can enhance your workflows:
 
-### `withStore` Middleware
+### `withState` Middleware
 
-The `withStore` middleware adds a persistent store to your workflow context:
+The `withState` middleware adds a persistent state to your workflow context:
 
 ```ts
-import { createStoreMiddleware } from "@llama-flow/core/middleware/store";
+import { createStatefulMiddleware } from "@llama-flow/core/middleware/state";
 
-// Define your store type
-type CounterStore = {
+// Define your state type
+type CounterState = {
   count: number;
   history: number[];
 };
 
-// Create a workflow with store middleware
-const { withStore } = createStoreMiddleware<CounterStore>(() => ({
+// Create a workflow with state middleware
+const { withState } = createStatefulMiddleware<CounterState>(() => ({
   count: 0,
   history: [],
 }));
 
-const workflow = withStore(createWorkflow());
+const workflow = withState(createWorkflow());
 
-// Use the store in your handlers
+// Use the state in your handlers
 workflow.handle([startEvent], () => {
-  const { store } = getContext();
-  store.count += 1;
-  store.history.push(store.count);
-  return incrementEvent.with(store.count);
+  const { state } = getContext();
+  state.count += 1;
+  state.history.push(state.count);
+  return incrementEvent.with(state.count);
 });
 
 workflow.handle([incrementEvent], (increment) => {
-  const { store } = getContext();
-  console.log("Current count:", store.count);
-  console.log("History:", store.history);
-  return resultEvent.with(store.count);
+  const { state } = getContext();
+  console.log("Current count:", state.count);
+  console.log("History:", state.history);
+  return resultEvent.with(state.count);
 });
 
 // Run the workflow
-async function runWithStore() {
-  const { sendEvent, store } = workflow.createContext();
-
-  // Send start event multiple times to see store update
+async function runWithState() {
+  const { sendEvent, state } = workflow.createContext();
+  
+  // Send start event multiple times to see state update
   sendEvent(startEvent.with());
   sendEvent(startEvent.with());
   sendEvent(startEvent.with());
-
-  // The store persists across events
-  console.log("Final count:", store.count);
-  console.log("Final history:", store.history);
+  
+  // The state persists across events
+  console.log("Final count:", state.count);
+  console.log("Final history:", state.history);
 }
 
-runWithStore();
+runWithState();
 ```
 
-You can also create a store with input:
+You can also create a state with input:
 
 ```ts
-const { withStore } = createStoreMiddleware(
-  (input: { initialCount: number }) => ({
-    count: input.initialCount,
-    history: [input.initialCount],
-  }),
-);
+const { withState } = createStatefulMiddleware((input: { initialCount: number }) => ({
+  count: input.initialCount,
+  history: [input.initialCount],
+}));
 
-const workflow = withStore(createWorkflow());
-const { store } = workflow.createContext({ initialCount: 10 });
+const workflow = withState(createWorkflow());
+const { state } = workflow.createContext({ initialCount: 10 });
 ```
 
 ### `withValidation` Middleware
