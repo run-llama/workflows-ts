@@ -40,7 +40,7 @@ type WithSnapshotWorkflow<Workflow extends WorkflowCore> = Omit<
   "createContext"
 > & {
   createContext: () => SnapshotWorkflowContext<Workflow>;
-  recoverContext: (
+  resume: (
     data: any[],
     serializable: Omit<SnapshotData, "unrecoverableQueue">,
   ) => SnapshotWorkflowContext<Workflow>;
@@ -218,7 +218,7 @@ export function withSnapshot<Workflow extends WorkflowCore>(
       });
       return workflow.handle(events, handler);
     },
-    recoverContext(
+    resume(
       data: any[],
       serializable: Omit<SnapshotData, "unrecoverableQueue">,
     ): any {
