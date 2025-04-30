@@ -5,7 +5,7 @@ import {
   type WorkflowEvent,
   type WorkflowEventData,
 } from "@llama-flow/core";
-import { createStoreMiddleware } from "@llama-flow/core/middleware/store";
+import { createStateMiddleware } from "@llama-flow/core/middleware/store";
 import { withTraceEvents } from "@llama-flow/core/middleware/trace-events";
 import { withValidation } from "@llama-flow/core/middleware/validation";
 import { zodEvent } from "@llama-flow/core/util/zod";
@@ -26,9 +26,9 @@ describe("full workflow middleware", () => {
     validation: Validation,
     createStore: (input: Input) => T,
   ) => {
-    const { withStore, getContext } = createStoreMiddleware(createStore);
+    const { withState, getContext } = createStateMiddleware(createStore);
     return [
-      withStore(withValidation(withTraceEvents(createWorkflow()), validation)),
+      withState(withValidation(withTraceEvents(createWorkflow()), validation)),
       getContext,
     ] as const;
   };
@@ -68,7 +68,7 @@ describe("full workflow middleware", () => {
     );
     workflow.strictHandle([startEvent], (sendEvent, start) => {
       expect(start.data).toBe("start");
-      sendEvent(stopEvent.with(getContext().store.id));
+      sendEvent(stopEvent.with(getContext().state.id));
     });
 
     expectTypeOf(workflow.substream).not.toBeNever();
