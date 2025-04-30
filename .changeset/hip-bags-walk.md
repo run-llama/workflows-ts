@@ -1,6 +1,7 @@
 ---
 "@llama-flow/docs": patch
-"@llama-flow/core": patch
+"@llama-flow/core": minor
+"@llama-flow/llamaindex": patch
 ---
 
 feat: add `createStatefulMiddleware` API
