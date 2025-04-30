@@ -5,7 +5,7 @@ import {
   type WorkflowEvent,
   type WorkflowEventData,
 } from "@llama-flow/core";
-import { withStore } from "@llama-flow/core/middleware/store";
+import { createStoreMiddleware } from "@llama-flow/core/middleware/store";
 import { withTraceEvents } from "@llama-flow/core/middleware/trace-events";
 import { withValidation } from "@llama-flow/core/middleware/validation";
 import { zodEvent } from "@llama-flow/core/util/zod";
@@ -26,10 +26,11 @@ describe("full workflow middleware", () => {
     validation: Validation,
     createStore: (input: Input) => T,
   ) => {
-    return withStore(
-      createStore,
-      withValidation(withTraceEvents(createWorkflow()), validation),
-    );
+    const { withStore, getContext } = createStoreMiddleware(createStore);
+    return [
+      withStore(withValidation(withTraceEvents(createWorkflow()), validation)),
+      getContext,
+    ] as const;
   };
   test("type check", () => {
     const startEvent = zodEvent(z.string(), {
@@ -41,7 +42,7 @@ describe("full workflow middleware", () => {
     const stopEvent = zodEvent(z.string(), {
       debugLabel: "stop",
     });
-    const workflow = createFullWorkflow(
+    const [workflow, getContext] = createFullWorkflow(
       [[[startEvent], [stopEvent]]],
       () => ({}),
     );
@@ -59,7 +60,7 @@ describe("full workflow middleware", () => {
     const stopEvent = zodEvent(z.string(), {
       debugLabel: "stop",
     });
-    const workflow = createFullWorkflow(
+    const [workflow, getContext] = createFullWorkflow(
       [[[startEvent], [stopEvent]]],
       (id: string) => ({
         id,
@@ -67,7 +68,7 @@ describe("full workflow middleware", () => {
     );
     workflow.strictHandle([startEvent], (sendEvent, start) => {
       expect(start.data).toBe("start");
-      sendEvent(stopEvent.with(workflow.getStore().id));
+      sendEvent(stopEvent.with(getContext().store.id));
     });
 
     expectTypeOf(workflow.substream).not.toBeNever();

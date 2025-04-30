@@ -1,36 +1,42 @@
-import type { Workflow as WorkflowCore } from "@llama-flow/core";
+import type {
+  Workflow,
+  Workflow as WorkflowCore,
+  WorkflowContext,
+} from "@llama-flow/core";
 import { getContext } from "@llama-flow/core";
 
-type WithStore<Workflow extends WorkflowCore, Store, Input> = Input extends
-  | void
-  | undefined
+type WithStore<Store, Input> = Input extends void | undefined
   ? {
-      (workflow: Workflow): Omit<Workflow, "createContext"> & {
+      <Workflow extends WorkflowCore>(
+        workflow: Workflow,
+      ): Omit<Workflow, "createContext"> & {
         createContext(): ReturnType<Workflow["createContext"]> & {
           get store(): Store;
         };
       };
     }
   : {
-      (workflow: Workflow): Omit<Workflow, "createContext"> & {
+      <Workflow extends WorkflowCore>(
+        workflow: Workflow,
+      ): Omit<Workflow, "createContext"> & {
         createContext(input: Input): ReturnType<Workflow["createContext"]> & {
           get store(): Store;
         };
       };
     };
 
-type CreateStore<Workflow extends WorkflowCore, Store, Input> = {
-  getContext(): ReturnType<Workflow["createContext"]> & {
+type CreateStore<Store, Input, Context extends WorkflowContext> = {
+  getContext(): Context & {
     get store(): Store;
   };
-  withStore: WithStore<Workflow, Store, Input>;
+  withStore: WithStore<Store, Input>;
 };
 
 export function createStoreMiddleware<
-  Workflow extends WorkflowCore,
   Store,
   Input = void,
->(init: (input: Input) => Store): CreateStore<Workflow, Store, Input> {
+  Context extends WorkflowContext = WorkflowContext,
+>(init: (input: Input) => Store): CreateStore<Store, Input, Context> {
   return {
     getContext: getContext as never,
     withStore: ((workflow: Workflow) => {
@@ -57,6 +63,6 @@ export function createStoreMiddleware<
           return context as any;
         },
       };
-    }) as unknown as WithStore<Workflow, Store, Input>,
+    }) as unknown as WithStore<Store, Input>,
   };
 }
