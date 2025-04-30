@@ -194,50 +194,52 @@ export const createContext = ({
         }
       });
   };
-  let stream: WorkflowStream | null = null;
   const createWorkflowContext = (
     handlerContext: HandlerContext,
-  ): WorkflowContext => ({
-    get stream() {
-      if (!stream) {
-        const subscribable = createSubscribable<
-          [event: WorkflowEventData<any>],
-          void
-        >();
-        rootWorkflowContext.__internal__call_send_event.subscribe(
-          (newEvent: WorkflowEventData<any>) => {
-            let currentEventContext = eventContextWeakMap.get(newEvent);
-            while (currentEventContext) {
-              if (currentEventContext === handlerContext) {
-                subscribable.publish(newEvent);
-                break;
+  ): WorkflowContext => {
+    let lazyLoadStream: WorkflowStream | null = null;
+    return {
+      get stream() {
+        if (!lazyLoadStream) {
+          const subscribable = createSubscribable<
+            [event: WorkflowEventData<any>],
+            void
+          >();
+          rootWorkflowContext.__internal__call_send_event.subscribe(
+            (newEvent: WorkflowEventData<any>) => {
+              let currentEventContext = eventContextWeakMap.get(newEvent);
+              while (currentEventContext) {
+                if (currentEventContext === handlerContext) {
+                  subscribable.publish(newEvent);
+                  break;
+                }
+                currentEventContext = currentEventContext.prev;
               }
-              currentEventContext = currentEventContext.prev;
-            }
-          },
-        );
-        stream = new WorkflowStream(subscribable, null);
-      }
-      return stream;
-    },
-    get signal() {
-      return handlerContext.abortController.signal;
-    },
-    sendEvent: (...events) => {
-      events.forEach((event) => {
-        eventContextWeakMap.set(event, handlerContext);
-        handlerContext.outputs.push(event);
-        queue.push(event);
-        rootWorkflowContext.__internal__call_send_event.publish(
-          event,
-          handlerContext,
-        );
-        queueUpdateCallback(handlerContext);
-      });
-    },
-    __internal__call_context: createSubscribable(),
-    __internal__call_send_event: createSubscribable(),
-  });
+            },
+          );
+          lazyLoadStream = new WorkflowStream(subscribable, null);
+        }
+        return lazyLoadStream;
+      },
+      get signal() {
+        return handlerContext.abortController.signal;
+      },
+      sendEvent: (...events) => {
+        events.forEach((event) => {
+          eventContextWeakMap.set(event, handlerContext);
+          handlerContext.outputs.push(event);
+          queue.push(event);
+          rootWorkflowContext.__internal__call_send_event.publish(
+            event,
+            handlerContext,
+          );
+          queueUpdateCallback(handlerContext);
+        });
+      },
+      __internal__call_context: createSubscribable(),
+      __internal__call_send_event: createSubscribable(),
+    };
+  };
 
   let rootAbortController = new AbortController();
   const handlerRootContext: HandlerContext = {
