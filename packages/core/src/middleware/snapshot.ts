@@ -11,7 +11,7 @@ import type { HandlerContext } from "../core/context";
 import { createStableHash } from "@llama-flow/core/middleware/snapshot/stable-hash";
 
 /**
- * @internal
+ * @internal We don't want to expose this special event to the user
  */
 const snapshotEvent = workflowEvent<WorkflowEvent<any>>();
 
