@@ -22,14 +22,14 @@ export const stopEvent = workflowEvent<{
 const wrappedWorkflow = createWorkflow();
 
 wrappedWorkflow.handle([startEvent], async ({ data: { filePath } }) => {
-  const { stream, sendEvent } = fileParseWorkflow.createContext();
+  const { stream, sendEvent, state } = fileParseWorkflow.createContext();
   sendEvent(startEvent.with({ filePath }));
   await nothing(until(stream, stopEvent));
   return stopEvent.with({
     content: [
       {
         type: "text",
-        text: fileParseWorkflow.getStore().output,
+        text: state.output,
       },
     ],
   });

@@ -3,8 +3,7 @@ import { until } from "@llama-flow/core/stream/until";
 import { nothing } from "@llama-flow/core/stream/consumer";
 import { z } from "zod";
 import { zodEvent } from "@llama-flow/core/util/zod";
-import { getContext } from "@llama-flow/core";
-import { withStore } from "@llama-flow/core/middleware/store";
+import { createStatefulMiddleware } from "@llama-flow/core/middleware/state";
 import { pRetryHandler } from "@llama-flow/core/util/p-retry";
 
 export const startEvent = zodEvent(
@@ -21,18 +20,19 @@ export const stopEvent = zodEvent(
   }),
 );
 
-export const llamaParseWorkflow = withStore(
+const { withState, getContext } = createStatefulMiddleware(
   () =>
     ({}) as {
       apiKey: string;
     },
-  createWorkflow(),
 );
+
+export const llamaParseWorkflow = withState(createWorkflow());
 
 llamaParseWorkflow.handle(
   [startEvent],
   async ({ data: { inputFile, apiKey } }) => {
-    llamaParseWorkflow.getStore().apiKey = apiKey;
+    getContext().state.apiKey = apiKey;
     const { stream, sendEvent } = getContext();
     const { openAsBlob } = await import("node:fs");
     const blob = await openAsBlob(inputFile);
@@ -71,7 +71,7 @@ llamaParseWorkflow.handle(
         {
           method: "GET",
           headers: {
-            Authorization: `Bearer ${llamaParseWorkflow.getStore().apiKey}`,
+            Authorization: `Bearer ${getContext().state.apiKey}`,
           },
         },
       ).then((res) => res.json());
