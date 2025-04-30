@@ -11,6 +11,7 @@ export default defineConfig({
           }),
         ],
         test: {
+          exclude: ["**/dist/**", "**/lib/**"],
           name: "DOM",
           environment: "happy-dom",
         },
@@ -22,6 +23,7 @@ export default defineConfig({
           }),
         ],
         test: {
+          exclude: ["**/dist/**", "**/lib/**"],
           name: "Node.js",
           environment: "node",
         },
@@ -33,6 +35,7 @@ export default defineConfig({
           }),
         ],
         test: {
+          exclude: ["**/dist/**", "**/lib/**"],
           name: "Edge Runtime",
           environment: "edge-runtime",
         },

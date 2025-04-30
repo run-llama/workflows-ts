@@ -1,5 +1,4 @@
 import {
-  getContext,
   type WorkflowContext,
   type Workflow as WorkflowCore,
   workflowEvent,
