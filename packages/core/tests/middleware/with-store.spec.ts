@@ -1,20 +1,21 @@
 import { describe, expect, test, vi } from "vitest";
 import { createWorkflow, workflowEvent } from "@llama-flow/core";
-import { withStore } from "@llama-flow/core/middleware/store";
+import { createStoreMiddleware } from "@llama-flow/core/middleware/store";
 
 describe("with store", () => {
   test("no input", () => {
-    const workflow = withStore(() => ({}), createWorkflow());
-    workflow.createContext();
+    const ref = {};
+    const { withStore } = createStoreMiddleware(() => ref);
+    const workflow = withStore(createWorkflow());
+    const { store } = workflow.createContext();
+    expect(store).toBe(ref);
   });
 
   test("with input", () => {
-    const workflow = withStore(
-      (input: { id: string }) => ({
-        id: input.id,
-      }),
-      createWorkflow(),
-    );
+    const { withStore } = createStoreMiddleware((input: { id: string }) => ({
+      id: input.id,
+    }));
+    const workflow = withStore(createWorkflow());
     workflow.createContext({
       id: "1",
     });
@@ -23,14 +24,15 @@ describe("with store", () => {
   test("runtime call getStore", async () => {
     const obj = {};
     const startEvent = workflowEvent();
-    const workflow = withStore(() => obj, createWorkflow());
+    const { withStore, getContext } = createStoreMiddleware(() => obj);
+    const workflow = withStore(createWorkflow());
     const fn = vi.fn();
     workflow.handle([startEvent], () => {
       fn();
-      expect(workflow.getStore()).toBe(obj);
+      expect(getContext()).toBe(obj);
     });
-    const { sendEvent, getStore } = workflow.createContext();
-    expect(getStore()).toBe(obj);
+    const { sendEvent, store } = workflow.createContext();
+    expect(store).toBe(obj);
     sendEvent(startEvent.with());
     expect(fn).toBeCalled();
   });

@@ -218,21 +218,21 @@ for [Async Context](https://github.com/tc39/proposal-async-context) to solve thi
 
 ### `withStore`
 
-Adding a `getStore()` method to the workflow context, which returns a store object, each store is linked to the workflow
+Adding a `store` property to the workflow context, which returns a store object, each store is linked to the workflow
 context.
 
 ```ts
-import { withStore } from "@llama-flow/core/middleware/store";
+import { createStoreMiddleware } from "@llama-flow/core/middleware/store";
 
-const workflow = withStore(
-  () => ({
-    pendingTasks: new Set<Promise<unknown>>(),
-  }),
-  createWorkflow(),
-);
+const { withStore } = createStoreMiddleware(() => ({
+  pendingTasks: new Set<Promise<unknown>>(),
+}));
+
+const workflow = withStore(createWorkflow());
 
 workflow.handle([startEvent], () => {
-  workflow.getStore().pendingTasks.add(
+  const { store } = getContext();
+  store.pendingTasks.add(
     new Promise((resolve) => {
       setTimeout(() => {
         resolve();
@@ -241,7 +241,18 @@ workflow.handle([startEvent], () => {
   );
 });
 
-const { getStore } = workflow.createContext();
+const { store } = workflow.createContext();
+```
+
+You can also create a store with input:
+
+```ts
+const { withStore } = createStoreMiddleware((input: { id: string }) => ({
+  id: input.id,
+}));
+
+const workflow = withStore(createWorkflow());
+const { store } = workflow.createContext({ id: "1" });
 ```
 
 ### `withValidation`

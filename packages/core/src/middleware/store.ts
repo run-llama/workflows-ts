@@ -1,75 +1,62 @@
-import { type WorkflowContext, getContext } from "@llama-flow/core";
+import type { Workflow as WorkflowCore } from "@llama-flow/core";
+import { getContext } from "@llama-flow/core";
 
-export function withStore<
-  T,
-  Input extends void,
-  WorkflowLike extends {
-    createContext(): WorkflowContext;
-  } = {
-    createContext(): WorkflowContext;
-  },
->(
-  createStore: () => T,
-  workflow: WorkflowLike,
-): Omit<WorkflowLike, "createContext"> & {
-  createContext(): ReturnType<WorkflowLike["createContext"]> & {
-    getStore(): T;
-  };
-  getStore(): T;
-};
-export function withStore<
-  T,
-  Input,
-  WorkflowLike extends {
-    createContext(): WorkflowContext;
-  } = {
-    createContext(): WorkflowContext;
-  },
->(
-  createStore: (input: Input) => T,
-  workflow: WorkflowLike,
-): Omit<WorkflowLike, "createContext"> & {
-  createContext(input: Input): ReturnType<WorkflowLike["createContext"]> & {
-    getStore(): T;
-  };
-  getStore(): T;
-};
-export function withStore<
-  T,
-  Input,
-  WorkflowLike extends {
-    createContext(): WorkflowContext;
-  } = {
-    createContext(): WorkflowContext;
-  },
->(
-  createStore: (input: Input) => T,
-  workflow: WorkflowLike,
-): Omit<WorkflowLike, "createContext"> & {
-  createContext(input: Input): ReturnType<WorkflowLike["createContext"]> & {
-    getStore(): T;
-  };
-  getStore(): T;
-} {
-  return {
-    ...workflow,
-    getStore(): T {
-      const context = getContext();
-      return (context as any).getStore();
-    },
-    createContext(input: Input): ReturnType<WorkflowLike["createContext"]> & {
-      getStore: () => T;
-    } {
-      const currentStore = createStore(input);
-      const context = workflow.createContext();
-      context.__internal__call_context.subscribe((_, next) => {
-        (getContext() as any).getStore = () => currentStore;
-        next(_);
-      });
-      (context as any).getStore = () => currentStore;
-      return context as ReturnType<WorkflowLike["createContext"]> & {
-        getStore: () => T;
+type WithStore<Workflow extends WorkflowCore, Store, Input> = Input extends
+  | void
+  | undefined
+  ? {
+      (workflow: Workflow): Omit<Workflow, "createContext"> & {
+        createContext(): ReturnType<Workflow["createContext"]> & {
+          get store(): Store;
+        };
       };
-    },
+    }
+  : {
+      (workflow: Workflow): Omit<Workflow, "createContext"> & {
+        createContext(input: Input): ReturnType<Workflow["createContext"]> & {
+          get store(): Store;
+        };
+      };
+    };
+
+type CreateStore<Workflow extends WorkflowCore, Store, Input> = {
+  getContext(): ReturnType<Workflow["createContext"]> & {
+    get store(): Store;
+  };
+  withStore: WithStore<Workflow, Store, Input>;
+};
+
+export function createStoreMiddleware<
+  Workflow extends WorkflowCore,
+  Store,
+  Input = void,
+>(init: (input: Input) => Store): CreateStore<Workflow, Store, Input> {
+  return {
+    getContext: getContext as never,
+    withStore: ((workflow: Workflow) => {
+      return {
+        ...workflow,
+        createContext: (input: Input) => {
+          const store = init(input);
+          const context = workflow.createContext();
+          context.__internal__call_context.subscribe((_, next) => {
+            // todo: make sure getContext is consistent with `workflow.createContext`
+            const context = getContext();
+            if (!Reflect.has(context, "store")) {
+              Object.defineProperty(context, "store", {
+                get: () => store,
+              });
+            }
+            next(_);
+          });
+          if (!Reflect.has(context, "store")) {
+            Object.defineProperty(context, "store", {
+              get: () => store,
+            });
+          }
+          return context as any;
+        },
+      };
+    }) as unknown as WithStore<Workflow, Store, Input>,
   };
 }
