@@ -53,7 +53,7 @@ describe("with snapshot - snapshot API", () => {
     `);
 
     // recover
-    const { stream } = workflow.recoverContext(["hello world"], sd);
+    const { stream } = workflow.resume(["hello world"], sd);
     const events = await collect(until(stream, stopEvent));
     expect(events.length).toBe(2);
     expect(events.map(eventSource)).toEqual([humanResponseEvent, stopEvent]);
@@ -87,7 +87,7 @@ describe("with snapshot - snapshot API", () => {
     `);
 
     // recover
-    const { stream } = workflow.recoverContext(["hello world"], sd);
+    const { stream } = workflow.resume(["hello world"], sd);
     const events = await collect(until(stream, stopEvent));
     expect(events.length).toBe(2);
     expect(events.map(eventSource)).toEqual([humanResponseEvent, stopEvent]);
@@ -122,7 +122,7 @@ describe("with snapshot - snapshot API", () => {
     `);
 
     // recover
-    const { stream } = workflow.recoverContext(["hello world"], sd);
+    const { stream } = workflow.resume(["hello world"], sd);
     const events = await collect(until(stream, stopEvent));
     expect(events.length).toBe(2);
     expect(events.map(eventSource)).toEqual([humanResponseEvent, stopEvent]);
@@ -170,7 +170,7 @@ describe("with snapshot - snapshot API", () => {
     `);
 
     // recover
-    const { stream } = workflow.recoverContext(["hello world"], sd);
+    const { stream } = workflow.resume(["hello world"], sd);
     const events = await collect(until(stream, stopEvent));
     expect(events.length).toBe(2);
     expect(events.map(eventSource)).toEqual([humanResponseEvent, stopEvent]);
@@ -208,7 +208,7 @@ describe("with snapshot - snapshot API", () => {
       }
     `);
     // recover
-    const { stream } = workflow.recoverContext(["hello world"], sd);
+    const { stream } = workflow.resume(["hello world"], sd);
     const events = await collect(until(stream, stopEvent));
     expect(events.length).toBe(2);
     expect(events.map(eventSource)).toEqual([humanResponseEvent, stopEvent]);
