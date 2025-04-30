@@ -1,6 +1,6 @@
 {
   "name": "@llama-flow/core",
-  "version": "0.3.10",
+  "version": "0.4.0",
   "description": "event-based workflow engine",
   "type": "module",
   "main": "dist/index.cjs",
@@ -56,9 +56,9 @@
       "types": "./dist/observable.d.ts",
       "default": "./dist/observable.js"
     },
-    "./middleware/store": {
-      "types": "./middleware/store.d.ts",
-      "default": "./middleware/store.js"
+    "./middleware/state": {
+      "types": "./middleware/state.d.ts",
+      "default": "./middleware/state.js"
     },
     "./middleware/trace-events": {
       "types": "./middleware/trace-events.d.ts",

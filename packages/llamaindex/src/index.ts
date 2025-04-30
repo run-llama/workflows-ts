@@ -3,11 +3,10 @@ import {
   type WorkflowEvent as CoreWorkflowEvent,
   type WorkflowEventData as CoreWorkflowEventData,
   workflowEvent,
-  getContext,
   WorkflowStream,
 } from "@llama-flow/core";
 import { collect } from "@llama-flow/core/stream/consumer";
-import { withStore } from "@llama-flow/core/middleware/store";
+import { createStatefulMiddleware } from "@llama-flow/core/middleware/state";
 
 type Handler<
   AcceptEvents extends (typeof WorkflowEvent<any>)[],
@@ -80,8 +79,10 @@ export class StopEvent<T = string> extends WorkflowEvent<T> {
   }
 }
 
+const { withState, getContext } = createStatefulMiddleware((data: any) => data);
+
 export class Workflow<ContextData, Start, Stop> {
-  #workflow = withStore((data: ContextData) => data, createWorkflow());
+  #workflow = withState(createWorkflow());
 
   addStep<const AcceptEvents extends (typeof WorkflowEvent<any>)[]>(
     parameters: {
@@ -106,7 +107,7 @@ export class Workflow<ContextData, Start, Stop> {
       }),
       (...events) => {
         const context = getContext();
-        const contextData = this.#workflow.getStore();
+        const state = context.state;
         const result = handler(
           {
             sendEvent: (event) => {
@@ -123,7 +124,7 @@ export class Workflow<ContextData, Start, Stop> {
               );
             },
             get data(): ContextData {
-              return contextData;
+              return state;
             },
           },
           ...(events.map((e) => coreEventWeakMap.get(e)!) as any),
@@ -150,9 +151,7 @@ export class Workflow<ContextData, Start, Stop> {
     AsyncIterable<WorkflowEvent<any>> & {
       get data(): ContextData;
     } {
-    const { sendEvent, stream, getStore } = this.#workflow.createContext(
-      context!,
-    );
+    const { sendEvent, stream, state } = this.#workflow.createContext(context!);
     const startEvent = new StartEvent(start);
     const coreStartEvent = eventDataWeakMap.get(startEvent)!;
     sendEvent(coreStartEvent);
@@ -201,7 +200,7 @@ export class Workflow<ContextData, Start, Stop> {
         }
       },
       get data() {
-        return getStore();
+        return state;
       },
     });
     return result as any;
