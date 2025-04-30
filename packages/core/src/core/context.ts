@@ -156,11 +156,11 @@ export const createContext = ({
             // return value is a special event
             if (isPromiseLike(result)) {
               (handlerContext as any).async = true;
-              (handlerContext as any).pending = result;
-              result.then((event) => {
+              (handlerContext as any).pending = result.then((event) => {
                 if (isEventData(event)) {
                   workflowContext.sendEvent(event);
                 }
+                return event;
               });
             } else if (isEventData(result)) {
               workflowContext.sendEvent(result);
