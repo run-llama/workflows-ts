@@ -3,17 +3,23 @@
 "@llama-flow/core": patch
 ---
 
-feat: add `createStoreMiddleware` API
+feat: add `createStatefulMiddleware` API
 
-Remove `withStore` API, because its createContext API type is confusing people,
-causing people cannot figure out what does store beling to (whether context or workflow instance)
+Remove `withState` API, because its createContext API type is confusing people,
+causing people cannot figure out what does state belong to (whether context or workflow instance)
 
-#### Before
+# Breaking Changes
+
+## State Middleware API Changes (formerly Store Middleware)
+
+The state middleware has been significantly improved with a new API and renamed from "store" to "state". Here are the key changes:
+
+### Before
 
 ```typescript
-import { withStore } from "@llama-flow/core/middleware/store";
+import { withState } from "@llama-flow/core/middleware/state";
 
-const workflow = withStore(
+const workflow = withState(
   () => ({
     count: 0,
     history: [],
@@ -21,33 +27,38 @@ const workflow = withStore(
   createWorkflow(),
 );
 
-// Access store via getStore()
-const store = workflow.getStore();
+// Access state via getState()
+const state = workflow.getState();
 ```
 
-#### After
+### After
 
 ```typescript
-import { createStoreMiddleware } from "@llama-flow/core/middleware/store";
+import { createStatefulMiddleware } from "@llama-flow/core/middleware/state";
 
-const { withStore, getContext } = createStoreMiddleware(() => ({
+const { withState, getContext } = createStatefulMiddleware(() => ({
   count: 0,
   history: [],
 }));
 
-const workflow = withStore(createWorkflow());
+const workflow = withState(createWorkflow());
 
 workflow.handle([], () => {
-  const { store } = getContext();
+  const { state } = getContext();
 });
 
-// Access store via context.store
-const { store } = getContext();
+// Access state via context.state
+const { state } = getContext();
 ```
 
 ### Migration Guide
 
 To migrate existing code:
 
-1. Replace `withStore` import with `createStoreMiddleware`
-2. Update store initialization to use the new API
+1. Replace `withState` import with `createStatefulMiddleware`
+2. Update state initialization to use the new API
+3. Replace `workflow.getState()` calls with `getContext().state`
+4. If using input parameters, update the state initialization accordingly
+5. Update all variable names from `state` to `state` in your code
+
+The new API provides better type safety, more flexibility with input parameters, and a more consistent way to access the state through the workflow context.
