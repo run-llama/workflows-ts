@@ -192,12 +192,12 @@ workflow.handle([incrementEvent], (increment) => {
 // Run the workflow
 async function runWithStore() {
   const { sendEvent, store } = workflow.createContext();
-  
+
   // Send start event multiple times to see store update
   sendEvent(startEvent.with());
   sendEvent(startEvent.with());
   sendEvent(startEvent.with());
-  
+
   // The store persists across events
   console.log("Final count:", store.count);
   console.log("Final history:", store.history);
@@ -209,10 +209,12 @@ runWithStore();
 You can also create a store with input:
 
 ```ts
-const { withStore } = createStoreMiddleware((input: { initialCount: number }) => ({
-  count: input.initialCount,
-  history: [input.initialCount],
-}));
+const { withStore } = createStoreMiddleware(
+  (input: { initialCount: number }) => ({
+    count: input.initialCount,
+    history: [input.initialCount],
+  }),
+);
 
 const workflow = withStore(createWorkflow());
 const { store } = workflow.createContext({ initialCount: 10 });
