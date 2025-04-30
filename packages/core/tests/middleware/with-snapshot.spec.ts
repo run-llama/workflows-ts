@@ -4,6 +4,7 @@ import {
   createWorkflow,
   eventSource,
   getContext,
+  type WorkflowEvent,
   workflowEvent,
 } from "@llama-flow/core";
 import { collect } from "@llama-flow/core/stream/consumer";
@@ -21,7 +22,7 @@ const humanResponseEvent = workflowEvent<string>({
 const stopEvent = workflowEvent({
   debugLabel: "stop",
 });
-
+const noop = vi.fn();
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 describe("with snapshot - snapshot API", () => {
@@ -36,7 +37,7 @@ describe("with snapshot - snapshot API", () => {
       return stopEvent.with();
     });
 
-    const { sendEvent, snapshot } = workflow.createContext();
+    const { sendEvent, snapshot } = workflow.createContext(noop);
     sendEvent(startEvent.with());
     const [req, sd] = await snapshot();
     expect(req.length).toBe(1);
@@ -53,7 +54,7 @@ describe("with snapshot - snapshot API", () => {
     `);
 
     // recover
-    const { stream } = workflow.resume(["hello world"], sd);
+    const { stream } = workflow.resume(noop, ["hello world"], sd);
     const events = await collect(until(stream, stopEvent));
     expect(events.length).toBe(2);
     expect(events.map(eventSource)).toEqual([humanResponseEvent, stopEvent]);
@@ -70,7 +71,7 @@ describe("with snapshot - snapshot API", () => {
       return stopEvent.with();
     });
 
-    const { sendEvent, snapshot } = workflow.createContext();
+    const { sendEvent, snapshot } = workflow.createContext(noop);
     sendEvent(startEvent.with());
     const [req, sd] = await snapshot();
     expect(req.length).toBe(1);
@@ -87,7 +88,7 @@ describe("with snapshot - snapshot API", () => {
     `);
 
     // recover
-    const { stream } = workflow.resume(["hello world"], sd);
+    const { stream } = workflow.resume(noop, ["hello world"], sd);
     const events = await collect(until(stream, stopEvent));
     expect(events.length).toBe(2);
     expect(events.map(eventSource)).toEqual([humanResponseEvent, stopEvent]);
@@ -105,7 +106,7 @@ describe("with snapshot - snapshot API", () => {
       return stopEvent.with();
     });
 
-    const { sendEvent, snapshot } = workflow.createContext();
+    const { sendEvent, snapshot } = workflow.createContext(noop);
     sendEvent(startEvent.with());
     const [req, sd] = await snapshot();
     expect(req.length).toBe(1);
@@ -122,7 +123,7 @@ describe("with snapshot - snapshot API", () => {
     `);
 
     // recover
-    const { stream } = workflow.resume(["hello world"], sd);
+    const { stream } = workflow.resume(noop, ["hello world"], sd);
     const events = await collect(until(stream, stopEvent));
     expect(events.length).toBe(2);
     expect(events.map(eventSource)).toEqual([humanResponseEvent, stopEvent]);
@@ -143,7 +144,7 @@ describe("with snapshot - snapshot API", () => {
       return stopEvent.with();
     });
 
-    const { sendEvent, snapshot } = workflow.createContext();
+    const { sendEvent, snapshot } = workflow.createContext(noop);
     sendEvent(startEvent.with());
     const [req, sd] = await snapshot();
     expect(req.length).toBe(1);
@@ -170,7 +171,7 @@ describe("with snapshot - snapshot API", () => {
     `);
 
     // recover
-    const { stream } = workflow.resume(["hello world"], sd);
+    const { stream } = workflow.resume(noop, ["hello world"], sd);
     const events = await collect(until(stream, stopEvent));
     expect(events.length).toBe(2);
     expect(events.map(eventSource)).toEqual([humanResponseEvent, stopEvent]);
@@ -191,7 +192,7 @@ describe("with snapshot - snapshot API", () => {
       return stopEvent.with();
     });
 
-    const { sendEvent, snapshot } = workflow.createContext();
+    const { sendEvent, snapshot } = workflow.createContext(noop);
     sendEvent(startEvent.with());
     const [req, sd] = await snapshot();
     expect(req.length).toBe(2);
@@ -208,7 +209,7 @@ describe("with snapshot - snapshot API", () => {
       }
     `);
     // recover
-    const { stream } = workflow.resume(["hello world"], sd);
+    const { stream } = workflow.resume(noop, ["hello world"], sd);
     const events = await collect(until(stream, stopEvent));
     expect(events.length).toBe(2);
     expect(events.map(eventSource)).toEqual([humanResponseEvent, stopEvent]);
@@ -227,7 +228,7 @@ describe("with snapshot - snapshot API", () => {
       }, 100);
     });
 
-    const { sendEvent, snapshot } = workflow.createContext();
+    const { sendEvent, snapshot } = workflow.createContext(noop);
     sendEvent(startEvent.with());
     const [req, se] = await snapshot();
     expect(req.length).toBe(0);
@@ -246,5 +247,33 @@ describe("with snapshot - snapshot API", () => {
         "snapshot is already ready, sendEvent after snapshot is not allowed",
       ]
     `);
+  });
+
+  test("onRequestEvent callback", async () => {
+    const workflow = withSnapshot(createWorkflow());
+    workflow.handle([startEvent], async () => {
+      return request(humanResponseEvent);
+    });
+
+    workflow.handle([humanResponseEvent], ({ data }) => {
+      expect(data).toBe("hello world");
+      return stopEvent.with();
+    });
+
+    const onRequestEvent = vi.fn((event: WorkflowEvent<any>) => {
+      expect(event).toBe(humanResponseEvent);
+      sendEvent(humanResponseEvent.with("hello world"));
+    });
+
+    const { sendEvent, stream } = workflow.createContext(onRequestEvent);
+    sendEvent(startEvent.with());
+
+    const events = await collect(until(stream, stopEvent));
+    expect(events.length).toBe(3);
+    expect(events.map(eventSource)).toEqual([
+      startEvent,
+      humanResponseEvent,
+      stopEvent,
+    ]);
   });
 });
