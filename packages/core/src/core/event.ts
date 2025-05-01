@@ -96,6 +96,18 @@ export const workflowEvent = <Data = void, DebugLabel extends string = string>(
 };
 
 // utils
+export const isWorkflowEvent = (
+  instance: unknown,
+): instance is WorkflowEvent<any> =>
+  typeof instance === "object" && instance !== null
+    ? eventMap.has(instance as any)
+    : false;
+export const isWorkflowEventData = (
+  instance: unknown,
+): instance is WorkflowEventData<any> =>
+  typeof instance === "object" && instance !== null
+    ? refMap.has(instance as any)
+    : false;
 export const eventSource = (
   instance: unknown,
 ): WorkflowEvent<any> | undefined =>

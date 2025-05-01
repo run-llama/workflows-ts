@@ -111,15 +111,10 @@ workflow.handle([startEvent], async (event) => {
       );
     });
     let counter = 0;
-    const results = collect(
-      filter(
-        until(
-          stream,
-          () => counter++ === response.choices[0].message.tool_calls.length,
-        ),
-        toolCallResultEvent,
-      ),
-    );
+    const results = stream
+      .until(() => counter++ === response.choices[0].message.tool_calls.length)
+      .filter(toolCallResultEvent)
+      .toArray();
     return sendEvent(
       startEvent.with([...event.data, ...results.map((r) => r.data)]),
     );

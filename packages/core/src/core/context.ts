@@ -54,7 +54,7 @@ export type ContextNext = (
 ) => void;
 
 export type WorkflowContext = {
-  get stream(): WorkflowStream;
+  get stream(): WorkflowStream<WorkflowEventData<any>>;
   get signal(): AbortSignal;
   sendEvent: (...events: WorkflowEventData<any>[]) => void;
 
@@ -197,7 +197,7 @@ export const createContext = ({
   const createWorkflowContext = (
     handlerContext: HandlerContext,
   ): WorkflowContext => {
-    let lazyLoadStream: WorkflowStream | null = null;
+    let lazyLoadStream: WorkflowStream<WorkflowEventData<any>> | null = null;
     return {
       get stream() {
         if (!lazyLoadStream) {
@@ -217,7 +217,10 @@ export const createContext = ({
               }
             },
           );
-          lazyLoadStream = new WorkflowStream(subscribable, null);
+          lazyLoadStream = new WorkflowStream<WorkflowEventData<any>>(
+            subscribable,
+            null,
+          );
         }
         return lazyLoadStream;
       },

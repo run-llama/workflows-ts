@@ -2,7 +2,6 @@ import { createWorkflow, workflowEvent } from "@llama-flow/core";
 import { readdir, stat } from "node:fs/promises";
 import { resolve } from "node:path";
 import { AsyncLocalStorage } from "node:async_hooks";
-import { until } from "@llama-flow/core/stream/until";
 import { createStatefulMiddleware } from "@llama-flow/core/middleware/state";
 
 export const messageEvent = workflowEvent<string>({
@@ -39,7 +38,9 @@ const locks: {
 fileParseWorkflow.handle([startEvent], async ({ data: dir }) => {
   const { stream, sendEvent } = getContext();
   sendEvent(readDirEvent.with([dir, 0]));
-  await until(stream, () => locks.length > 0 && locks.every((l) => l.finish));
+  await stream
+    .until(() => locks.length > 0 && locks.every((l) => l.finish))
+    .toArray();
   return stopEvent.with();
 });
 

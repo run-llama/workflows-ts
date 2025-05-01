@@ -7,7 +7,6 @@ import {
   getContext,
   type WorkflowEventData,
 } from "@llama-flow/core";
-import { until } from "@llama-flow/core/stream/until";
 
 describe("node:stream", () => {
   test("basic usage", async () => {
@@ -58,7 +57,7 @@ describe("stream-chain", () => {
     const outputs: WorkflowEventData<any>[] = [];
     const pipeline = chain([
       // fixme: upstream should be treat it as a stream
-      until(stream, stopEvent)[Symbol.asyncIterator],
+      stream.until(stopEvent)[Symbol.asyncIterator],
       new TransformStream({
         transform: (event: WorkflowEventData<any>, controller) => {
           if (messageEvent.include(event)) {

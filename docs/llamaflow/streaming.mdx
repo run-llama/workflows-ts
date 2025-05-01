@@ -57,8 +57,6 @@ Workflows provide utility functions to make working with streams easier:
 
 ```ts
 import { createWorkflow, workflowEvent, getContext } from "@llama-flow/core";
-import { collect } from "@llama-flow/core/stream/consumer";
-import { until } from "@llama-flow/core/stream/until";
 
 const startEvent = workflowEvent<void>();
 const progressEvent = workflowEvent<number>();
@@ -82,10 +80,10 @@ const { stream, sendEvent } = workflow.createContext();
 sendEvent(startEvent.with());
 
 // Collect all events until resultEvent is encountered
-const events = await collect(until(stream, resultEvent));
-
-// Filter only progress events
-const progressEvents = events.filter((event) => progressEvent.include(event));
+const progressEvents = await stream
+  .until(resultEvent)
+  .filter(progressEvent)
+  .toArray();
 console.log(`Received ${progressEvents.length} progress updates`);
 ```
 

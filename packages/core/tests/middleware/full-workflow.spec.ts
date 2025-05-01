@@ -11,8 +11,6 @@ import { withValidation } from "@llama-flow/core/middleware/validation";
 import { zodEvent } from "@llama-flow/core/util/zod";
 import { z } from "zod";
 import { webcrypto } from "node:crypto";
-import { collect } from "@llama-flow/core/stream/consumer";
-import { until } from "@llama-flow/core/stream/until";
 
 describe("full workflow middleware", () => {
   const createFullWorkflow = <
@@ -75,9 +73,9 @@ describe("full workflow middleware", () => {
     const id = webcrypto.randomUUID();
     const { sendEvent, stream } = workflow.createContext(id);
     sendEvent(startEvent.with("start"));
-    const events: WorkflowEventData<any>[] = await collect(
-      until(stream, stopEvent),
-    );
+    const events: WorkflowEventData<any>[] = await stream
+      .until(stopEvent)
+      .toArray();
     expect(events.length).toBe(2);
     expect(events.map(eventSource)).toEqual([startEvent, stopEvent]);
   });

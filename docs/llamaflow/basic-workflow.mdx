@@ -11,9 +11,6 @@ One of the most powerful features of workflows is the ability to run tasks in pa
 
 ```ts
 import { createWorkflow, workflowEvent, getContext } from "@llama-flow/core";
-import { collect } from "@llama-flow/core/stream/consumer";
-import { until } from "@llama-flow/core/stream/until";
-import { filter } from "@llama-flow/core/stream/filter";
 
 // Define events
 const startEvent = workflowEvent<string>();
@@ -29,7 +26,7 @@ let itemsToProcess = 10; // Total number of items
 let itemsProcessed = 0;
 
 // Process start event: fan out to multiple processItemEvent events
-workflow.handle([startEvent], (start) => {
+workflow.handle([startEvent], async (start) => {
   const { sendEvent, stream } = getContext();
   itemsProcessed = 0; // Reset counter for this execution context
 
@@ -39,17 +36,17 @@ workflow.handle([startEvent], (start) => {
   }
 
   // Use an async IIFE to collect results and emit completeEvent
-  (async () => {
-    const results = await collect(
-      // Filter for resultEvent and stop when all items are processed
-      until(
-        filter(stream, (event) => resultEvent.include(event)), // Only consider resultEvent
-        () => itemsProcessed === itemsToProcess, // Stop condition check
-      ),
-    );
+  try {
+    const results = await stream
+      .filter(resultEvent)
+      .until(() => itemsProcessed === itemsToProcess)
+      .toArray();
     // Send the final aggregated result
     sendEvent(completeEvent.with(results.map((event) => event.data)));
-  })().catch(console.error); // Handle potential errors during collection
+  } catch (err) {
+    console.error("Error processing items:", err);
+    // Handle error if needed
+  }
 
   // Note: This handler finishes *before* the collection completes.
   // Returning nothing or a specific "processing started" event might be appropriate.
@@ -100,8 +97,6 @@ You can implement conditional logic in your workflows:
 
 ```ts
 import { createWorkflow, workflowEvent } from "@llama-flow/core";
-import { collect } from "@llama-flow/core/stream/consumer";
-import { until } from "@llama-flow/core/stream/until";
 
 const inputEvent = workflowEvent<number>();
 const evenNumberEvent = workflowEvent<string>();
@@ -136,7 +131,7 @@ async function run(input_number: number) {
   sendEvent(inputEvent.with(input_number));
 
   // Collect all events until we get a stopEvent
-  const allEvents = await collect(until(stream, resultEvent));
+  const allEvents = await stream.until(resultEvent).toArray();
 
   // The last event will be the stopEvent that was requested
   const finalEvent = allEvents[allEvents.length - 1];
