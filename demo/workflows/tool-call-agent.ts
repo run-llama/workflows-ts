@@ -4,8 +4,6 @@ import type {
   ChatCompletionMessageToolCall,
   ChatCompletionTool,
 } from "openai/resources/chat/completions/completions";
-import { until } from "@llama-flow/core/stream/until";
-import { collect } from "@llama-flow/core/stream/consumer";
 
 const llm = new OpenAI();
 const tools = [
@@ -69,7 +67,7 @@ toolCallWorkflow.handle([chatEvent], async ({ data }) => {
       await Promise.all(
         choices[0].message.tool_calls.map(async (tool_call) => {
           sendEvent(toolCallEvent.with(tool_call));
-          return collect(until(stream, toolCallResultEvent));
+          return stream.until(toolCallResultEvent).toArray();
         }),
       )
     )

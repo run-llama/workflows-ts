@@ -3,8 +3,6 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { fileParseWorkflow } from "../workflows/file-parse-agent.js";
 import { createWorkflow, workflowEvent } from "@llama-flow/core";
-import { until } from "@llama-flow/core/stream/until";
-import { nothing } from "@llama-flow/core/stream/consumer";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 
 const server = new McpServer({
@@ -24,7 +22,7 @@ const wrappedWorkflow = createWorkflow();
 wrappedWorkflow.handle([startEvent], async ({ data: { filePath } }) => {
   const { stream, sendEvent, state } = fileParseWorkflow.createContext();
   sendEvent(startEvent.with({ filePath }));
-  await nothing(until(stream, stopEvent));
+  await stream.until(stopEvent).toArray();
   return stopEvent.with({
     content: [
       {

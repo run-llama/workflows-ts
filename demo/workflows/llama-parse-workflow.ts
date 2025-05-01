@@ -1,6 +1,4 @@
 import { workflowEvent, createWorkflow } from "@llama-flow/core";
-import { until } from "@llama-flow/core/stream/until";
-import { nothing } from "@llama-flow/core/stream/consumer";
 import { z } from "zod";
 import { zodEvent } from "@llama-flow/core/util/zod";
 import { createStatefulMiddleware } from "@llama-flow/core/middleware/state";
@@ -49,7 +47,7 @@ llamaParseWorkflow.handle(
       },
     ).then((res) => res.json());
     sendEvent(checkStatusEvent.with(id));
-    await nothing(until(stream, checkStatusSuccessEvent));
+    await stream.until(checkStatusSuccessEvent).toArray();
     return fetch(
       `https://api.cloud.llamaindex.ai/api/v1/parsing/job/${id}/result/markdown`,
       {

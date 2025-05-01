@@ -3,8 +3,6 @@ import {
   startEvent,
   stopEvent,
 } from "../workflows/file-parse-agent.js";
-import { until } from "@llama-flow/core/stream/until";
-import { nothing } from "@llama-flow/core/stream/consumer";
 
 const directory = "..";
 
@@ -12,6 +10,6 @@ const { state, sendEvent, stream } = fileParseWorkflow.createContext();
 
 sendEvent(startEvent.with(directory));
 
-await nothing(until(stream, stopEvent));
+await stream.until(stopEvent).toArray();
 
-console.log("r", state.output);
+console.log(state.output);
