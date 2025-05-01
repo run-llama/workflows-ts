@@ -6,8 +6,6 @@ import {
   startEvent,
   stopEvent,
 } from "../workflows/tool-call-agent.js";
-import { until } from "@llama-flow/core/stream/until";
-import { collect } from "@llama-flow/core/stream/consumer";
 
 const app = new Hono();
 
@@ -60,10 +58,13 @@ app.post("/human-in-the-loop", async (ctx) => {
     });
 
     // consume stream
-    collect(until(stream, stopEvent)).then((events) => {
-      const stopEvent = events.at(-1)!;
-      resolve(Response.json(stopEvent.data));
-    });
+    stream
+      .until(stopEvent)
+      .toArray()
+      .then((events) => {
+        const stopEvent = events.at(-1)!;
+        resolve(Response.json(stopEvent.data));
+      });
   });
 });
 
