@@ -264,13 +264,17 @@ describe("with snapshot - snapshot API", () => {
     const { sendEvent, stream, onRequest } = workflow.createContext();
     sendEvent(startEvent.with());
 
-    const onRequestCallback = vi.fn<OnRequestFn>((event) => {
-      expect(event).toBe(humanResponseEvent);
-      sendEvent(humanResponseEvent.with("hello world"));
-    });
-    onRequest(onRequestCallback);
+    const onRequestCallback = vi.fn<OnRequestFn<typeof humanResponseEvent>>(
+      (event) => {
+        expect(event).toBe(humanResponseEvent);
+        sendEvent(humanResponseEvent.with("hello world"));
+      },
+    );
+    onRequest(humanResponseEvent, onRequestCallback);
 
+    expect(onRequestCallback).toBeCalledTimes(0);
     const events = await stream.until(stopEvent).toArray();
+    expect(onRequestCallback).toBeCalledTimes(1);
     expect(events.length).toBe(3);
     expect(events.map(eventSource)).toEqual([
       startEvent,

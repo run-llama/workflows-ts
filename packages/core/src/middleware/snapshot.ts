@@ -35,7 +35,10 @@ export type SnapshotFn = () => Promise<
 type SnapshotWorkflowContext<Workflow extends WorkflowCore> = ReturnType<
   Workflow["createContext"]
 > & {
-  onRequest: (callback: OnRequestFn) => () => void;
+  onRequest: <Event extends WorkflowEvent<any>>(
+    event: Event,
+    callback: OnRequestFn<Event>,
+  ) => () => void;
   /**
    * Snapshot will lock the context and wait for there is no pending event.
    *
@@ -73,10 +76,8 @@ interface SnapshotData {
   missing: number[];
 }
 
-export type OnRequestFn = (
-  event: WorkflowEvent<any>,
-  reason: any,
-) => void | Promise<void>;
+export type OnRequestFn<Event extends WorkflowEvent<any> = WorkflowEvent<any>> =
+  (eventData: Event, reason: any) => void | Promise<void>;
 
 export function withSnapshot<Workflow extends WorkflowCore>(
   workflow: Workflow,
@@ -277,8 +278,15 @@ export function withSnapshot<Workflow extends WorkflowCore>(
       return {
         ...context,
         snapshot: snapshotFn,
-        onRequest: (callback: OnRequestFn): (() => void) =>
-          requests.subscribe(callback),
+        onRequest: (
+          event: WorkflowEvent<any>,
+          callback: OnRequestFn,
+        ): (() => void) =>
+          requests.subscribe((ev, reason) => {
+            if (ev === event) {
+              return callback(ev, reason);
+            }
+          }),
         get stream() {
           if (!lazyInitStream) {
             lazyInitStream = stream.pipeThrough(
@@ -308,8 +316,15 @@ export function withSnapshot<Workflow extends WorkflowCore>(
       return {
         ...context,
         snapshot: snapshotFn,
-        onRequest: (callback: OnRequestFn): (() => void) =>
-          requests.subscribe(callback),
+        onRequest: (
+          event: WorkflowEvent<any>,
+          callback: OnRequestFn,
+        ): (() => void) =>
+          requests.subscribe((ev, reason) => {
+            if (ev === event) {
+              return callback(ev, reason);
+            }
+          }),
         get stream() {
           if (!lazyInitStream) {
             lazyInitStream = stream.pipeThrough(
