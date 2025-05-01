@@ -188,6 +188,25 @@ export class WorkflowStream<R = any>
     return this.#stream.values(options);
   }
 
+  take(limit: number): WorkflowStream<WorkflowEventData<any>> {
+    let count = 0;
+    return WorkflowStream.fromReadableStream(
+      this.#stream.pipeThrough(
+        new TransformStream({
+          transform: (ev, controller) => {
+            if (count < limit) {
+              controller.enqueue(ev);
+              count++;
+            }
+            if (count >= limit) {
+              controller.terminate();
+            }
+          },
+        }),
+      ),
+    );
+  }
+
   filter(predicate: WorkflowEvent<any>): WorkflowStream<R>;
   filter(
     predicate: (event: WorkflowEventData<any>) => boolean,
@@ -214,13 +233,25 @@ export class WorkflowStream<R = any>
     );
   }
 
-  until(event: WorkflowEvent<any>): WorkflowStream<R> {
+  until(
+    predicate: (event: WorkflowEventData<any>) => boolean,
+  ): WorkflowStream<R>;
+  until(event: WorkflowEvent<any>): WorkflowStream<R>;
+  until(
+    predicate:
+      | WorkflowEvent<any>
+      | ((event: WorkflowEventData<any>) => boolean),
+  ): WorkflowStream<R> {
     return WorkflowStream.fromReadableStream(
       this.#stream.pipeThrough(
         new TransformStream({
           transform: (ev, controller) => {
             controller.enqueue(ev);
-            if (event.include(ev)) {
+            if (
+              typeof predicate === "function"
+                ? predicate(ev)
+                : predicate.include(ev)
+            ) {
               controller.terminate();
             }
           },

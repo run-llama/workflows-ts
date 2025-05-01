@@ -11,9 +11,7 @@ import {
   createHandlerDecorator,
   getEventOrigins,
 } from "@llama-flow/core/middleware/trace-events";
-import { filter } from "@llama-flow/core/stream/filter";
 import { collect } from "@llama-flow/core/stream/consumer";
-import { until } from "@llama-flow/core/stream/until";
 import { pipeline } from "node:stream/promises";
 
 const groupBy = <T>(
@@ -77,18 +75,15 @@ describe("with trace events", () => {
     context.sendEvent(startEvent.with());
 
     const [l, r] = stream.tee();
-    const allEvents = await collect(
-      until(l, (ev) => messageEvent.include(ev) && ev.data === 2),
-    );
-    const events = await collect(
-      filter(
-        workflow.substream(
-          ev,
-          until(r, (ev) => ev.data === 2),
-        ),
-        (e) => messageEvent.include(e),
-      ),
-    );
+    const allEvents = await l.until((ev) => ev.data === 2).toArray();
+
+    const events = await workflow
+      .substream(
+        ev,
+        r.until((ev) => ev.data === 2),
+      )
+      .filter((e) => messageEvent.include(e))
+      .toArray();
     expect(counter).toBe(3);
     expect(allEvents.length).toBe(6);
     expect(events.length).toBe(1);
@@ -113,9 +108,7 @@ describe("with trace events", () => {
     context.sendEvent(ev);
     context.sendEvent(startEvent.with());
     context.sendEvent(startEvent.with());
-    const events = await collect(
-      until(stream, (ev) => messageEvent.include(ev) && ev.data === 2),
-    );
+    const events = await stream.until((ev) => ev.data === 2).toArray();
     expect(events.length).toBe(6);
   });
 
@@ -242,16 +235,10 @@ describe("get event origins", () => {
       sendEvent(branchBEvent.with("Branch B"));
       sendEvent(branchCEvent.with("Branch C"));
 
-      let condition = 0;
-      const results = await collect(
-        until(
-          filter(stream, (ev) => branchCompleteEvent.include(ev)),
-          () => {
-            condition++;
-            return condition === 3;
-          },
-        ),
-      );
+      const results = await stream
+        .filter(branchCompleteEvent)
+        .take(3)
+        .toArray();
 
       const result = groupBy(
         results,

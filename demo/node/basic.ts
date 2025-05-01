@@ -1,8 +1,6 @@
 import { createWorkflow, workflowEvent, getContext } from "@llama-flow/core";
 import { pipeline } from "node:stream/promises";
 import { collect } from "@llama-flow/core/stream/consumer";
-import { until } from "@llama-flow/core/stream/until";
-import { filter } from "@llama-flow/core/stream/filter";
 
 //#region define workflow events
 const startEvent = workflowEvent<string>();
@@ -23,16 +21,7 @@ workflow.handle([startEvent], async () => {
   sendEvent(branchBEvent.with("Branch B"));
   sendEvent(branchCEvent.with("Branch C"));
 
-  let condition = 0;
-  const results = await collect(
-    until(
-      filter(stream, (ev) => branchCompleteEvent.include(ev)),
-      () => {
-        condition++;
-        return condition === 3;
-      },
-    ),
-  );
+  const results = await stream.filter(branchCompleteEvent).take(3).toArray();
 
   return allCompleteEvent.with(results.map((e) => e.data).join(", "));
 });

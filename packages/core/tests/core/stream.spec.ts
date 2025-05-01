@@ -74,4 +74,19 @@ describe("stream api", () => {
       events.messageEvent,
     ]);
   });
+
+  test("stream.take", async () => {
+    const workflow = createWorkflow();
+    const { sendEvent, stream } = workflow.createContext();
+    sendEvent(events.messageEvent.with());
+    sendEvent(events.messageEvent.with());
+    sendEvent(events.messageEvent.with());
+    sendEvent(events.haltEvent.with());
+    const list = await stream.until(events.haltEvent).take(2).toArray();
+    expect(list).toHaveLength(2);
+    expect(list.map(eventSource)).toEqual([
+      events.messageEvent,
+      events.messageEvent,
+    ]);
+  });
 });
