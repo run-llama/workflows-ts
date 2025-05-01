@@ -187,4 +187,57 @@ export class WorkflowStream<R = any>
   ): ReadableStreamAsyncIterator<WorkflowEventData<any>> {
     return this.#stream.values(options);
   }
+
+  filter(predicate: WorkflowEvent<any>): WorkflowStream<R>;
+  filter(
+    predicate: (event: WorkflowEventData<any>) => boolean,
+  ): WorkflowStream<R>;
+  filter(
+    predicate:
+      | ((event: WorkflowEventData<any>) => boolean)
+      | WorkflowEvent<any>,
+  ): WorkflowStream<R> {
+    return WorkflowStream.fromReadableStream(
+      this.#stream.pipeThrough(
+        new TransformStream({
+          transform: (ev, controller) => {
+            if (
+              typeof predicate === "function"
+                ? predicate(ev)
+                : predicate.include(ev)
+            ) {
+              controller.enqueue(ev);
+            }
+          },
+        }),
+      ),
+    );
+  }
+
+  until(event: WorkflowEvent<any>): WorkflowStream<R> {
+    return WorkflowStream.fromReadableStream(
+      this.#stream.pipeThrough(
+        new TransformStream({
+          transform: (ev, controller) => {
+            controller.enqueue(ev);
+            if (event.include(ev)) {
+              controller.terminate();
+            }
+          },
+        }),
+      ),
+    );
+  }
+
+  async toArray(): Promise<WorkflowEventData<any>[]> {
+    const events: WorkflowEventData<any>[] = [];
+    await this.#stream.pipeTo(
+      new WritableStream({
+        write: (event: WorkflowEventData<any>) => {
+          events.push(event);
+        },
+      }),
+    );
+    return events;
+  }
 }
