@@ -7,7 +7,7 @@ import type {
 /**
  * Runs a workflow with a specified input event and returns the first matching event of the specified output type.
  *
- * @deprecated
+ * @deprecated Use `stream.until().toArray()` for a more idiomatic approach.
  * @example
  * ```ts
  * const result = await runWorkflow(workflow, startEvent.with("42"), stopEvent);
@@ -36,7 +36,7 @@ export async function runWorkflow<Input, Output>(
  * Runs a workflow with a specified input event and collects all events until a specified output event is encountered.
  * Returns an array containing all events including the final output event.
  *
- * @deprecated
+ * @deprecated Use `stream.until().toArray()` for a more idiomatic approach.
  * @example
  * ```ts
  * const allEvents = await runAndCollect(workflow, startEvent.with("42"), stopEvent);
@@ -64,7 +64,7 @@ export async function runAndCollect<Input, Output>(
  *
  * This allows processing events one by one without collecting them all upfront.
  *
- * @deprecated
+ * @deprecated Use `stream.until().toArray()` for a more idiomatic approach.
  * @example
  * ```ts
  * const eventStream = runStream(workflow, startEvent.with("42"), stopEvent);
