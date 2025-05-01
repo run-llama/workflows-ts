@@ -1,14 +1,30 @@
 import type {
+  Workflow,
   WorkflowEvent,
   WorkflowEventData,
-  Workflow,
 } from "@llama-flow/core";
-import { collect } from "./consumer";
-import { until } from "./until";
+
+/**
+ * Runs a workflow with the provided events and returns the resulting stream.
+ *
+ * ```ts
+ * const events = await run(workflow, startEvent.with("42")).toArray();
+ * ```
+ *
+ */
+export function run(
+  workflow: Workflow,
+  events: WorkflowEventData<any> | WorkflowEventData<any>[],
+) {
+  const { stream, sendEvent } = workflow.createContext();
+  sendEvent(...(Array.isArray(events) ? events : [events]));
+  return stream;
+}
 
 /**
  * Runs a workflow with a specified input event and returns the first matching event of the specified output type.
  *
+ * @deprecated Use `stream.until().toArray()` for a more idiomatic approach.
  * @example
  * ```ts
  * const result = await runWorkflow(workflow, startEvent.with("42"), stopEvent);
@@ -26,22 +42,18 @@ export async function runWorkflow<Input, Output>(
   sendEvent(inputEvent);
 
   // Create a stream until we get the output event
-  const untilStream = until(stream, outputEvent);
-
-  // Find the first matching event
-  for await (const event of untilStream) {
-    if (outputEvent.include(event)) {
-      return event as WorkflowEventData<Output>;
-    }
+  const result = (await stream.until(outputEvent).toArray()).at(-1);
+  if (!result) {
+    throw new Error("No output event received");
   }
-
-  throw new Error(`No matching ${outputEvent.toString()} event found`);
+  return result as WorkflowEventData<Output>;
 }
 
 /**
  * Runs a workflow with a specified input event and collects all events until a specified output event is encountered.
  * Returns an array containing all events including the final output event.
  *
+ * @deprecated Use `stream.until().toArray()` for a more idiomatic approach.
  * @example
  * ```ts
  * const allEvents = await runAndCollect(workflow, startEvent.with("42"), stopEvent);
@@ -60,7 +72,7 @@ export async function runAndCollect<Input, Output>(
   sendEvent(inputEvent);
 
   // Collect all events until the output event
-  return await collect(until(stream, outputEvent));
+  return await stream.until(outputEvent).toArray();
 }
 
 /**
@@ -69,6 +81,7 @@ export async function runAndCollect<Input, Output>(
  *
  * This allows processing events one by one without collecting them all upfront.
  *
+ * @deprecated Use `stream.until().toArray()` for a more idiomatic approach.
  * @example
  * ```ts
  * const eventStream = runStream(workflow, startEvent.with("42"), stopEvent);
@@ -89,5 +102,5 @@ export function runStream<Input, Output>(
   sendEvent(inputEvent);
 
   // Return the stream that runs until the output event is encountered
-  return until(stream, outputEvent);
+  return stream.until(outputEvent).values();
 }

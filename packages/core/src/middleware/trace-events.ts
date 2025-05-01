@@ -4,6 +4,7 @@ import {
   type WorkflowContext,
   type WorkflowEvent,
   type WorkflowEventData,
+  WorkflowStream,
 } from "@llama-flow/core";
 import { isPromiseLike } from "../core/utils";
 import {
@@ -91,15 +92,15 @@ export function withTraceEvents<
   ): HandlerRef<AcceptEvents, Result, Fn>;
   substream<T extends WorkflowEventData<any>>(
     eventData: WorkflowEventData<any>,
-    stream: ReadableStream<T>,
-  ): ReadableStream<T>;
+    stream: WorkflowStream<T>,
+  ): WorkflowStream<T>;
 } {
   return {
     ...workflow,
     substream: <T extends WorkflowEventData<any>>(
       eventData: WorkflowEventData<any>,
-      stream: ReadableStream<T>,
-    ): ReadableStream<T> => {
+      stream: WorkflowStream<T>,
+    ): WorkflowStream<T> => {
       const rootContext = eventToHandlerContextWeakMap.get(eventData);
       return stream.pipeThrough(
         new TransformStream({

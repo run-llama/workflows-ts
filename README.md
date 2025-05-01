@@ -67,9 +67,7 @@ const result = await pipeline(stream, async function (source) {
 });
 console.log(result); // stop received!
 // or
-import { until } from "@llama-flow/core/stream/until";
-import { collect } from "@llama-flow/core/stream/consumer";
-const allEvents = await collect(until(stream, stopEvent));
+const allEvents = await stream.until(stopEvent).toArray();
 ```
 
 ### Helper Functions for Common Tasks
@@ -102,10 +100,6 @@ By default, we provide a simple fan-out utility to run multiple workflows in par
 - `getContext().stream` will return a stream of events emitted by the sub-workflow
 
 ```ts
-import { until } from "@llama-flow/core/stream/until";
-import { collect } from "@llama-flow/core/stream/consumer";
-import { filter } from "@llama-flow/core/stream/filter";
-
 let condition = false;
 workflow.handle([startEvent], async (start) => {
   const { sendEvent, stream } = getContext();
@@ -113,12 +107,10 @@ workflow.handle([startEvent], async (start) => {
     sendEvent(convertEvent.with(i));
   }
   // You define the condition to stop the workflow
-  const results = await collect(
-    filter(
-      until(stream, () => condition),
-      (ev) => convertStopEvent.includes(ev),
-    ),
-  );
+  const results = await stream
+    .until(() => condition)
+    .filter(convertStopEvent)
+    .toArray();
   console.log(results.length); // 10
   return stopEvent.with();
 });

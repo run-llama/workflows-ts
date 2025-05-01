@@ -187,4 +187,88 @@ export class WorkflowStream<R = any>
   ): ReadableStreamAsyncIterator<WorkflowEventData<any>> {
     return this.#stream.values(options);
   }
+
+  take(limit: number): WorkflowStream<WorkflowEventData<any>> {
+    let count = 0;
+    return WorkflowStream.fromReadableStream(
+      this.#stream.pipeThrough(
+        new TransformStream({
+          transform: (ev, controller) => {
+            if (count < limit) {
+              controller.enqueue(ev);
+              count++;
+            }
+            if (count >= limit) {
+              controller.terminate();
+            }
+          },
+        }),
+      ),
+    );
+  }
+
+  filter(predicate: WorkflowEvent<any>): WorkflowStream<R>;
+  filter(
+    predicate: (event: WorkflowEventData<any>) => boolean,
+  ): WorkflowStream<R>;
+  filter(
+    predicate:
+      | ((event: WorkflowEventData<any>) => boolean)
+      | WorkflowEvent<any>,
+  ): WorkflowStream<R> {
+    return WorkflowStream.fromReadableStream(
+      this.#stream.pipeThrough(
+        new TransformStream({
+          transform: (ev, controller) => {
+            if (
+              typeof predicate === "function"
+                ? predicate(ev)
+                : predicate.include(ev)
+            ) {
+              controller.enqueue(ev);
+            }
+          },
+        }),
+      ),
+    );
+  }
+
+  until(
+    predicate: (event: WorkflowEventData<any>) => boolean,
+  ): WorkflowStream<R>;
+  until(event: WorkflowEvent<any>): WorkflowStream<R>;
+  until(
+    predicate:
+      | WorkflowEvent<any>
+      | ((event: WorkflowEventData<any>) => boolean),
+  ): WorkflowStream<R> {
+    return WorkflowStream.fromReadableStream(
+      this.#stream.pipeThrough(
+        new TransformStream({
+          transform: (ev, controller) => {
+            controller.enqueue(ev);
+            if (
+              typeof predicate === "function"
+                ? predicate(ev)
+                : predicate.include(ev)
+            ) {
+              controller.terminate();
+            }
+          },
+        }),
+      ),
+    );
+  }
+
+  async toArray(): Promise<WorkflowEventData<any>[]> {
+    const events: WorkflowEventData<any>[] = [];
+    await this.#stream.pipeTo(
+      new WritableStream({
+        write: (event: WorkflowEventData<any>) => {
+          events.push(event);
+        },
+      }),
+    );
+    return events;
+  }
 }

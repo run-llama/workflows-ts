@@ -65,9 +65,6 @@ You can create complex event flows with branching and merging patterns:
 
 ```ts
 import { createWorkflow, workflowEvent, getContext } from "@llama-flow/core";
-import { collect } from "@llama-flow/core/stream/consumer";
-import { until } from "@llama-flow/core/stream/until";
-import { filter } from "@llama-flow/core/stream/filter";
 import { pipeline } from "node:stream/promises";
 
 // Define events for a data processing pipeline with branching and merging
@@ -130,19 +127,13 @@ workflow.handle([startEvent], async (event) => {
   console.log(`Setting up merger to collect ${totalItems} processed results`);
 
   // Merge: collect results from both processing paths
-  const results = await collect(
-    until(
-      filter(
-        stream,
-        (ev) =>
-          processedValidEvent.include(ev) || processedInvalidEvent.include(ev),
-      ),
-      () => {
-        // Stop when we've collected the expected number of results
-        return results.length >= totalItems;
-      },
-    ),
-  );
+  const results = await stream
+    .filter(
+      (ev) =>
+        processedValidEvent.include(ev) || processedInvalidEvent.include(ev),
+    )
+    .take(totalItems)
+    .toArray();
 
   // Extract and sort the data from collected events
   const processedResults = results.map((event) => event.data);
@@ -200,9 +191,6 @@ You can filter and transform events to build sophisticated data processing pipel
 
 ```ts
 import { createWorkflow, workflowEvent, getContext } from "@llama-flow/core";
-import { collect } from "@llama-flow/core/stream/consumer";
-import { until } from "@llama-flow/core/stream/until";
-import { filter } from "@llama-flow/core/stream/filter";
 
 // Define events
 const dataEvent = workflowEvent<number>();
@@ -245,15 +233,13 @@ workflow.handle([initEvent], async (event) => {
 
   // Collect transformed events
   let numResults = 0;
-  const results = await collect(
-    until(
-      filter(stream, (ev) => transformedEvent.include(ev)),
-      () => {
-        numResults++;
-        return numResults >= event.data;
-      },
-    ),
-  );
+  const results = await stream
+    .filter(transformedEvent)
+    .until((event) => {
+      numResults++;
+      return numResults >= event.data;
+    })
+    .toArray();
 
   return resultEvent.with(results.map((r) => r.data));
 });
@@ -473,7 +459,6 @@ LlamaIndex workflows excel at managing complex asynchronous patterns:
 
 ```ts
 import { createWorkflow, workflowEvent, getContext } from "@llama-flow/core";
-import { until } from "@llama-flow/core/stream/until";
 
 // Events for an orchestration workflow
 const orchestrateEvent = workflowEvent<string[]>();
@@ -498,7 +483,7 @@ workflow.handle([orchestrateEvent], async (event) => {
   const results: Record<string, string> = {};
 
   // Process task completion and progress events
-  for await (const event of until(stream, () => completed === tasks.length)) {
+  for await (const event of stream.until(() => completed === tasks.length)) {
     if (progressEvent.include(event)) {
       console.log(`Task ${event.data.task}: ${event.data.progress}%`);
     } else if (taskCompleteEvent.include(event)) {
