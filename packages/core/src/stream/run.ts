@@ -5,6 +5,23 @@ import type {
 } from "@llama-flow/core";
 
 /**
+ * Runs a workflow with the provided events and returns the resulting stream.
+ *
+ * ```ts
+ * const events = await run(workflow, startEvent.with("42")).toArray();
+ * ```
+ *
+ */
+export function run(
+  workflow: Workflow,
+  events: WorkflowEventData<any> | WorkflowEventData<any>[],
+) {
+  const { stream, sendEvent } = workflow.createContext();
+  sendEvent(...(Array.isArray(events) ? events : [events]));
+  return stream;
+}
+
+/**
  * Runs a workflow with a specified input event and returns the first matching event of the specified output type.
  *
  * @deprecated Use `stream.until().toArray()` for a more idiomatic approach.

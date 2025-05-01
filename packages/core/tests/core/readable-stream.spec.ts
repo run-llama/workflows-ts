@@ -6,8 +6,6 @@ import {
   workflowEvent,
   type WorkflowEventData,
 } from "@llama-flow/core";
-import { until } from "@llama-flow/core/stream/until";
-import { collect, nothing } from "@llama-flow/core/stream/consumer";
 
 describe("workflow basic", () => {
   const startEvent = workflowEvent<string>({
@@ -52,9 +50,9 @@ describe("workflow basic", () => {
 
     const { stream, sendEvent } = workflow.createContext();
     sendEvent(startEvent.with("100"));
-    const events: WorkflowEventData<any>[] = await collect(
-      until(stream, stopEvent),
-    );
+    const events: WorkflowEventData<any>[] = await stream
+      .until(stopEvent)
+      .toArray();
     expect(events).toHaveLength(3);
     expect(events.at(-1)!.data).toBe(1);
   });
@@ -69,9 +67,9 @@ describe("workflow basic", () => {
 
     const { stream, sendEvent } = workflow.createContext();
     sendEvent(startEvent.with("100"));
-    const events: WorkflowEventData<any>[] = await collect(
-      until(stream, stopEvent),
-    );
+    const events: WorkflowEventData<any>[] = await stream
+      .until(stopEvent)
+      .toArray();
     expect(events).toHaveLength(3);
     expect(events.at(-1)!.data).toBe(1);
   });
@@ -86,9 +84,9 @@ describe("workflow basic", () => {
 
     const { stream, sendEvent } = workflow.createContext();
     sendEvent(startEvent.with("100"));
-    const events: WorkflowEventData<any>[] = await collect(
-      until(stream, stopEvent),
-    );
+    const events: WorkflowEventData<any>[] = await stream
+      .until(stopEvent)
+      .toArray();
     expect(events).toHaveLength(3);
     expect(events.at(-1)!.data).toBe(1);
   });
@@ -104,9 +102,9 @@ describe("workflow basic", () => {
 
     const { stream, sendEvent } = workflow.createContext();
     sendEvent(startEvent.with("100"));
-    const events: WorkflowEventData<any>[] = await collect(
-      until(stream, stopEvent),
-    );
+    const events: WorkflowEventData<any>[] = await stream
+      .until(stopEvent)
+      .toArray();
     expect(events).toHaveLength(3);
     expect(events.at(-1)!.data).toBe(1);
   });
@@ -134,8 +132,8 @@ describe("workflow basic", () => {
     sendEvent(startEvent.with("100"));
     const [l, r] = newStream.tee();
     expect(newStream.locked).toBe(true);
-    await nothing(until(l, stopEvent));
-    await nothing(until(r, stopEvent));
+    await l.until(stopEvent).toArray();
+    await r.until(stopEvent).toArray();
   });
 });
 
@@ -152,9 +150,9 @@ describe("workflow simple logic", () => {
     workflow.handle([startEvent], f1);
     const { stream, sendEvent } = workflow.createContext();
     sendEvent(startEvent.with());
-    const events: WorkflowEventData<any>[] = await collect(
-      until(stream, stopEvent),
-    );
+    const events: WorkflowEventData<any>[] = await stream
+      .until(stopEvent)
+      .toArray();
     expect(f1).toBeCalledTimes(1);
     expect(events).toHaveLength(2);
   });
@@ -169,9 +167,9 @@ describe("workflow simple logic", () => {
     workflow.handle([event], f2);
     const { stream, sendEvent } = workflow.createContext();
     sendEvent(startEvent.with());
-    const events: WorkflowEventData<any>[] = await collect(
-      until(stream, stopEvent),
-    );
+    const events: WorkflowEventData<any>[] = await stream
+      .until(stopEvent)
+      .toArray();
     expect(f1).toBeCalledTimes(1);
     expect(f2).toBeCalledTimes(1);
     expect(events).toHaveLength(3);
@@ -189,9 +187,9 @@ describe("workflow simple logic", () => {
     {
       const { stream, sendEvent } = workflow.createContext();
       sendEvent(startEvent.with(1));
-      const events: WorkflowEventData<any>[] = await collect(
-        until(stream, stopEvent),
-      );
+      const events: WorkflowEventData<any>[] = await stream
+        .until(stopEvent)
+        .toArray();
       expect(f1).toBeCalledTimes(2);
       expect(events).toHaveLength(3);
     }
@@ -199,9 +197,9 @@ describe("workflow simple logic", () => {
     {
       const { stream, sendEvent } = workflow.createContext();
       sendEvent(startEvent.with(-1));
-      const events: WorkflowEventData<any>[] = await collect(
-        until(stream, stopEvent),
-      );
+      const events: WorkflowEventData<any>[] = await stream
+        .until(stopEvent)
+        .toArray();
       expect(f1).toBeCalledTimes(1);
       expect(events).toHaveLength(2);
     }
@@ -225,9 +223,9 @@ describe("workflow simple logic", () => {
     workflow.handle([event2], f3);
     const { stream, sendEvent } = workflow.createContext();
     sendEvent(startEvent.with());
-    const events: WorkflowEventData<any>[] = await collect(
-      until(stream, stopEvent),
-    );
+    const events: WorkflowEventData<any>[] = await stream
+      .until(stopEvent)
+      .toArray();
     expect(f1).toBeCalledTimes(1);
     expect(f2).toBeCalledTimes(2);
     expect(f3).toBeCalledTimes(2);
@@ -248,9 +246,9 @@ describe("workflow simple logic", () => {
     {
       const { stream, sendEvent } = workflow.createContext();
       sendEvent(startEvent.with("100"));
-      const events: WorkflowEventData<any>[] = await collect(
-        until(stream, stopEvent),
-      );
+      const events: WorkflowEventData<any>[] = await stream
+        .until(stopEvent)
+        .toArray();
       expect(events).toHaveLength(2);
       expect(events.at(-1)!.data).toBe(1);
     }
@@ -258,9 +256,9 @@ describe("workflow simple logic", () => {
     {
       const { stream, sendEvent } = workflow.createContext();
       sendEvent(startEvent.with("200"));
-      const events: WorkflowEventData<any>[] = await collect(
-        until(stream, stopEvent),
-      );
+      const events: WorkflowEventData<any>[] = await stream
+        .until(stopEvent)
+        .toArray();
       expect(events).toHaveLength(2);
       expect(events.at(-1)!.data).toBe(-1);
     }
@@ -305,9 +303,9 @@ describe("workflow simple logic", () => {
 
     const { stream, sendEvent } = jokeFlow.createContext();
     sendEvent(startEvent.with("pirates"));
-    const events: WorkflowEventData<any>[] = await collect(
-      until(stream, stopEvent),
-    );
+    const events: WorkflowEventData<any>[] = await stream
+      .until(stopEvent)
+      .toArray();
     expect(events).toHaveLength(5);
     expect(events.at(-1)!.data).toBe("critique analysis");
     expect(events.map((e) => eventSource(e))).toEqual([
@@ -343,9 +341,9 @@ describe("workflow simple logic", () => {
 
     const { stream, sendEvent } = workflow.createContext();
     sendEvent(startEvent.with("100"));
-    const events: WorkflowEventData<any>[] = await collect(
-      until(stream, stopEvent),
-    );
+    const events: WorkflowEventData<any>[] = await stream
+      .until(stopEvent)
+      .toArray();
     expect(events).toHaveLength(4);
     expect(events.at(-1)!.data).toBe(1);
     expect(events.map((e) => eventSource(e))).toEqual([
@@ -384,9 +382,9 @@ describe("workflow simple logic", () => {
     );
     const { stream, sendEvent } = workflow.createContext();
     sendEvent(startEvent.with("100"));
-    const events: WorkflowEventData<any>[] = await collect(
-      until(stream, stopEvent),
-    );
+    const events: WorkflowEventData<any>[] = await stream
+      .until(stopEvent)
+      .toArray();
     expect(events).toHaveLength(102);
     expect(events.at(-1)!.data).toBe(1);
     expect(events.map((e) => eventSource(e))).toEqual([
@@ -422,9 +420,9 @@ describe("workflow simple logic", () => {
     {
       const { stream, sendEvent } = workflow.createContext();
       sendEvent(startEvent.with("100"));
-      const events: WorkflowEventData<any>[] = await collect(
-        until(stream, stopEvent),
-      );
+      const events: WorkflowEventData<any>[] = await stream
+        .until(stopEvent)
+        .toArray();
       expect(events).toHaveLength(3);
       expect(events.at(-1)!.data).toBe(1);
       expect(events.map((e) => eventSource(e))).toEqual([
@@ -466,9 +464,9 @@ describe("workflow simple logic", () => {
     {
       const { stream, sendEvent } = workflow.createContext();
       sendEvent(startEvent.with("100"));
-      const events: WorkflowEventData<any>[] = await collect(
-        until(stream, stopEvent),
-      );
+      const events: WorkflowEventData<any>[] = await stream
+        .until(stopEvent)
+        .toArray();
       expect(events).toHaveLength(102);
     }
   });
@@ -496,9 +494,9 @@ describe("workflow simple logic", () => {
     });
     const { stream, sendEvent } = workflow.createContext();
     sendEvent(startEvent.with("100"));
-    const events: WorkflowEventData<any>[] = await collect(
-      until(stream, stopEvent),
-    );
+    const events: WorkflowEventData<any>[] = await stream
+      .until(stopEvent)
+      .toArray();
     expect(events).toHaveLength(4);
     expect(events.at(-1)!.data).toBe(1);
     expect(events.map((e) => eventSource(e))).toEqual([

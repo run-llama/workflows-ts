@@ -5,9 +5,7 @@ import {
   getContext,
   workflowEvent,
 } from "@llama-flow/core";
-import { runWorkflow } from "@llama-flow/core/stream/run";
-import { collect } from "@llama-flow/core/stream/consumer";
-import { until } from "@llama-flow/core/stream/until";
+import { run } from "@llama-flow/core/stream/run";
 
 describe("sub workflow", () => {
   test("basic", async () => {
@@ -23,16 +21,16 @@ describe("sub workflow", () => {
         sendEvent(stopEvent.with());
       });
       await Promise.all([
-        runWorkflow(subWorkflow, startEvent.with(), stopEvent),
-        runWorkflow(subWorkflow, startEvent.with(), stopEvent),
-        runWorkflow(subWorkflow, startEvent.with(), stopEvent),
-      ]).then((evt) => sendEvent(...evt));
+        run(subWorkflow, startEvent.with()).filter(stopEvent).take(1).toArray(),
+        run(subWorkflow, startEvent.with()).filter(stopEvent).take(1).toArray(),
+        run(subWorkflow, startEvent.with()).filter(stopEvent).take(1).toArray(),
+      ]).then((evt) => sendEvent(...evt.flat()));
       sendEvent(haltEvent.with());
     });
     const { sendEvent, stream } = rootWorkflow.createContext();
     sendEvent(startEvent.with());
 
-    const events = await collect(until(stream, haltEvent));
+    const events = await stream.until(haltEvent).toArray();
     expect(events.length).toBe(5);
     expect(events.map(eventSource)).toEqual([
       startEvent,
