@@ -27,37 +27,56 @@ export class WorkflowStream<R = any>
 
   constructor(
     subscribable: Subscribable<[R], void>,
+    rootStream: ReadableStream<R>,
+  );
+  constructor(subscribable: Subscribable<[R], void>, rootStream: null);
+  constructor(subscribable: null, rootStream: ReadableStream<R> | null);
+  constructor(
+    subscribable: Subscribable<[R], void> | null,
     rootStream: ReadableStream<R> | null,
   ) {
-    this.#subscribable = subscribable;
-    let unsubscribe: () => void;
-    this.#stream =
-      rootStream ??
-      new ReadableStream<R>({
-        start: (controller) => {
-          unsubscribe = subscribable.subscribe((event) => {
-            controller.enqueue(event);
-          });
-        },
-        cancel: () => {
-          unsubscribe();
-        },
-      });
+    if (!subscribable && !rootStream) {
+      throw new TypeError(
+        "Either subscribable or root stream must be provided",
+      );
+    }
+    if (!subscribable) {
+      this.#subscribable = createSubscribable<[data: R], void>();
+      this.#stream = rootStream!.pipeThrough(
+        new TransformStream({
+          transform: (ev, controller) => {
+            this.#subscribable.publish(ev);
+            controller.enqueue(ev);
+          },
+        }),
+      );
+      return;
+    } else {
+      this.#subscribable = subscribable;
+      let unsubscribe: () => void;
+      this.#stream =
+        rootStream ??
+        new ReadableStream<R>({
+          start: (controller) => {
+            unsubscribe = subscribable.subscribe((event) => {
+              controller.enqueue(event);
+            });
+          },
+          cancel: () => {
+            unsubscribe();
+          },
+        });
+    }
   }
 
   static fromReadableStream<T = any>(
     stream: ReadableStream<WorkflowEventData<any>>,
   ): WorkflowStream<T> {
-    const subscribable = createSubscribable<
-      [event: WorkflowEventData<any>],
-      void
-    >();
     return new WorkflowStream(
-      subscribable,
+      null,
       stream.pipeThrough(
         new TransformStream<WorkflowEventData<any>>({
           transform: (event, controller) => {
-            subscribable.publish(event);
             controller.enqueue(event);
           },
         }),
@@ -68,18 +87,14 @@ export class WorkflowStream<R = any>
   static fromResponse(
     response: Response,
     eventMap: Record<string, WorkflowEvent<any>>,
-  ): WorkflowStream {
+  ): WorkflowStream<WorkflowEventData<any>> {
     const body = response.body;
     if (!body) {
       throw new Error("Response body is not readable");
     }
-    const subscribable = createSubscribable<
-      [event: WorkflowEventData<any>],
-      void
-    >();
     const events = Object.values(eventMap);
     return new WorkflowStream(
-      subscribable,
+      null,
       body
         .pipeThrough(new TextDecoderStream())
         .pipeThrough<WorkflowEventData<any>>(
@@ -96,7 +111,6 @@ export class WorkflowStream<R = any>
                 const ev = targetEvent.with(
                   eventData.data,
                 ) as WorkflowEventData<any>;
-                subscribable.publish(ev);
                 controller.enqueue(ev);
               }
             },
@@ -155,11 +169,7 @@ export class WorkflowStream<R = any>
     options?: StreamPipeOptions,
   ): WorkflowStream<T> {
     const stream = this.#stream.pipeThrough(transform, options) as any;
-    return new WorkflowStream<T>(
-      // @ts-expect-error
-      this.#subscribable,
-      stream,
-    );
+    return new WorkflowStream<T>(null, stream);
   }
 
   pipeTo(
