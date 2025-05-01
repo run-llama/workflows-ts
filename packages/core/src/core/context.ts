@@ -54,7 +54,7 @@ export type ContextNext = (
 ) => void;
 
 export type WorkflowContext = {
-  get stream(): WorkflowStream;
+  get stream(): WorkflowStream<WorkflowEventData<any>>;
   get signal(): AbortSignal;
   sendEvent: (...events: WorkflowEventData<any>[]) => void;
 
@@ -214,7 +214,7 @@ export const createContext = ({
           }
         },
       );
-      return new WorkflowStream(subscribable, null);
+      return new WorkflowStream<WorkflowEventData<any>>(subscribable, null);
     },
     get signal() {
       return handlerContext.abortController.signal;

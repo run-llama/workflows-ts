@@ -4,6 +4,8 @@ export { createWorkflow, type Workflow } from "./workflow";
 export { getContext, type WorkflowContext, type Handler } from "./context";
 // event system
 export {
+  isWorkflowEvent,
+  isWorkflowEventData,
   eventSource,
   workflowEvent,
   type WorkflowEvent,
