@@ -1,18 +1,18 @@
 import {
   eventSource,
+  type InferWorkflowEventData,
+  isWorkflowEvent,
   type WorkflowEvent,
   type WorkflowEventData,
 } from "./event";
 import { createSubscribable, type Subscribable } from "./utils";
 
 export class WorkflowStream<R = any>
-  implements
-    AsyncIterable<WorkflowEventData<any>>,
-    ReadableStream<WorkflowEventData<any>>
+  implements AsyncIterable<R>, ReadableStream<R>
 {
-  #stream: ReadableStream<WorkflowEventData<any>>;
+  #stream: ReadableStream<R>;
 
-  #subscribable: Subscribable<[event: WorkflowEventData<any>], void>;
+  #subscribable: Subscribable<[data: R], void>;
 
   on(
     event: WorkflowEvent<any>,
@@ -26,14 +26,14 @@ export class WorkflowStream<R = any>
   }
 
   constructor(
-    subscribable: Subscribable<[event: WorkflowEventData<any>], void>,
-    rootStream: ReadableStream<WorkflowEventData<any>> | null,
+    subscribable: Subscribable<[R], void>,
+    rootStream: ReadableStream<R> | null,
   ) {
     this.#subscribable = subscribable;
     let unsubscribe: () => void;
     this.#stream =
       rootStream ??
-      new ReadableStream<WorkflowEventData<any>>({
+      new ReadableStream<R>({
         start: (controller) => {
           unsubscribe = subscribable.subscribe((event) => {
             controller.enqueue(event);
@@ -45,9 +45,9 @@ export class WorkflowStream<R = any>
       });
   }
 
-  static fromReadableStream(
+  static fromReadableStream<T = any>(
     stream: ReadableStream<WorkflowEventData<any>>,
-  ): WorkflowStream {
+  ): WorkflowStream<T> {
     const subscribable = createSubscribable<
       [event: WorkflowEventData<any>],
       void
@@ -112,13 +112,16 @@ export class WorkflowStream<R = any>
       this.#stream
         .pipeThrough(
           new TransformStream({
-            transform: (event, controller) => {
-              controller.enqueue(
-                JSON.stringify({
-                  data: event.data,
-                  uniqueId: eventSource(event)!.uniqueId,
-                }) + "\n",
-              );
+            transform: (data, controller) => {
+              // fixme: use a generalized way to stringify all data
+              if (eventSource(data)) {
+                controller.enqueue(
+                  JSON.stringify({
+                    data: (data as WorkflowEventData<any>).data,
+                    uniqueId: eventSource(data)!.uniqueId,
+                  }) + "\n",
+                );
+              }
             },
           }),
         )
@@ -131,9 +134,7 @@ export class WorkflowStream<R = any>
     return this.#stream.locked;
   }
 
-  [Symbol.asyncIterator](): ReadableStreamAsyncIterator<
-    WorkflowEventData<any>
-  > {
+  [Symbol.asyncIterator](): ReadableStreamAsyncIterator<R> {
     return this.#stream[Symbol.asyncIterator]();
   }
 
@@ -143,38 +144,32 @@ export class WorkflowStream<R = any>
 
   // make type compatible with Web ReadableStream API
   getReader(options: { mode: "byob" }): ReadableStreamBYOBReader;
-  getReader(): ReadableStreamDefaultReader<WorkflowEventData<any>>;
-  getReader(
-    options?: ReadableStreamGetReaderOptions,
-  ): ReadableStreamReader<WorkflowEventData<any>>;
+  getReader(): ReadableStreamDefaultReader<R>;
+  getReader(options?: ReadableStreamGetReaderOptions): ReadableStreamReader<R>;
   getReader(): any {
     return this.#stream.getReader();
   }
 
-  // @ts-expect-error
   pipeThrough<T>(
     transform: ReadableWritablePair<T, R>,
     options?: StreamPipeOptions,
   ): WorkflowStream<T> {
-    const stream = this.#stream.pipeThrough(
+    const stream = this.#stream.pipeThrough(transform, options) as any;
+    return new WorkflowStream<T>(
       // @ts-expect-error
-      transform,
-      options,
-    ) as any;
-    return new WorkflowStream(this.#subscribable, stream);
+      this.#subscribable,
+      stream,
+    );
   }
 
-  // @ts-expect-error
   pipeTo(
     destination: WritableStream<R>,
     options?: StreamPipeOptions,
   ): Promise<void> {
-    // @ts-expect-error
     return this.#stream.pipeTo(destination, options);
   }
 
-  // @ts-expect-error
-  tee(): [WorkflowStream, WorkflowStream] {
+  tee(): [WorkflowStream<R>, WorkflowStream<R>] {
     const [l, r] = this.#stream.tee();
     return [
       new WorkflowStream(this.#subscribable, l),
@@ -182,89 +177,109 @@ export class WorkflowStream<R = any>
     ];
   }
 
+  forEach(callback: (item: R) => void): Promise<void> {
+    return this.#stream.pipeTo(
+      new WritableStream({
+        write: (item: R) => {
+          callback(item);
+        },
+      }),
+    );
+  }
+
+  map<T>(callback: (item: R) => T): WorkflowStream<T> {
+    return this.pipeThrough<T>(
+      new TransformStream({
+        transform: (item, controller) => {
+          controller.enqueue(callback(item));
+        },
+      }),
+    );
+  }
+
   values(
     options?: ReadableStreamIteratorOptions,
-  ): ReadableStreamAsyncIterator<WorkflowEventData<any>> {
+  ): ReadableStreamAsyncIterator<R> {
     return this.#stream.values(options);
   }
 
-  take(limit: number): WorkflowStream<WorkflowEventData<any>> {
+  take(limit: number): WorkflowStream<R> {
     let count = 0;
-    return WorkflowStream.fromReadableStream(
-      this.#stream.pipeThrough(
-        new TransformStream({
-          transform: (ev, controller) => {
-            if (count < limit) {
-              controller.enqueue(ev);
-              count++;
-            }
-            if (count >= limit) {
-              controller.terminate();
-            }
-          },
-        }),
-      ),
-    );
-  }
-
-  filter(predicate: WorkflowEvent<any>): WorkflowStream<R>;
-  filter(
-    predicate: (event: WorkflowEventData<any>) => boolean,
-  ): WorkflowStream<R>;
-  filter(
-    predicate:
-      | ((event: WorkflowEventData<any>) => boolean)
-      | WorkflowEvent<any>,
-  ): WorkflowStream<R> {
-    return WorkflowStream.fromReadableStream(
-      this.#stream.pipeThrough(
-        new TransformStream({
-          transform: (ev, controller) => {
-            if (
-              typeof predicate === "function"
-                ? predicate(ev)
-                : predicate.include(ev)
-            ) {
-              controller.enqueue(ev);
-            }
-          },
-        }),
-      ),
-    );
-  }
-
-  until(
-    predicate: (event: WorkflowEventData<any>) => boolean,
-  ): WorkflowStream<R>;
-  until(event: WorkflowEvent<any>): WorkflowStream<R>;
-  until(
-    predicate:
-      | WorkflowEvent<any>
-      | ((event: WorkflowEventData<any>) => boolean),
-  ): WorkflowStream<R> {
-    return WorkflowStream.fromReadableStream(
-      this.#stream.pipeThrough(
-        new TransformStream({
-          transform: (ev, controller) => {
+    return this.pipeThrough(
+      new TransformStream({
+        transform: (ev, controller) => {
+          if (count < limit) {
             controller.enqueue(ev);
-            if (
-              typeof predicate === "function"
-                ? predicate(ev)
-                : predicate.include(ev)
-            ) {
-              controller.terminate();
-            }
-          },
-        }),
-      ),
+            count++;
+          }
+          if (count >= limit) {
+            controller.terminate();
+          }
+        },
+      }),
     );
   }
 
-  async toArray(): Promise<WorkflowEventData<any>[]> {
-    const events: WorkflowEventData<any>[] = [];
-    await this.#stream.pipeTo(
+  filter(
+    predicate: WorkflowEvent<InferWorkflowEventData<R>>,
+  ): WorkflowStream<R>;
+  filter(predicate: R): WorkflowStream<R>;
+  filter(predicate: (event: R) => boolean): WorkflowStream<R>;
+  filter(
+    predicate:
+      | WorkflowEvent<InferWorkflowEventData<R>>
+      | ((event: R) => boolean)
+      | R,
+  ): WorkflowStream<R> {
+    return this.pipeThrough(
+      new TransformStream({
+        transform: (ev, controller) => {
+          if (
+            typeof predicate === "function"
+              ? (predicate as Function)(ev)
+              : isWorkflowEvent(predicate)
+                ? predicate.include(ev)
+                : predicate === ev
+          ) {
+            controller.enqueue(ev);
+          }
+        },
+      }),
+    );
+  }
+
+  until(predicate: WorkflowEvent<InferWorkflowEventData<R>>): WorkflowStream<R>;
+  until(predicate: (item: R) => boolean): WorkflowStream<R>;
+  until(item: R): WorkflowStream<R>;
+  until(
+    predicate:
+      | WorkflowEvent<InferWorkflowEventData<R>>
+      | R
+      | ((item: R) => boolean),
+  ): WorkflowStream<R> {
+    return this.pipeThrough(
+      new TransformStream({
+        transform: (ev, controller) => {
+          controller.enqueue(ev);
+          if (
+            typeof predicate === "function"
+              ? (predicate as Function)(ev)
+              : isWorkflowEvent(predicate)
+                ? predicate.include(ev)
+                : predicate === ev
+          ) {
+            controller.terminate();
+          }
+        },
+      }),
+    );
+  }
+
+  async toArray(): Promise<R[]> {
+    const events: R[] = [];
+    await this.pipeTo(
       new WritableStream({
-        write: (event: WorkflowEventData<any>) => {
+        write: (event) => {
           events.push(event);
         },
       }),
