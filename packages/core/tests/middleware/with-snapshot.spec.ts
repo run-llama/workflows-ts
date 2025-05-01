@@ -10,8 +10,6 @@ import {
   getContext,
   workflowEvent,
 } from "@llama-flow/core";
-import { collect } from "@llama-flow/core/stream/consumer";
-import { until } from "@llama-flow/core/stream/until";
 
 const startEvent = workflowEvent({
   debugLabel: "start",
@@ -58,7 +56,7 @@ describe("with snapshot - snapshot API", () => {
 
     // recover
     const { stream } = workflow.resume(["hello world"], sd);
-    const events = await collect(until(stream, stopEvent));
+    const events = await stream.until(stopEvent).toArray();
     expect(events.length).toBe(2);
     expect(events.map(eventSource)).toEqual([humanResponseEvent, stopEvent]);
   });
@@ -92,7 +90,7 @@ describe("with snapshot - snapshot API", () => {
 
     // recover
     const { stream } = workflow.resume(["hello world"], sd);
-    const events = await collect(until(stream, stopEvent));
+    const events = await stream.until(stopEvent).toArray();
     expect(events.length).toBe(2);
     expect(events.map(eventSource)).toEqual([humanResponseEvent, stopEvent]);
   });
@@ -127,7 +125,7 @@ describe("with snapshot - snapshot API", () => {
 
     // recover
     const { stream } = workflow.resume(["hello world"], sd);
-    const events = await collect(until(stream, stopEvent));
+    const events = await stream.until(stopEvent).toArray();
     expect(events.length).toBe(2);
     expect(events.map(eventSource)).toEqual([humanResponseEvent, stopEvent]);
   });
@@ -175,7 +173,7 @@ describe("with snapshot - snapshot API", () => {
 
     // recover
     const { stream } = workflow.resume(["hello world"], sd);
-    const events = await collect(until(stream, stopEvent));
+    const events = await stream.until(stopEvent).toArray();
     expect(events.length).toBe(2);
     expect(events.map(eventSource)).toEqual([humanResponseEvent, stopEvent]);
   });
@@ -213,7 +211,7 @@ describe("with snapshot - snapshot API", () => {
     `);
     // recover
     const { stream } = workflow.resume(["hello world"], sd);
-    const events = await collect(until(stream, stopEvent));
+    const events = await stream.until(stopEvent).toArray();
     expect(events.length).toBe(2);
     expect(events.map(eventSource)).toEqual([humanResponseEvent, stopEvent]);
   });
@@ -272,7 +270,7 @@ describe("with snapshot - snapshot API", () => {
     });
     onRequest(onRequestCallback);
 
-    const events = await collect(until(stream, stopEvent));
+    const events = await stream.until(stopEvent).toArray();
     expect(events.length).toBe(3);
     expect(events.map(eventSource)).toEqual([
       startEvent,
