@@ -231,7 +231,9 @@ export class WorkflowStream<R = any>
   }
 
   filter(
-    predicate: WorkflowEvent<InferWorkflowEventData<R>>,
+    predicate: R extends WorkflowEventData<any>
+      ? WorkflowEvent<InferWorkflowEventData<R>>
+      : never,
   ): WorkflowStream<R>;
   filter(predicate: R): WorkflowStream<R>;
   filter(predicate: (event: R) => boolean): WorkflowStream<R>;
@@ -258,7 +260,11 @@ export class WorkflowStream<R = any>
     );
   }
 
-  until(predicate: WorkflowEvent<InferWorkflowEventData<R>>): WorkflowStream<R>;
+  until(
+    predicate: R extends WorkflowEventData<any>
+      ? WorkflowEvent<InferWorkflowEventData<R>>
+      : never,
+  ): WorkflowStream<R>;
   until(predicate: (item: R) => boolean): WorkflowStream<R>;
   until(item: R): WorkflowStream<R>;
   until(
