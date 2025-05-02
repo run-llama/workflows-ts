@@ -37,24 +37,22 @@ app.post("/human-in-the-loop", async (ctx) => {
   const { onRequest, stream } = context;
   return new Promise<Response>((resolve) => {
     // listen to human interaction
-    onRequest(async (event, reason) => {
-      if (humanInteractionEvent === event) {
-        context.snapshot().then(([re, sd]) => {
-          const requestId = crypto.randomUUID();
-          serializableMemoryMap.set(requestId, sd);
-          resolve(
-            Response.json({
-              requestId: requestId,
-              reason: reason,
-              data: re.map((r) =>
-                r === humanInteractionEvent
-                  ? "request human in the loop"
-                  : "UNKNOWN",
-              ),
-            }),
-          );
-        });
-      }
+    onRequest(humanInteractionEvent, async (reason) => {
+      context.snapshot().then(([re, sd]) => {
+        const requestId = crypto.randomUUID();
+        serializableMemoryMap.set(requestId, sd);
+        resolve(
+          Response.json({
+            requestId: requestId,
+            reason: reason,
+            data: re.map((r) =>
+              r === humanInteractionEvent
+                ? "request human in the loop"
+                : "UNKNOWN",
+            ),
+          }),
+        );
+      });
     });
 
     // consume stream

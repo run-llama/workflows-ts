@@ -1,9 +1,5 @@
 import { describe, expect, test, vi } from "vitest";
-import {
-  withSnapshot,
-  type OnRequestFn,
-  request,
-} from "@llama-flow/core/middleware/snapshot";
+import { withSnapshot, request } from "@llama-flow/core/middleware/snapshot";
 import {
   createWorkflow,
   eventSource,
@@ -253,7 +249,7 @@ describe("with snapshot - snapshot API", () => {
   test("onRequestEvent callback", async () => {
     const workflow = withSnapshot(createWorkflow());
     workflow.handle([startEvent], async () => {
-      return request(humanResponseEvent);
+      return request(humanResponseEvent, 1);
     });
 
     workflow.handle([humanResponseEvent], ({ data }) => {
@@ -264,12 +260,10 @@ describe("with snapshot - snapshot API", () => {
     const { sendEvent, stream, onRequest } = workflow.createContext();
     sendEvent(startEvent.with());
 
-    const onRequestCallback = vi.fn<OnRequestFn<typeof humanResponseEvent>>(
-      (event) => {
-        expect(event).toBe(humanResponseEvent);
-        sendEvent(humanResponseEvent.with("hello world"));
-      },
-    );
+    const onRequestCallback = vi.fn((reason) => {
+      expect(reason).toBe(1);
+      sendEvent(humanResponseEvent.with("hello world"));
+    });
     onRequest(humanResponseEvent, onRequestCallback);
 
     expect(onRequestCallback).toBeCalledTimes(0);
