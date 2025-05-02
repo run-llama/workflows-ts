@@ -56,8 +56,7 @@ describe("stream-chain", () => {
     sendEvent(startEvent.with());
     const outputs: WorkflowEventData<any>[] = [];
     const pipeline = chain([
-      // fixme: upstream should be treat it as a stream
-      stream.until(stopEvent)[Symbol.asyncIterator],
+      stream.until(stopEvent),
       new TransformStream({
         transform: (event: WorkflowEventData<any>, controller) => {
           if (messageEvent.include(event)) {

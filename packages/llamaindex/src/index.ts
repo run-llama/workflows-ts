@@ -5,7 +5,6 @@ import {
   workflowEvent,
   WorkflowStream,
 } from "@llama-flow/core";
-import { collect } from "@llama-flow/core/stream/consumer";
 import { createStatefulMiddleware } from "@llama-flow/core/middleware/state";
 
 type Handler<
@@ -179,7 +178,7 @@ export class Workflow<ContextData, Start, Stop> {
     Object.assign(result, {
       then: async (resolve: any, reject: any) => {
         try {
-          const events = await collect(result);
+          const events = await result.toArray();
           resolve(events.at(-1)!);
         } catch (error) {
           reject(error);
@@ -187,14 +186,14 @@ export class Workflow<ContextData, Start, Stop> {
       },
       catch: async (reject: any) => {
         try {
-          await collect(result);
+          await result.toArray();
         } catch (error) {
           reject(error);
         }
       },
       finally: async (resolve: any) => {
         try {
-          await collect(result);
+          await result.toArray();
         } finally {
           resolve();
         }

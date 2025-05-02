@@ -8,10 +8,10 @@ import {
 import { createSubscribable, type Subscribable } from "./utils";
 
 export class WorkflowStream<R = any>
-  implements AsyncIterable<R>, ReadableStream<R>
+  extends ReadableStream<R>
+  implements AsyncIterable<R>
 {
   #stream: ReadableStream<R>;
-
   #subscribable: Subscribable<[data: R], void>;
 
   on(
@@ -40,6 +40,7 @@ export class WorkflowStream<R = any>
         "Either subscribable or root stream must be provided",
       );
     }
+    super();
     if (!subscribable) {
       this.#subscribable = createSubscribable<[data: R], void>();
       this.#stream = rootStream!.pipeThrough(
