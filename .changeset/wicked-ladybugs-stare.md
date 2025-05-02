@@ -1,6 +1,6 @@
 ---
 "@llama-flow/docs": patch
-"@llama-flow/core": minor
+"@llama-flow/core": patch
 ---
 
 feat: add stream helper
