@@ -1,0 +1,18 @@
+{
+  "name": "@llama-flow/http",
+  "version": "0.0.1",
+  "description": "HTTP protocol for Llama Flow",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/run-llama/llama-flow.git"
+  },
+  "devDependencies": {
+    "@llama-flow/core": "workspace:*",
+    "hono": "^4.7.7"
+  },
+  "peerDependencies": {
+    "@llama-flow/core": "workspace:*",
+    "hono": "^4.7.7"
+  }
+}
