@@ -10,7 +10,7 @@ In this release, we built-in some stream helper (inspired from (TC39 Async Itera
 - move `@llama-flow/core/stream/until` into `stream.until`
 - move `@llama-flow/core/stream/filter` into `stream.filter`
 - move `@llama-flow/core/stream/consumer` into `stream.toArray()`
-- add `stream.take(limit)
+- add `stream.take(limit)`
 - add `stream.toArray()`
 
 ```diff
