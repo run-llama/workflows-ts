@@ -82,7 +82,7 @@ export const workflowEvent = <Data = void, DebugLabel extends string = string>(
   Object.defineProperty(event, "uniqueId", {
     get: () => {
       if (!uniqueId) {
-        uniqueId = `${Math.random().toString(36).slice(2)}`;
+        uniqueId = l1;
       }
       return uniqueId;
     },
