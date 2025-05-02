@@ -320,11 +320,11 @@ export function withSnapshot<Workflow extends WorkflowCore>(
         snapshot: snapshotFn,
         onRequest: (
           event: WorkflowEvent<any>,
-          callback: OnRequestFn,
+          callback: (reason: any) => void | Promise<void>,
         ): (() => void) =>
           requests.subscribe((ev, reason) => {
             if (ev === event) {
-              return callback(ev, reason);
+              return callback(reason);
             }
           }),
         get stream() {
