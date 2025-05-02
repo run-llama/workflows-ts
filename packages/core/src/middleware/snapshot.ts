@@ -37,7 +37,7 @@ type SnapshotWorkflowContext<Workflow extends WorkflowCore> = ReturnType<
 > & {
   onRequest: <Event extends WorkflowEvent<any>>(
     event: Event,
-    callback: OnRequestFn<Event>,
+    callback: (reason: any) => void | Promise<void>,
   ) => () => void;
   /**
    * Snapshot will lock the context and wait for there is no pending event.
@@ -76,8 +76,10 @@ interface SnapshotData {
   missing: number[];
 }
 
-export type OnRequestFn<Event extends WorkflowEvent<any> = WorkflowEvent<any>> =
-  (eventData: Event, reason: any) => void | Promise<void>;
+type OnRequestFn<Event extends WorkflowEvent<any> = WorkflowEvent<any>> = (
+  eventData: Event,
+  reason: any,
+) => void | Promise<void>;
 
 export function withSnapshot<Workflow extends WorkflowCore>(
   workflow: Workflow,
@@ -280,11 +282,11 @@ export function withSnapshot<Workflow extends WorkflowCore>(
         snapshot: snapshotFn,
         onRequest: (
           event: WorkflowEvent<any>,
-          callback: OnRequestFn,
+          callback: (reason: any) => void | Promise<void>,
         ): (() => void) =>
           requests.subscribe((ev, reason) => {
             if (ev === event) {
-              return callback(ev, reason);
+              return callback(reason);
             }
           }),
         get stream() {
