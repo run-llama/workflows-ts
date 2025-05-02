@@ -8,10 +8,9 @@ import {
 import { createSubscribable, type Subscribable } from "./utils";
 
 export class WorkflowStream<R = any>
-  implements AsyncIterable<R>, ReadableStream<R>
+  extends ReadableStream<R>
+  implements AsyncIterable<R>
 {
-  #stream: ReadableStream<R>;
-
   #subscribable: Subscribable<[data: R], void>;
 
   on(
@@ -41,31 +40,34 @@ export class WorkflowStream<R = any>
       );
     }
     if (!subscribable) {
-      this.#subscribable = createSubscribable<[data: R], void>();
-      this.#stream = rootStream!.pipeThrough(
-        new TransformStream({
-          transform: (ev, controller) => {
-            this.#subscribable.publish(ev);
-            controller.enqueue(ev);
-          },
-        }),
+      super(
+        rootStream!.pipeThrough(
+          new TransformStream({
+            transform: (ev, controller) => {
+              this.#subscribable.publish(ev);
+              controller.enqueue(ev);
+            },
+          }),
+        ),
       );
+      this.#subscribable = createSubscribable<[data: R], void>();
       return;
     } else {
-      this.#subscribable = subscribable;
       let unsubscribe: () => void;
-      this.#stream =
+      super(
         rootStream ??
-        new ReadableStream<R>({
-          start: (controller) => {
-            unsubscribe = subscribable.subscribe((event) => {
-              controller.enqueue(event);
-            });
-          },
-          cancel: () => {
-            unsubscribe();
-          },
-        });
+          new ReadableStream<R>({
+            start: (controller) => {
+              unsubscribe = subscribable.subscribe((event) => {
+                controller.enqueue(event);
+              });
+            },
+            cancel: () => {
+              unsubscribe();
+            },
+          }),
+      );
+      this.#subscribable = subscribable;
     }
   }
 
@@ -123,64 +125,35 @@ export class WorkflowStream<R = any>
     init?: ResponseInit,
   ): R extends WorkflowEventData<any> ? Response : never {
     return new Response(
-      this.#stream
-        .pipeThrough(
-          new TransformStream({
-            transform: (data, controller) => {
-              // fixme: use a generalized way to stringify all data
-              if (eventSource(data)) {
-                controller.enqueue(
-                  JSON.stringify({
-                    data: (data as WorkflowEventData<any>).data,
-                    uniqueId: eventSource(data)!.uniqueId,
-                  }) + "\n",
-                );
-              }
-            },
-          }),
-        )
-        .pipeThrough(new TextEncoderStream()),
+      this.pipeThrough(
+        new TransformStream({
+          transform: (data, controller) => {
+            // fixme: use a generalized way to stringify all data
+            if (eventSource(data)) {
+              controller.enqueue(
+                JSON.stringify({
+                  data: (data as WorkflowEventData<any>).data,
+                  uniqueId: eventSource(data)!.uniqueId,
+                }) + "\n",
+              );
+            }
+          },
+        }),
+      ).pipeThrough(new TextEncoderStream()),
       init,
     ) as any;
-  }
-
-  get locked() {
-    return this.#stream.locked;
-  }
-
-  [Symbol.asyncIterator](): ReadableStreamAsyncIterator<R> {
-    return this.#stream[Symbol.asyncIterator]();
-  }
-
-  cancel(reason?: any): Promise<void> {
-    return this.#stream.cancel(reason);
-  }
-
-  // make type compatible with Web ReadableStream API
-  getReader(options: { mode: "byob" }): ReadableStreamBYOBReader;
-  getReader(): ReadableStreamDefaultReader<R>;
-  getReader(options?: ReadableStreamGetReaderOptions): ReadableStreamReader<R>;
-  getReader(): any {
-    return this.#stream.getReader();
   }
 
   pipeThrough<T>(
     transform: ReadableWritablePair<T, R>,
     options?: StreamPipeOptions,
   ): WorkflowStream<T> {
-    const stream = this.#stream.pipeThrough(transform, options) as any;
+    const stream = super.pipeThrough(transform, options);
     return new WorkflowStream<T>(null, stream);
   }
 
-  pipeTo(
-    destination: WritableStream<R>,
-    options?: StreamPipeOptions,
-  ): Promise<void> {
-    return this.#stream.pipeTo(destination, options);
-  }
-
   tee(): [WorkflowStream<R>, WorkflowStream<R>] {
-    const [l, r] = this.#stream.tee();
+    const [l, r] = this.tee();
     return [
       new WorkflowStream(this.#subscribable, l),
       new WorkflowStream(this.#subscribable, r),
@@ -188,7 +161,7 @@ export class WorkflowStream<R = any>
   }
 
   forEach(callback: (item: R) => void): Promise<void> {
-    return this.#stream.pipeTo(
+    return this.pipeTo(
       new WritableStream({
         write: (item: R) => {
           callback(item);
@@ -205,12 +178,6 @@ export class WorkflowStream<R = any>
         },
       }),
     );
-  }
-
-  values(
-    options?: ReadableStreamIteratorOptions,
-  ): ReadableStreamAsyncIterator<R> {
-    return this.#stream.values(options);
   }
 
   take(limit: number): WorkflowStream<R> {
