@@ -1,5 +1,4 @@
 import type { Workflow, WorkflowContext } from "@llama-flow/core";
-import type { Context } from "hono";
 
 export const createServer = (
   workflow: Workflow,
@@ -11,11 +10,13 @@ export const createServer = (
     stream: WorkflowContext["stream"],
   ) => WorkflowContext["stream"],
 ) => {
-  return async function fetch(ctx: Context): Promise<Response> {
-    if (ctx.req.method !== "POST") {
-      return ctx.text("Method Not Allowed", 405);
+  return async function fetch(request: Request): Promise<Response> {
+    if (request.method !== "POST") {
+      return new Response("Method Not Allowed", {
+        status: 405,
+      });
     }
-    const json = await ctx.req.json();
+    const json = await request.json();
     const { stream, sendEvent } = workflow.createContext();
     await initRequest(json, sendEvent);
     return handleStream(stream).toResponse();
