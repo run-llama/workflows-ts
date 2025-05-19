@@ -10,17 +10,24 @@ export const createClient = (
 ) => {
   return {
     fetch: async (
-      data: any,
+      data: Record<string, any>,
       requestInit?: Omit<RequestInit, "body">,
     ): Promise<WorkflowStream<WorkflowEventData<any>>> => {
+      const form = new FormData();
+      for (const key in data) {
+        if (data[key] instanceof File) {
+          form.append(key, data[key]);
+        } else {
+          form.append(key, JSON.stringify(data[key]));
+        }
+      }
       const response = await fetch(endpoint, {
         ...requestInit,
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
           ...requestInit?.headers,
         },
-        body: JSON.stringify(data),
+        body: form,
       });
       return WorkflowStream.fromResponse(response, events);
     },

@@ -3,4 +3,6 @@ import { startEvent, stopEvent } from "./events";
 
 export const workflow = createWorkflow();
 
-workflow.handle([startEvent], () => stopEvent.with());
+workflow.handle([startEvent], () => {
+  return stopEvent.with();
+});
