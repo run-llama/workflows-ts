@@ -42,17 +42,27 @@ class JsonDecodeTransform extends TransformStream<
         data: string,
         controller: TransformStreamDefaultController<WorkflowEventData<any>>,
       ) => {
-        const eventData = JSON.parse(data) as {
-          data: ReturnType<WorkflowEvent<any>["with"]>;
-          uniqueId: string;
-        };
-        const targetEvent = Object.values(this.#eventMap).find(
-          (e) => e.uniqueId === eventData.uniqueId,
-        );
-        if (targetEvent) {
-          const ev = targetEvent.with(eventData.data) as WorkflowEventData<any>;
-          controller.enqueue(ev);
-        }
+        const lines = data
+          .split("\n")
+          .map((line) => line.trim())
+          .filter((line) => line.length > 0);
+        lines.forEach((line) => {
+          const eventData = JSON.parse(line) as {
+            data: ReturnType<WorkflowEvent<any>["with"]>;
+            uniqueId: string;
+          };
+          const targetEvent = Object.values(this.#eventMap).find(
+            (e) => e.uniqueId === eventData.uniqueId,
+          );
+          if (targetEvent) {
+            const ev = targetEvent.with(
+              eventData.data,
+            ) as WorkflowEventData<any>;
+            controller.enqueue(ev);
+          } else {
+            console.warn(`Unknown event: ${eventData.uniqueId}`);
+          }
+        });
       },
     });
     this.#eventMap = eventMap;
