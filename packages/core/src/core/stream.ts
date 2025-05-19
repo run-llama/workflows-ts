@@ -14,14 +14,14 @@ class JsonEncodeTransform extends TransformStream<
   constructor() {
     super({
       transform: (
-        data: WorkflowEventData<any>,
+        event: WorkflowEventData<any>,
         controller: TransformStreamDefaultController<string>,
       ) => {
-        if (eventSource(data)) {
+        if (eventSource(event)) {
           controller.enqueue(
             JSON.stringify({
-              data: (data as WorkflowEventData<any>).data,
-              uniqueId: eventSource(data)!.uniqueId,
+              data: (event as WorkflowEventData<any>).data,
+              uniqueId: eventSource(event)!.uniqueId,
             }) + "\n",
           );
         }

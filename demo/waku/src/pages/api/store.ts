@@ -1,21 +1,25 @@
 import { createServer } from "@llama-flow/http/server";
 import { workflow } from "../../workflow/basic";
 import { upload } from "../../workflow/llama-parse";
-import { startEvent, stopEvent } from "../../workflow/events";
+import { storeEvent, stopEvent, searchEvent } from "../../workflow/events";
+
+process.on("unhandledRejection", (reason) => {
+  console.error("Unhandled Rejection at:", reason);
+});
 
 export const POST = createServer(
   workflow,
   async (data, sendEvent) => {
-    const file = data.file;
-    try {
+    if (data.file) {
+      const file = data.file;
       const job = await upload({
         file,
       });
       const text = await job.markdown();
-      console.log("text", text);
-      sendEvent(startEvent.with());
-    } catch (e) {
-      console.log(e);
+      sendEvent(storeEvent.with(text));
+    } else if (data.search) {
+      const search = data.search;
+      sendEvent(searchEvent.with(search));
     }
   },
   (stream) => stream.until(stopEvent),

@@ -1,9 +1,8 @@
 import { createClient, createConfig } from "@hey-api/client-fetch";
 import {
   createWorkflow,
-  type WorkflowEvent,
   workflowEvent,
-  type WorkflowEventData,
+  type InferWorkflowEventData,
 } from "@llama-flow/core";
 import { createStatefulMiddleware } from "@llama-flow/core/middleware/state";
 import { withTraceEvents } from "@llama-flow/core/middleware/trace-events";
@@ -24,49 +23,17 @@ import {
   type StatusEnum,
   uploadFileApiV1ParsingUploadPost,
 } from "../lib/api";
-
-type InferWorkflowEventData<T> =
-  T extends WorkflowEventData<infer U>
-    ? U
-    : T extends WorkflowEvent<infer U>
-      ? U
-      : never;
-
-const startEvent = zodEvent(
-  parseFormSchema.merge(
-    z.object({
-      file: z
-        .string()
-        .or(z.instanceof(File))
-        .or(z.instanceof(Blob))
-        .or(z.instanceof(Uint8Array))
-        .optional()
-        .describe("input"),
-    }),
-  ),
-);
-
-const checkStatusEvent = workflowEvent<string>();
-const checkStatusSuccessEvent = workflowEvent<string>();
-const requestMarkdownEvent = workflowEvent<string>({
-  debugLabel: "markdown-request",
-});
-const requestTextEvent = workflowEvent<string>({
-  debugLabel: "text-request",
-});
-const requestJsonEvent = workflowEvent<string>({
-  debugLabel: "json-request",
-});
-
-const markdownResultEvent = workflowEvent<string>({
-  debugLabel: "markdown-result",
-});
-const textResultEvent = workflowEvent<string>({
-  debugLabel: "text-result",
-});
-const jsonResultEvent = workflowEvent<unknown>({
-  debugLabel: "json-result",
-});
+import {
+  checkStatusEvent,
+  checkStatusSuccessEvent,
+  requestMarkdownEvent,
+  startEvent,
+  markdownResultEvent,
+  requestTextEvent,
+  textResultEvent,
+  requestJsonEvent,
+  jsonResultEvent,
+} from "./events";
 
 export type LlamaParseWorkflowParams = {
   region?: "us" | "eu" | "us-staging";
@@ -235,7 +202,7 @@ export const upload = async (
 
   const uploadThread = await llamaParseWorkflow
     .substream(ev, stream)
-    .until((ev) => checkStatusEvent.include(ev))
+    .until((ev) => checkStatusSuccessEvent.include(ev))
     .toArray();
   //#region
   const jobId: string = uploadThread.at(-1)!.data;

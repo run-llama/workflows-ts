@@ -12,7 +12,9 @@
   "dependencies": {
     "@llama-flow/core": "latest",
     "@llama-flow/http": "latest",
+    "@neondatabase/serverless": "^1.0.0",
     "lucide-react": "^0.511.0",
+    "openai": "^4.95.1",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-server-dom-webpack": "19.1.0",

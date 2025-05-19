@@ -3,9 +3,9 @@ import { createClient } from "@llama-flow/http/client";
 import * as events from "../workflow/events";
 import { useState, useCallback } from "react";
 
-const { fetch } = createClient("/api/workflow", events);
+const { fetch } = createClient("/api/store", events);
 
-export const Counter = () => {
+export const RAG = () => {
   const [list, setList] = useState<any[]>([]);
   const [file, setFile] = useState<File | null>(null);
 
@@ -28,10 +28,8 @@ export const Counter = () => {
             fetch({
               file,
             }).then((stream) => {
-              stream.on(events.stopEvent, () => {
-                console.log("stop!");
-              });
               stream.forEach((event) => {
+                console.log(event);
                 if (event.data) {
                   setList((prev) => [...prev, `${event.data}`]);
                 }
@@ -43,9 +41,35 @@ export const Counter = () => {
         </button>
       </div>
 
+      <form
+        action={(form) => {
+          const search = form.get("search") as string;
+          fetch({
+            search,
+          }).then((stream) => {
+            stream.forEach((event) => {
+              console.log(event);
+              if (event.data) {
+                setList((prev) => [...prev, `${event.data}`]);
+              }
+            });
+          });
+        }}
+      >
+        <input
+          type="text"
+          name="search"
+          className="border-gray-400 mt-4 w-full rounded-sm border p-2"
+          placeholder="Search something..."
+        />
+        <button type="submit" />
+      </form>
+
       {list.map((item, index) => (
         <div key={index} className="flex items-center gap-2">
-          <span className="text-sm text-gray-400">{item.data}</span>
+          <div className="text-sm max-h-12 max-w-64 overflow-scroll">
+            {item}
+          </div>
         </div>
       ))}
     </section>
