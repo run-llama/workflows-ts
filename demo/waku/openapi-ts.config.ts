@@ -1,7 +1,7 @@
 import { defaultPlugins, defineConfig } from "@hey-api/openapi-ts";
 
 export default defineConfig({
-  input: "openapi.json",
+  input: "https://api.cloud.llamaindex.ai/api/openapi.json",
   output: "src/lib/api",
   plugins: [
     ...defaultPlugins,
