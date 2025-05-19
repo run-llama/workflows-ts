@@ -7,6 +7,68 @@ import {
 } from "./event";
 import { createSubscribable, type Subscribable } from "./utils";
 
+class JsonEncodeTransform extends TransformStream<
+  WorkflowEventData<any>,
+  string
+> {
+  constructor() {
+    super({
+      transform: (
+        event: WorkflowEventData<any>,
+        controller: TransformStreamDefaultController<string>,
+      ) => {
+        if (eventSource(event)) {
+          controller.enqueue(
+            JSON.stringify({
+              data: (event as WorkflowEventData<any>).data,
+              uniqueId: eventSource(event)!.uniqueId,
+            }) + "\n",
+          );
+        }
+      },
+    });
+  }
+}
+
+class JsonDecodeTransform extends TransformStream<
+  string,
+  WorkflowEventData<any>
+> {
+  #eventMap: Record<string, WorkflowEvent<any>>;
+
+  constructor(eventMap: Record<string, WorkflowEvent<any>>) {
+    super({
+      transform: (
+        data: string,
+        controller: TransformStreamDefaultController<WorkflowEventData<any>>,
+      ) => {
+        const lines = data
+          .split("\n")
+          .map((line) => line.trim())
+          .filter((line) => line.length > 0);
+        lines.forEach((line) => {
+          const eventData = JSON.parse(line) as {
+            data: ReturnType<WorkflowEvent<any>["with"]>;
+            uniqueId: string;
+          };
+          const targetEvent = Object.values(this.#eventMap).find(
+            (e) => e.uniqueId === eventData.uniqueId,
+          );
+          if (targetEvent) {
+            const ev = targetEvent.with(
+              eventData.data,
+            ) as WorkflowEventData<any>;
+            controller.enqueue(ev);
+          } else {
+            console.warn(`Unknown event: ${eventData.uniqueId}`);
+          }
+        });
+      },
+    });
+    this.#eventMap = eventMap;
+  }
+}
+
 export class WorkflowStream<R = any>
   extends ReadableStream<R>
   implements AsyncIterable<R>
@@ -93,53 +155,21 @@ export class WorkflowStream<R = any>
     if (!body) {
       throw new Error("Response body is not readable");
     }
-    const events = Object.values(eventMap);
     return new WorkflowStream(
       null,
       body
         .pipeThrough(new TextDecoderStream())
-        .pipeThrough<WorkflowEventData<any>>(
-          new TransformStream({
-            transform: (chunk, controller) => {
-              const eventData = JSON.parse(chunk) as {
-                data: ReturnType<WorkflowEvent<any>["with"]>;
-                uniqueId: string;
-              };
-              const targetEvent = events.find(
-                (e) => e.uniqueId === eventData.uniqueId,
-              );
-              if (targetEvent) {
-                const ev = targetEvent.with(
-                  eventData.data,
-                ) as WorkflowEventData<any>;
-                controller.enqueue(ev);
-              }
-            },
-          }),
-        ),
+        .pipeThrough(new JsonDecodeTransform(eventMap)),
     );
   }
 
   toResponse(
     init?: ResponseInit,
+    transformer = new JsonEncodeTransform(),
   ): R extends WorkflowEventData<any> ? Response : never {
     return new Response(
-      this.#stream
-        .pipeThrough(
-          new TransformStream({
-            transform: (data, controller) => {
-              // fixme: use a generalized way to stringify all data
-              if (eventSource(data)) {
-                controller.enqueue(
-                  JSON.stringify({
-                    data: (data as WorkflowEventData<any>).data,
-                    uniqueId: eventSource(data)!.uniqueId,
-                  }) + "\n",
-                );
-              }
-            },
-          }),
-        )
+      (this.#stream as ReadableStream<WorkflowEventData<any>>)
+        .pipeThrough<string>(transformer)
         .pipeThrough(new TextEncoderStream()),
       init,
     ) as any;

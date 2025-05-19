@@ -1,0 +1,34 @@
+{
+  "name": "waku-project",
+  "version": "0.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "postinstall": "openapi-ts",
+    "dev": "waku dev",
+    "build": "waku build",
+    "start": "waku start"
+  },
+  "dependencies": {
+    "@llama-flow/core": "latest",
+    "@llama-flow/http": "latest",
+    "@neondatabase/serverless": "^1.0.0",
+    "lucide-react": "^0.511.0",
+    "openai": "^4.95.1",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "react-server-dom-webpack": "19.1.0",
+    "stable-hash": "^0.0.5",
+    "waku": "0.22.4"
+  },
+  "devDependencies": {
+    "@hey-api/client-fetch": "^0.10.1",
+    "@hey-api/openapi-ts": "^0.67.5",
+    "@tailwindcss/postcss": "4.1.4",
+    "@types/react": "19.1.2",
+    "@types/react-dom": "19.1.2",
+    "postcss": "8.5.3",
+    "tailwindcss": "4.1.4",
+    "typescript": "5.8.3"
+  }
+}
