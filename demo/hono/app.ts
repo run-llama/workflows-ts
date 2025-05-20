@@ -52,8 +52,9 @@ app.post("/human-in-the-loop", async (ctx) => {
     for await (const event of stream) {
       if (humanInteractionRequestEvent.include(event)) {
         // request for a human, serialize the workflow for later resume
+        const snapshot = await context.snapshot();
         const requestId = crypto.randomUUID();
-        serializableMemoryMap.set(requestId, event.data.snapshot);
+        serializableMemoryMap.set(requestId, snapshot);
         // send request id to user
         resolve(
           Response.json({

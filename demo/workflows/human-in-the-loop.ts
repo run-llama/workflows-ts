@@ -13,7 +13,6 @@ const startEvent = workflowEvent<string>({
   debugLabel: "start",
 });
 const humanInteractionRequestEvent = workflowEvent<{
-  snapshot: SnapshotData;
   reason: string;
 }>();
 const humanInteractionResponseEvent = workflowEvent<string>({
@@ -65,10 +64,8 @@ For example, alex is from "Alexander the Great", who was a king of the ancient G
   if (tools && tools.length > 0) {
     const askName = tools.find((tool) => tool.function.name === "ask_name");
     if (askName) {
-      const snapshot = await getContext().snapshot();
       return humanInteractionRequestEvent.with({
         reason: askName.function.arguments,
-        snapshot,
       });
     }
   }
