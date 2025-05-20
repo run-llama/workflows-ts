@@ -14,38 +14,47 @@ app.post(
   createHonoHandler(
     toolCallWorkflow,
     async (ctx) => startEvent.with(await ctx.req.text()),
-    stopEvent
-  )
+    stopEvent,
+  ),
 );
 
-app.post("/human-in-the-loop", async (ctx) => {
-  const {
-    workflow,
-    stopEvent,
-    startEvent,
-    serializableMemoryMap,
-    humanInteractionResponseEvent,
-  } = await import("../workflows/human-in-the-loop");
+const serializableMemoryMap = new Map<string, any>();
 
+app.post("/human-in-the-loop", async (ctx) => {
+  const { workflow, stopEvent, startEvent, humanInteractionEvent } =
+    await import("../workflows/human-in-the-loop");
   const json = await ctx.req.json();
   let context: ReturnType<typeof workflow.createContext>;
   if (json.requestId) {
+    const data = json.data;
     const serializable = serializableMemoryMap.get(json.requestId);
-    context = workflow.resume(serializable);
-    context.sendEvent(humanInteractionResponseEvent.with(json.data));
-    // Note: we are implying here knowledge of the workflow (that we need to continue
-    // with a humanInteractionResponseEvent), we could alternatively add the next event, when we create the snapshot:
-    // const snapshot = await getContext().snapshot(humanInteractionResponseEvent);
-    // and then pass just the data with resume:
-    // context = workflow.resume(json.data, serializable);
-    // I think the current version is better as it simplifies the design
+    context = workflow.resume(data, serializable);
   } else {
     context = workflow.createContext();
     context.sendEvent(startEvent.with(json.data));
   }
 
-  const { stream } = context;
+  const { onRequest, stream } = context;
   return new Promise<Response>((resolve) => {
+    // listen to human interaction
+    onRequest(humanInteractionEvent, async (reason) => {
+      context.snapshot().then(([re, sd]) => {
+        const requestId = crypto.randomUUID();
+        serializableMemoryMap.set(requestId, sd);
+        resolve(
+          Response.json({
+            requestId: requestId,
+            reason: reason,
+            data: re.map((r) =>
+              r === humanInteractionEvent
+                ? "request human in the loop"
+                : "UNKNOWN",
+            ),
+          }),
+        );
+      });
+    });
+
     // consume stream
     stream
       .until(stopEvent)
