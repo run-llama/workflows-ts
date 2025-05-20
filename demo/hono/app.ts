@@ -18,14 +18,12 @@ app.post(
   )
 );
 
-export const serializableMemoryMap = new Map<string, any>();
-
 app.post("/human-in-the-loop", async (ctx) => {
   const {
     workflow,
     stopEvent,
     startEvent,
-    humanInteractionRequestEvent,
+    serializableMemoryMap,
     humanInteractionResponseEvent,
   } = await import("../workflows/human-in-the-loop");
 
@@ -47,26 +45,15 @@ app.post("/human-in-the-loop", async (ctx) => {
   }
 
   const { stream } = context;
-  return new Promise<Response>(async (resolve) => {
+  return new Promise<Response>((resolve) => {
     // consume stream
-    for await (const event of stream) {
-      if (humanInteractionRequestEvent.include(event)) {
-        // request for a human, serialize the workflow for later resume
-        const requestId = crypto.randomUUID();
-        serializableMemoryMap.set(requestId, event.data.snapshot);
-        // send request id to user
-        resolve(
-          Response.json({
-            requestId: requestId,
-            reason: event.data.reason,
-            data: "request human in the loop",
-          })
-        );
-      }
-      if (stopEvent.include(event)) {
-        resolve(Response.json(event.data));
-      }
-    }
+    stream
+      .until(stopEvent)
+      .toArray()
+      .then((events) => {
+        const stopEvent = events.at(-1)!;
+        resolve(Response.json(stopEvent.data));
+      });
   });
 });
 

@@ -1,9 +1,8 @@
-import {
-  withSnapshot,
-  SnapshotData,
-} from "@llama-flow/core/middleware/snapshot";
-import { createWorkflow, getContext, workflowEvent } from "@llama-flow/core";
+import { withSnapshot, request } from "@llama-flow/core/middleware/snapshot";
+import { createWorkflow, workflowEvent, getContext } from "@llama-flow/core";
 import { OpenAI } from "openai";
+
+export const serializableMemoryMap = new Map<string, any>();
 
 const openai = new OpenAI();
 
@@ -12,14 +11,22 @@ const workflow = withSnapshot(createWorkflow());
 const startEvent = workflowEvent<string>({
   debugLabel: "start",
 });
-const humanInteractionRequestEvent = workflowEvent<{
-  snapshot: SnapshotData;
-  reason: string;
-}>();
+const humanInteractionRequestEvent = workflowEvent<string>({
+  debugLabel: "humanInteractionRequest",
+});
 const humanInteractionResponseEvent = workflowEvent<string>({
   debugLabel: "humanInteractionResponse",
 });
-const stopEvent = workflowEvent<string>({
+type ResponseData =
+  | {
+      requestId: string;
+      reason: string;
+      data: string;
+    }
+  | {
+      content: string;
+    };
+const stopEvent = workflowEvent<ResponseData>({
   debugLabel: "stop",
 });
 
@@ -65,14 +72,21 @@ For example, alex is from "Alexander the Great", who was a king of the ancient G
   if (tools && tools.length > 0) {
     const askName = tools.find((tool) => tool.function.name === "ask_name");
     if (askName) {
-      const snapshot = await getContext().snapshot();
-      return humanInteractionRequestEvent.with({
-        reason: askName.function.arguments,
-        snapshot,
-      });
+      return humanInteractionRequestEvent.with(askName.function.arguments);
     }
   }
-  return stopEvent.with(response.choices[0].message.content!);
+  return stopEvent.with({ content: response.choices[0].message.content! });
+});
+
+workflow.handle([humanInteractionRequestEvent], async (reason) => {
+  const snapshot = await getContext().snapshot();
+  const requestId = crypto.randomUUID();
+  serializableMemoryMap.set(requestId, snapshot);
+  return stopEvent.with({
+    requestId: requestId,
+    reason: reason,
+    data: "request human in the loop",
+  });
 });
 
 workflow.handle([humanInteractionResponseEvent], async ({ data }) => {
