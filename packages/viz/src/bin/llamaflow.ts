@@ -11,7 +11,6 @@ const app = new Hono();
 interface WorkflowAnalysis {
   filePath: string;
   workflowName: string;
-  originalName: string | undefined;
   handlers: {
     acceptedEvents: string[];
     returnedEvent: string | undefined;
@@ -22,8 +21,6 @@ interface WorkflowAnalysis {
 
 // Global map to track workflows across files
 const globalWorkflowMap = new Map<string, WorkflowAnalysis>();
-// Map to track imported workflow aliases
-const workflowAliases = new Map<string, string>();
 
 function extractReturnedEventName(node: Node): string | undefined {
   let returnedEventName: string | undefined;
@@ -172,40 +169,6 @@ function analyzeFile(code: string, filePath: string): WorkflowAnalysis[] {
 
   const workflows: WorkflowAnalysis[] = [];
 
-  // First pass: collect imports and exports
-  const visitImports = (node: Node) => {
-    if (node.type === "ImportDeclaration") {
-      for (const specifier of node.specifiers) {
-        if (
-          specifier.type === "ImportSpecifier" &&
-          specifier.imported.type === "Identifier"
-        ) {
-          const originalName = specifier.imported.name;
-          const localName = specifier.local.name;
-          if (originalName !== localName) {
-            workflowAliases.set(localName, originalName);
-          }
-        }
-      }
-    }
-
-    // Recursively visit child nodes
-    for (const key in node) {
-      if (Object.prototype.hasOwnProperty.call(node, key)) {
-        const child = (node as any)[key];
-        if (typeof child === "object" && child !== null) {
-          if (Array.isArray(child)) {
-            child.forEach(visitImports);
-          } else {
-            visitImports(child);
-          }
-        }
-      }
-    }
-  };
-
-  visitImports(ast);
-
   const visit = (node: Node) => {
     // Look for withGraph(createWorkflow()) pattern
     if (
@@ -220,16 +183,11 @@ function analyzeFile(code: string, filePath: string): WorkflowAnalysis[] {
           ? node.declarations[0]!.id.name
           : "anonymous";
 
-      // Check if this is an imported workflow
-      const originalName = workflowAliases.get(workflowName);
-      const effectiveName = originalName || workflowName;
-
       // Check if workflow already exists in global map
-      const existingWorkflow = globalWorkflowMap.get(effectiveName);
+      const existingWorkflow = globalWorkflowMap.get(workflowName);
       const workflow: WorkflowAnalysis = existingWorkflow || {
         filePath,
         workflowName,
-        originalName,
         handlers: [],
       };
 
@@ -277,8 +235,8 @@ function analyzeFile(code: string, filePath: string): WorkflowAnalysis[] {
       // Start searching from the program root
       findHandlers(ast);
 
-      // Update global map with the effective name
-      globalWorkflowMap.set(effectiveName, workflow);
+      // Update global map
+      globalWorkflowMap.set(workflowName, workflow);
       workflows.push(workflow);
     }
 
@@ -342,8 +300,10 @@ yargs(hideBin(process.argv))
           },
         ],
       });
+
       const mod = await viteServer.environments.ssr.fetchModule(file);
-      app.get("/", (c) => {
+
+      app.get("/debug", async (c) => {
         return c.render(
           `
         <h1>LlamaFlow Workflow Analysis</h1>
