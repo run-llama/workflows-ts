@@ -1,5 +1,14 @@
 # @llama-flow/llamaindex
 
+## 0.0.16
+
+### Patch Changes
+
+- Updated dependencies [23ecfc7]
+- Updated dependencies [4402a6d]
+- Updated dependencies [9c65785]
+  - @llama-flow/core@0.4.2
+
 ## 0.0.15
 
 ### Patch Changes
