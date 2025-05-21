@@ -9,6 +9,7 @@ import { type Node, type Expression } from "@babel/types";
 const app = new Hono();
 
 interface WorkflowAnalysis {
+  filePath: string;
   workflowName: string;
   handlers: {
     acceptedEvents: string[];
@@ -156,7 +157,7 @@ function extractAwaitedEventNames(node: Node): string[] {
   return Array.from(awaitedEventNames);
 }
 
-function analyzeFile(code: string): WorkflowAnalysis[] {
+function analyzeFile(code: string, filePath: string): WorkflowAnalysis[] {
   const ast = babelParser.parse(code, {
     sourceType: "module",
     plugins: ["typescript", "jsx"],
@@ -180,6 +181,7 @@ function analyzeFile(code: string): WorkflowAnalysis[] {
           : "anonymous";
 
       const workflow: WorkflowAnalysis = {
+        filePath,
         workflowName,
         handlers: [],
       };
@@ -280,7 +282,7 @@ yargs(hideBin(process.argv))
             name: "llamaflow-analyzer",
             transform(code, id) {
               if (id.endsWith(".ts") || id.endsWith(".js")) {
-                const workflows = analyzeFile(code);
+                const workflows = analyzeFile(code, id);
                 workflowAnalysis.set(id, workflows);
                 return {
                   code,
