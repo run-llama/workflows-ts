@@ -1,6 +1,7 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
+    "target": "esnext",
     "outDir": "./lib",
     "tsBuildInfoFile": "./lib/.tsbuildinfo",
     "paths": {
