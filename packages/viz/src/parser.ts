@@ -1,26 +1,102 @@
 import * as babelParser from "@babel/parser";
-import { type Expression } from "@babel/types";
+import { type Expression, type Node } from "@babel/types";
 import type { Handler } from "@llama-flow/core";
 import type { AcceptEventsType, ResultType } from "./types";
 
-export function getReturnedEventName<
+// Helper function to parse handler code and traverse AST
+function _parseAndExtractFromHandlerAst<
+  T,
+  C,
   AcceptEvents extends AcceptEventsType,
   Result extends ResultType,
->(handler: Handler<AcceptEvents, Result>): string | undefined {
+>(
+  handler: Handler<AcceptEvents, Result>,
+  initialContext: C,
+  visitorFunc: (node: Node, context: C) => void,
+  resultSelector: (context: C) => T | undefined,
+  emptyResultMessage: string,
+  defaultValue: T,
+): T {
   try {
     const handlerCode = handler.toString();
     const ast = babelParser.parse(handlerCode, {
       sourceType: "module",
     });
 
-    let returnedEventName: string | null = null;
+    const context = initialContext;
+
+    const visit = (node: Node) => {
+      if (!node) {
+        return;
+      }
+      visitorFunc(node, context);
+
+      // Recursively visit child nodes
+      for (const key in node) {
+        if (Object.prototype.hasOwnProperty.call(node, key)) {
+          const child = (node as any)[key];
+          if (typeof child === "object" && child !== null) {
+            if (Array.isArray(child)) {
+              child.forEach(visit);
+            } else {
+              visit(child);
+            }
+          }
+        }
+      }
+    };
+
+    visit(ast);
+
+    const result = resultSelector(context);
 
     if (
-      ast.program.body[0] &&
-      ast.program.body[0].type === "ExpressionStatement"
+      result !== undefined &&
+      (!(Array.isArray(result) && result.length === 0) ||
+        (Array.isArray(result) && result.length > 0))
     ) {
-      const funcExpr = ast.program.body[0].expression;
-      if (funcExpr && funcExpr.type === "ArrowFunctionExpression") {
+      // Check if result is not undefined, and if it's an array, it's not empty.
+      // For non-array types, or non-empty arrays, return the result.
+      if (
+        Array.isArray(result) &&
+        result.length === 0 &&
+        defaultValue !== undefined &&
+        Array.isArray(defaultValue) &&
+        defaultValue.length === 0
+      ) {
+        // If result is an empty array and defaultValue is also an empty array, log and return empty array.
+        console.log(emptyResultMessage);
+        return defaultValue;
+      }
+      return result;
+    } else {
+      console.log(emptyResultMessage);
+      return defaultValue;
+    }
+  } catch (e: any) {
+    console.error("Error parsing handler code with Babel:", e.message);
+    return defaultValue;
+  }
+}
+
+export function getReturnedEventName<
+  AcceptEvents extends AcceptEventsType,
+  Result extends ResultType,
+>(handler: Handler<AcceptEvents, Result>): string | undefined {
+  return _parseAndExtractFromHandlerAst<
+    string | undefined,
+    { returnedEventName: string | null },
+    AcceptEvents,
+    Result
+  >(
+    handler,
+    { returnedEventName: null },
+    (node, context) => {
+      if (
+        node.type === "ExpressionStatement" &&
+        node.expression.type === "ArrowFunctionExpression"
+      ) {
+        const funcExpr = node.expression;
         let returnArgNode: Expression | null = null;
 
         if (funcExpr.body.type === "BlockStatement") {
@@ -36,49 +112,38 @@ export function getReturnedEventName<
 
         if (returnArgNode) {
           if (returnArgNode.type === "Identifier") {
-            returnedEventName = returnArgNode.name;
+            context.returnedEventName = returnArgNode.name;
           } else if (
             returnArgNode.type === "CallExpression" &&
             returnArgNode.callee.type === "MemberExpression" &&
             returnArgNode.callee.object.type === "Identifier"
           ) {
-            returnedEventName = returnArgNode.callee.object.name;
+            context.returnedEventName = (
+              returnArgNode.callee.object as any
+            ).name;
           }
         }
       }
-    }
-
-    if (returnedEventName) {
-      return returnedEventName;
-    } else {
-      console.log(
-        "Parser did not identify a clear returned event variable from handler AST.",
-      );
-      return undefined;
-    }
-  } catch (e: any) {
-    console.error("Error parsing handler code with Babel:", e.message);
-    return undefined;
-  }
+    },
+    (context) => context.returnedEventName ?? undefined,
+    "Parser did not identify a clear returned event variable from handler AST.",
+    undefined,
+  );
 }
 
 export function getSentEventNames<
   AcceptEvents extends AcceptEventsType,
   Result extends ResultType,
 >(handler: Handler<AcceptEvents, Result>): string[] {
-  try {
-    const handlerCode = handler.toString();
-    const ast = babelParser.parse(handlerCode, {
-      sourceType: "module",
-    });
-
-    const sentEventNames = new Set<string>();
-
-    const visit = (node: any) => {
-      if (!node) {
-        return;
-      }
-
+  return _parseAndExtractFromHandlerAst<
+    string[],
+    { sentEventNames: Set<string> },
+    AcceptEvents,
+    Result
+  >(
+    handler,
+    { sentEventNames: new Set<string>() },
+    (node, context) => {
       if (node.type === "CallExpression") {
         if (
           node.callee.type === "Identifier" &&
@@ -86,68 +151,39 @@ export function getSentEventNames<
         ) {
           if (node.arguments.length > 0) {
             const firstArg = node.arguments[0];
-            if (firstArg.type === "Identifier") {
-              sentEventNames.add(firstArg.name);
+            if (firstArg && firstArg.type === "Identifier") {
+              context.sentEventNames.add(firstArg.name);
             } else if (
+              firstArg &&
               firstArg.type === "CallExpression" &&
               firstArg.callee.type === "MemberExpression" &&
               firstArg.callee.object.type === "Identifier"
             ) {
-              // Handle cases like sendEvent(branchAEvent.with("Branch A"))
-              sentEventNames.add(firstArg.callee.object.name);
+              context.sentEventNames.add((firstArg.callee.object as any).name);
             }
           }
         }
       }
-
-      // Recursively visit child nodes
-      for (const key in node) {
-        if (node.hasOwnProperty(key)) {
-          const child = node[key];
-          if (typeof child === "object" && child !== null) {
-            if (Array.isArray(child)) {
-              child.forEach(visit);
-            } else {
-              visit(child);
-            }
-          }
-        }
-      }
-    };
-
-    visit(ast);
-
-    if (sentEventNames.size > 0) {
-      return Array.from(sentEventNames);
-    } else {
-      console.log(
-        "Parser did not identify any calls to sendEvent with identifiable event names.",
-      );
-      return [];
-    }
-  } catch (e: any) {
-    console.error("Error parsing handler code with Babel:", e.message);
-    return [];
-  }
+    },
+    (context) => Array.from(context.sentEventNames),
+    "Parser did not identify any calls to sendEvent with identifiable event names.",
+    [],
+  );
 }
 
 export function getAwaitedEventNames<
   AcceptEvents extends AcceptEventsType,
   Result extends ResultType,
 >(handler: Handler<AcceptEvents, Result>): string[] {
-  try {
-    const handlerCode = handler.toString();
-    const ast = babelParser.parse(handlerCode, {
-      sourceType: "module",
-    });
-
-    const awaitedEventNames = new Set<string>();
-
-    const visit = (node: any) => {
-      if (!node) {
-        return;
-      }
-
+  return _parseAndExtractFromHandlerAst<
+    string[],
+    { awaitedEventNames: Set<string> },
+    AcceptEvents,
+    Result
+  >(
+    handler,
+    { awaitedEventNames: new Set<string>() },
+    (node, context) => {
       if (node.type === "CallExpression") {
         if (
           node.callee.type === "MemberExpression" &&
@@ -158,40 +194,15 @@ export function getAwaitedEventNames<
         ) {
           if (node.arguments.length > 0) {
             const firstArg = node.arguments[0];
-            if (firstArg.type === "Identifier") {
-              awaitedEventNames.add(firstArg.name);
+            if (firstArg && firstArg.type === "Identifier") {
+              context.awaitedEventNames.add(firstArg.name);
             }
           }
         }
       }
-
-      // Recursively visit child nodes
-      for (const key in node) {
-        if (node.hasOwnProperty(key)) {
-          const child = node[key];
-          if (typeof child === "object" && child !== null) {
-            if (Array.isArray(child)) {
-              child.forEach(visit);
-            } else {
-              visit(child);
-            }
-          }
-        }
-      }
-    };
-
-    visit(ast);
-
-    if (awaitedEventNames.size > 0) {
-      return Array.from(awaitedEventNames);
-    } else {
-      console.log(
-        "Parser did not identify any calls to stream.filter() with identifiable event names.",
-      );
-      return [];
-    }
-  } catch (e: any) {
-    console.error("Error parsing handler code with Babel:", e.message);
-    return [];
-  }
+    },
+    (context) => Array.from(context.awaitedEventNames),
+    "Parser did not identify any calls to stream.filter() with identifiable event names.",
+    [],
+  );
 }
