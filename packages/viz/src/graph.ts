@@ -29,21 +29,24 @@ export function withGraph<WorkflowLike extends Workflow>(
       handler: Handler<AcceptEvents, Result>,
     ): void => {
       const nodeName = handler.toString().slice(0, 10);
-      const inEvents = accept.map((event) => event.debugLabel);
-      const outEvent = getReturnedEventName(handler);
+      const inEvents = accept.map((event) => ensureEventName(event.debugLabel));
+      const outEvent = ensureEventName(getReturnedEventName(handler));
 
       graph.addNode(nodeName, {
         type: "handler",
+        label: nodeName,
       });
 
       for (const inEvent of inEvents) {
         graph.mergeNode(inEvent, {
           type: "event",
+          label: inEvent,
         });
         graph.addEdge(inEvent, nodeName);
       }
       graph.mergeNode(outEvent, {
         type: "event",
+        label: outEvent,
       });
       graph.addEdge(nodeName, outEvent);
 
@@ -56,7 +59,7 @@ export function withGraph<WorkflowLike extends Workflow>(
 function getReturnedEventName<
   AcceptEvents extends AcceptEventsType,
   Result extends ResultType,
->(handler: Handler<AcceptEvents, Result>): string {
+>(handler: Handler<AcceptEvents, Result>): string | undefined {
   try {
     const handlerCode = handler.toString();
     const ast = babelParser.parse(handlerCode, {
@@ -99,17 +102,24 @@ function getReturnedEventName<
     }
 
     if (returnedEventName) {
-      return returnedEventName.endsWith("Event")
-        ? returnedEventName.slice(0, -5)
-        : returnedEventName;
+      return returnedEventName;
     } else {
       console.log(
         "Parser did not identify a clear returned event variable from handler AST.",
       );
-      return "unknown";
+      return undefined;
     }
   } catch (e: any) {
     console.error("Error parsing handler code with Babel:", e.message);
+    return undefined;
+  }
+}
+
+function ensureEventName(name: string | undefined): string {
+  if (!name) {
     return "unknown";
   }
+  return name.endsWith("Event") || name.endsWith("event")
+    ? name
+    : `${name}Event`;
 }
