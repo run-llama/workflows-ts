@@ -130,3 +130,68 @@ export function getSentEventNames<
     return [];
   }
 }
+
+export function getAwaitedEventNames<
+  AcceptEvents extends AcceptEventsType,
+  Result extends ResultType,
+>(handler: Handler<AcceptEvents, Result>): string[] {
+  try {
+    const handlerCode = handler.toString();
+    const ast = babelParser.parse(handlerCode, {
+      sourceType: "module",
+    });
+
+    const awaitedEventNames = new Set<string>();
+
+    const visit = (node: any) => {
+      if (!node) {
+        return;
+      }
+
+      if (node.type === "CallExpression") {
+        if (
+          node.callee.type === "MemberExpression" &&
+          node.callee.object.type === "Identifier" &&
+          node.callee.object.name === "stream" &&
+          node.callee.property.type === "Identifier" &&
+          node.callee.property.name === "filter"
+        ) {
+          if (node.arguments.length > 0) {
+            const firstArg = node.arguments[0];
+            if (firstArg.type === "Identifier") {
+              awaitedEventNames.add(firstArg.name);
+            }
+          }
+        }
+      }
+
+      // Recursively visit child nodes
+      for (const key in node) {
+        if (node.hasOwnProperty(key)) {
+          const child = node[key];
+          if (typeof child === "object" && child !== null) {
+            if (Array.isArray(child)) {
+              child.forEach(visit);
+            } else {
+              visit(child);
+            }
+          }
+        }
+      }
+    };
+
+    visit(ast);
+
+    if (awaitedEventNames.size > 0) {
+      return Array.from(awaitedEventNames);
+    } else {
+      console.log(
+        "Parser did not identify any calls to stream.filter() with identifiable event names.",
+      );
+      return [];
+    }
+  } catch (e: any) {
+    console.error("Error parsing handler code with Babel:", e.message);
+    return [];
+  }
+}

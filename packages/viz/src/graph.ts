@@ -2,7 +2,11 @@ import { type Handler, type Workflow } from "@llama-flow/core";
 import Graph from "graphology";
 import type { ResultType } from "./types";
 import type { AcceptEventsType } from "./types";
-import { getReturnedEventName, getSentEventNames } from "./parser";
+import {
+  getAwaitedEventNames,
+  getReturnedEventName,
+  getSentEventNames,
+} from "./parser";
 
 export type WithGraphWorkflow = {
   getGraph(): Graph;
@@ -20,7 +24,10 @@ export function withGraph<WorkflowLike extends Workflow>(
       handler: Handler<AcceptEvents, Result>,
     ): void => {
       const nodeName = handler.toString().slice(0, 10);
-      const inEvents = accept.map((event) => ensureEventName(event.debugLabel));
+      const inEvents = [
+        ...accept.map((event) => ensureEventName(event.debugLabel)),
+        ...getAwaitedEventNames(handler).map(ensureEventName),
+      ];
       const outEvents = [
         ensureEventName(getReturnedEventName(handler)),
         ...getSentEventNames(handler).map(ensureEventName),
