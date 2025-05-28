@@ -57,20 +57,60 @@
       "default": "./dist/observable.js"
     },
     "./middleware/state": {
-      "types": "./middleware/state.d.ts",
-      "default": "./middleware/state.js"
+      "import": {
+        "types": "./middleware/state.d.ts",
+        "default": "./middleware/state.js"
+      },
+      "require": {
+        "types": "./middleware/state.d.cts",
+        "default": "./middleware/state.cjs"
+      },
+      "default": {
+        "types": "./middleware/state.d.ts",
+        "default": "./middleware/state.js"
+      }
     },
     "./middleware/trace-events": {
-      "types": "./middleware/trace-events.d.ts",
-      "default": "./middleware/trace-events.js"
+      "import": {
+        "types": "./middleware/trace-events.d.ts",
+        "default": "./middleware/trace-events.js"
+      },
+      "require": {
+        "types": "./middleware/trace-events.d.cts",
+        "default": "./middleware/trace-events.cjs"
+      },
+      "default": {
+        "types": "./middleware/trace-events.d.ts",
+        "default": "./middleware/trace-events.js"
+      }
     },
     "./middleware/validation": {
-      "types": "./middleware/validation.d.ts",
-      "default": "./middleware/validation.js"
+      "import": {
+        "types": "./middleware/validation.d.ts",
+        "default": "./middleware/validation.js"
+      },
+      "require": {
+        "types": "./middleware/validation.d.cts",
+        "default": "./middleware/validation.cjs"
+      },
+      "default": {
+        "types": "./middleware/validation.d.ts",
+        "default": "./middleware/validation.js"
+      }
     },
     "./middleware/snapshot": {
-      "types": "./middleware/snapshot.d.ts",
-      "default": "./middleware/snapshot.js"
+      "import": {
+        "types": "./middleware/snapshot.d.ts",
+        "default": "./middleware/snapshot.js"
+      },
+      "require": {
+        "types": "./middleware/snapshot.d.cts",
+        "default": "./middleware/snapshot.cjs"
+      },
+      "default": {
+        "types": "./middleware/snapshot.d.ts",
+        "default": "./middleware/snapshot.js"
+      }
     },
     "./util/p-retry": {
       "types": "./util/p-retry.d.ts",
