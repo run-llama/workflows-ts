@@ -49,7 +49,7 @@ export default defineConfig([
     entry: ["src/middleware/*.ts"],
     outDir: "middleware",
     external: ["@llama-flow/core", "@llama-flow/core/async-context"],
-    format: ["esm"],
+    format: ["esm", "cjs"],
     tsconfig: "./tsconfig.build.json",
     dts: true,
     sourcemap: true,
