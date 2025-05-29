@@ -1,5 +1,11 @@
 # @llama-flow/core
 
+## 0.4.3
+
+### Patch Changes
+
+- 9c17c2e: fix: build and export all middlewares to esm and cjs modules
+
 ## 0.4.2
 
 ### Patch Changes
