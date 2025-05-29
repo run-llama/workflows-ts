@@ -44,8 +44,10 @@ describe("Llama Flow Pure CJS Tests", () => {
       startEvent = workflowEvent<string>(); // Input topic for joke
       resultEvent = workflowEvent<JokeResult>(); // Final joke
 
+      const { withState } = createStatefulMiddleware(() => ({}));
+
       // Create our workflow
-      jokeFlow = createWorkflow();
+      jokeFlow = withState(createWorkflow());
 
       // Define handlers for each step
       jokeFlow.handle([startEvent], async (event: any) => {
