@@ -6,7 +6,13 @@ const llamaFlow = require("@llama-flow/core") as {
   createWorkflow: () => Workflow;
   workflowEvent: <T = any>() => WorkflowEvent<T>;
 };
+const stateLlama = require("@llama-flow/core/middleware/state") as {
+  createStatefulMiddleware: (input: CallableFunction) => {
+    withState: (workflow: Workflow) => Workflow;
+  };
+};
 
+const { createStatefulMiddleware } = stateLlama;
 const { createWorkflow, workflowEvent } = llamaFlow;
 
 interface JokeResult {
