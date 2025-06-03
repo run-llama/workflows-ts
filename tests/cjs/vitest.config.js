@@ -20,5 +20,9 @@ module.exports = defineConfig({
   esbuild: {
     // Enable TypeScript compilation
     target: "node18",
+    format: "cjs", // Ensure CJS output
+  },
+  resolve: {
+    conditions: ["require", "node"],
   },
 });
