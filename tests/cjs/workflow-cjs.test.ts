@@ -1,17 +1,6 @@
 // Pure CommonJS Vitest test file with TypeScript
 import type { WorkflowEvent, Workflow } from "@llama-flow/core";
 
-// Add debugging to understand CI module resolution
-console.log("Node.js version:", process.version);
-console.log(
-  "require.resolve for @llama-flow/core:",
-  require.resolve("@llama-flow/core"),
-);
-console.log(
-  "require.resolve for @llama-flow/core/middleware/state:",
-  require.resolve("@llama-flow/core/middleware/state"),
-);
-
 // Type the require imports properly for TypeScript
 const llamaFlow = require("@llama-flow/core") as {
   createWorkflow: () => Workflow;
