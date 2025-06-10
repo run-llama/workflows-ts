@@ -1,5 +1,11 @@
 # @llama-flow/core
 
+## 0.4.4
+
+### Patch Changes
+
+- 24fe0b2: Add support for zod schemas for events
+
 ## 0.4.3
 
 ### Patch Changes

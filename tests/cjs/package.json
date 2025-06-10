@@ -1,6 +1,6 @@
 {
   "name": "llama-flow-cjs-test",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "description": "CommonJS test for llama-flow workflow functionality",
   "type": "commonjs",
