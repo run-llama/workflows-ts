@@ -1,5 +1,12 @@
 # @llama-flow/http
 
+## 0.0.4
+
+### Patch Changes
+
+- Updated dependencies [24fe0b2]
+  - @llama-flow/core@0.4.4
+
 ## 0.0.3
 
 ### Patch Changes
