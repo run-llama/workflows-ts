@@ -32,12 +32,6 @@
       "path": "./packages/core/tsconfig.json"
     },
     {
-      "path": "./packages/llamaindex/tsconfig.json"
-    },
-    {
-      "path": "./packages/llamaindex/tsconfig.test.json"
-    },
-    {
       "path": "./packages/http/tsconfig.json"
     },
     {
