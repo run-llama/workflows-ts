@@ -157,17 +157,17 @@
     "prepublishOnly": "cp ../../README.md ./README.md"
   },
   "devDependencies": {
-    "@modelcontextprotocol/sdk": "^1.10.1",
-    "@types/node": "^22.14.1",
+    "@modelcontextprotocol/sdk": "^1.13.1",
+    "@types/node": "^24.0.4",
     "hono": "^4.8.3",
-    "next": "^15.3.1",
+    "next": "^15.3.4",
     "p-retry": "^6.2.1",
     "rimraf": "^6.0.1",
     "rxjs": "^7.8.2",
     "stream-chain": "^3.4.0",
-    "tsdown": "^0.11.12",
+    "tsdown": "^0.12.9",
     "typescript": "^5.8.3",
-    "zod": "^3.24.3"
+    "zod": "^3.25.67"
   },
   "peerDependencies": {
     "@modelcontextprotocol/sdk": "^1.7.0",

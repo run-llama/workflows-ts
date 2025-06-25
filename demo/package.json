@@ -6,15 +6,15 @@
     "@hono/node-server": "^1.14.4",
     "@inquirer/prompts": "^7.5.3",
     "@llamaindex/workflow-core": "latest",
-    "@modelcontextprotocol/sdk": "^1.12.3",
+    "@modelcontextprotocol/sdk": "^1.13.1",
     "hono": "^4.8.3",
-    "openai": "^5.5.1",
+    "openai": "^5.7.0",
     "p-retry": "^6.2.1",
     "rxjs": "^7.8.2",
-    "zod": "^3.24.3"
+    "zod": "^3.25.67"
   },
   "devDependencies": {
-    "@types/node": "^22.14.1",
-    "tsx": "^4.19.3"
+    "@types/node": "^24.0.4",
+    "tsx": "^4.20.3"
   }
 }
