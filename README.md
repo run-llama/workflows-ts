@@ -1,4 +1,4 @@
-# llamaindex workflow ts
+# LlamaIndex Workflow TS
 
  🌊 is a simple, lightweight workflow engine, in TypeScript.
 
