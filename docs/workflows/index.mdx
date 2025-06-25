@@ -3,14 +3,14 @@ title: LlamaIndex Workflows
 description: LlamaIndex Workflows is a simple and lightweight engine for JavaScript and TypeScript apps.
 ---
 
-LlamaIndex Workflow (LlamaFlow) is a library for streaming event-driven programming in JavaScript and TypeScript.
+LlamaIndex Workflows are a library for event-driven programming in JavaScript and TypeScript.
 It provides a simple and lightweight orchestration solution for building complex workflows with minimal boilerplate.
 
 It combines [event-driven](#) programming, [async context](#) and [streaming](#) to create a flexible and efficient way to handle data processing tasks.
 
-The essential concepts of LlamaFlow are:
+The essential concepts of Workflows are:
 
-- **Events**: are the core building blocks of LlamaFlow. They represent data that flows through the system.
+- **Events**: are the core building blocks of Workflows. They represent data that flows through the system.
 - **Handlers**: are functions that process events and can produce new events.
 - **Context**: is the environment in which events are processed. It provides access to the event stream and allows sending new events.
 - **Workflow**: is the collection of events, handlers, and context that define the processing logic.
@@ -60,16 +60,16 @@ workflow.handle([stopEvent], (event) => {
 });
 
 const { sendEvent } = workflow.createContext();
-sendEvent(startEvent.with("Hello, LlamaFlow!"));
+sendEvent(startEvent.with("Hello, Workflows!"));
 ```
 
 ## Parallel processing with async handlers
 
 Tool calls are a common pattern in LLM applications, where the model generates a call to an external function or API.
 
-### With LlamaFlow
+### With Workflows
 
-LlamaFlow provides [abort signals](#) and [parallel processing](#) out of the box.
+Workflows provide [abort signals](#) and [parallel processing](#) out of the box.
 
 ```ts
 workflow.handle([toolCallEvent], ({ data: { id, name, args } }) => {
@@ -129,7 +129,7 @@ sendEvent(
   startEvent.with([
     {
       role: "user",
-      content: "Hello, LlamaFlow!",
+      content: "Hello, Workflows!",
     },
   ]),
 );
