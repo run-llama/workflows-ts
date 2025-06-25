@@ -1,5 +1,13 @@
 # @llamaindex/workflow-http
 
+## 0.0.6
+
+### Patch Changes
+
+- 59b9199: chore: bump version
+- Updated dependencies [59b9199]
+  - @llamaindex/workflow-core@0.4.6
+
 ## 0.0.5
 
 ### Patch Changes

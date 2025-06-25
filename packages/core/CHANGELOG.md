@@ -1,5 +1,11 @@
 # @llamaindex/workflow-core
 
+## 0.4.6
+
+### Patch Changes
+
+- 59b9199: chore: bump version
+
 ## 0.4.5
 
 ### Patch Changes
