@@ -10,7 +10,11 @@ This guide explores common patterns you can use to build more complex workflows 
 One of the most powerful features of workflows is the ability to run tasks in parallel:
 
 ```ts
-import { createWorkflow, workflowEvent, getContext } from "@llamaindex/workflow-core";
+import {
+  createWorkflow,
+  workflowEvent,
+  getContext,
+} from "@llamaindex/workflow-core";
 
 // Define events
 const startEvent = workflowEvent<string>();
@@ -252,7 +256,11 @@ workflow.strictHandle([startEvent], (sendEvent, start) => {
 LlamaIndex workflows provide built-in mechanisms for handling errors:
 
 ```ts
-import { createWorkflow, workflowEvent, getContext } from "@llamaindex/workflow-core";
+import {
+  createWorkflow,
+  workflowEvent,
+  getContext,
+} from "@llamaindex/workflow-core";
 
 const startEvent = workflowEvent<string>();
 const processEvent = workflowEvent<number>();
