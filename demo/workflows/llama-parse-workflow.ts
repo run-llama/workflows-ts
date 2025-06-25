@@ -1,8 +1,8 @@
-import { workflowEvent, createWorkflow } from "@llama-flow/core";
+import { workflowEvent, createWorkflow } from "@llamaindex/workflow-core";
 import { z } from "zod";
-import { zodEvent } from "@llama-flow/core/util/zod";
-import { createStatefulMiddleware } from "@llama-flow/core/middleware/state";
-import { pRetryHandler } from "@llama-flow/core/util/p-retry";
+import { zodEvent } from "@llamaindex/workflow-core/util/zod";
+import { createStatefulMiddleware } from "@llamaindex/workflow-core/middleware/state";
+import { pRetryHandler } from "@llamaindex/workflow-core/util/p-retry";
 
 export const startEvent = zodEvent(
   z.object({

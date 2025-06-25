@@ -6,7 +6,7 @@ import {
   workflowEvent,
   type WorkflowEventData,
   WorkflowStream,
-} from "@llama-flow/core";
+} from "@llamaindex/workflow-core";
 import type { HandlerContext } from "../core/context";
 import { createStableHash } from "./snapshot/stable-hash";
 import { createSubscribable, isPromiseLike } from "../core/utils";

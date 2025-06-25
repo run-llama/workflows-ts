@@ -5,7 +5,7 @@ import {
   getContext,
   workflowEvent,
   type WorkflowEventData,
-} from "@llama-flow/core";
+} from "@llamaindex/workflow-core";
 
 describe("workflow context api", () => {
   const startEvent = workflowEvent({

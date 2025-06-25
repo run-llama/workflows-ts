@@ -1,5 +1,5 @@
 {
-  "name": "@llama-flow/core",
+  "name": "@llamaindex/workflow-core",
   "version": "0.4.4",
   "description": "event-based workflow engine",
   "type": "module",
@@ -159,7 +159,7 @@
   "devDependencies": {
     "@modelcontextprotocol/sdk": "^1.10.1",
     "@types/node": "^22.14.1",
-    "hono": "^4.7.7",
+    "hono": "^4.8.3",
     "next": "^15.3.1",
     "p-retry": "^6.2.1",
     "rimraf": "^6.0.1",

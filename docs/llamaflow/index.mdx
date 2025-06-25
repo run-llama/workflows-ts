@@ -18,15 +18,15 @@ The essential concepts of LlamaFlow are:
 ## Getting Started
 
 ```shell
-npm i @llama-flow/core
+npm i @llamaindex/workflow-core
 
-yarn add @llama-flow/core
+yarn add @llamaindex/workflow-core
 
-pnpm add @llama-flow/core
+pnpm add @llamaindex/workflow-core
 
-bun add @llama-flow/core
+bun add @llamaindex/workflow-core
 
-deno add npm:@llama-flow/core
+deno add npm:@llamaindex/workflow-core
 ```
 
 ## First Example
@@ -35,7 +35,7 @@ With [workflowEvent](#) and [createWorkflow](#), you can create a simple workflo
 
 ```ts
 import { OpenAI } from "openai";
-import { createWorkflow, workflowEvent } from "@llama-flow/core";
+import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -143,7 +143,7 @@ We provide tons of [middleware](#) and [integrations](#) to make it easy to ship
 
 ```ts
 import { Hono } from "hono";
-import { createHonoHandler } from "@llama-flow/core/interrupter/hono";
+import { createHonoHandler } from "@llamaindex/workflow-core/interrupter/hono";
 import { openaiChatWorkflow, startEvent, stopEvent } from "@/lib/workflow";
 
 const app = new Hono();
@@ -163,7 +163,7 @@ export default app;
 ### Next.js
 
 ```ts
-import { createNextHandler } from "@llama-flow/core/interrupter/next";
+import { createNextHandler } from "@llamaindex/workflow-core/interrupter/next";
 import { openaiChatWorkflow, startEvent, stopEvent } from "@/lib/workflows";
 
 export const { GET } = createNextHandler(

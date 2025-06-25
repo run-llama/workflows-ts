@@ -1,5 +1,12 @@
-import { withSnapshot, request } from "@llama-flow/core/middleware/snapshot";
-import { createWorkflow, workflowEvent, getContext } from "@llama-flow/core";
+import {
+  withSnapshot,
+  request,
+} from "@llamaindex/workflow-core/middleware/snapshot";
+import {
+  createWorkflow,
+  workflowEvent,
+  getContext,
+} from "@llamaindex/workflow-core";
 import { OpenAI } from "openai";
 
 const openai = new OpenAI();

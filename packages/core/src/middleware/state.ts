@@ -2,8 +2,8 @@ import type {
   Workflow,
   Workflow as WorkflowCore,
   WorkflowContext,
-} from "@llama-flow/core";
-import { getContext } from "@llama-flow/core";
+} from "@llamaindex/workflow-core";
+import { getContext } from "@llamaindex/workflow-core";
 
 type WithState<State, Input> = Input extends void | undefined
   ? {

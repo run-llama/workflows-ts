@@ -1,4 +1,4 @@
-import type { Workflow, WorkflowContext } from "@llama-flow/core";
+import type { Workflow, WorkflowContext } from "@llamaindex/workflow-core";
 
 export const createServer = (
   workflow: Workflow,

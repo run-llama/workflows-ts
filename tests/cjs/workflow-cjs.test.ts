@@ -1,12 +1,12 @@
 // Pure CommonJS Vitest test file with TypeScript
-import type { WorkflowEvent, Workflow } from "@llama-flow/core";
+import type { WorkflowEvent, Workflow } from "@llamaindex/workflow-core";
 
 // Type the require imports properly for TypeScript
-const llamaFlow = require("@llama-flow/core") as {
+const llamaFlow = require("@llamaindex/workflow-core") as {
   createWorkflow: () => Workflow;
   workflowEvent: <T = any>() => WorkflowEvent<T>;
 };
-const stateLlama = require("@llama-flow/core/middleware/state") as {
+const stateLlama = require("@llamaindex/workflow-core/middleware/state") as {
   createStatefulMiddleware: (input: CallableFunction) => {
     withState: (workflow: Workflow) => Workflow;
   };

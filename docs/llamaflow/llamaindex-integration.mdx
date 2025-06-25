@@ -14,7 +14,7 @@ This example requires installing the `openai` provider: `npm i @llamaindex/opena
 :::
 
 ```ts
-import { createWorkflow, workflowEvent } from "@llama-flow/core";
+import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";
 import {
   Document,
   VectorStoreIndex,
@@ -121,7 +121,7 @@ for await (const event of stream) {
 Workflows can orchestrate calls to LlamaIndex Agents, which can use tools (like functions or other query engines). This example adapts the agent from `examples/11_rag.ts`.
 
 ```ts
-import { createWorkflow, workflowEvent } from "@llama-flow/core";
+import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";
 import {
   Settings,
   Document,

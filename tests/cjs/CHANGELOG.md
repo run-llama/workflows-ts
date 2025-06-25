@@ -5,4 +5,4 @@
 ### Patch Changes
 
 - Updated dependencies [24fe0b2]
-  - @llama-flow/core@0.4.4
+  - @llamaindex/workflow-core@0.4.4

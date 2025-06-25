@@ -1,4 +1,7 @@
-import type { WorkflowEvent, WorkflowEventData } from "@llama-flow/core";
+import type {
+  WorkflowEvent,
+  WorkflowEventData,
+} from "@llamaindex/workflow-core";
 import {
   createSubscribable,
   flattenEvents,
@@ -7,7 +10,7 @@ import {
   isPromiseLike,
   type Subscribable,
 } from "./utils";
-import { createAsyncContext } from "@llama-flow/core/async-context";
+import { createAsyncContext } from "@llamaindex/workflow-core/async-context";
 import { WorkflowStream } from "./stream";
 
 export type Handler<

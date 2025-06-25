@@ -10,8 +10,8 @@
     "start": "waku start"
   },
   "dependencies": {
-    "@llama-flow/core": "latest",
-    "@llama-flow/http": "latest",
+    "@llamaindex/workflow-core": "latest",
+    "@llamaindex/workflow-http": "latest",
     "@neondatabase/serverless": "^1.0.0",
     "lucide-react": "^0.511.0",
     "openai": "^4.95.1",

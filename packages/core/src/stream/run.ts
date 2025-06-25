@@ -2,7 +2,7 @@ import type {
   Workflow,
   WorkflowEvent,
   WorkflowEventData,
-} from "@llama-flow/core";
+} from "@llamaindex/workflow-core";
 
 /**
  * Runs a workflow with the provided events and returns the resulting stream.

@@ -1,6 +1,6 @@
-import { createAsyncContext } from "@llama-flow/core/async-context";
+import { createAsyncContext } from "@llamaindex/workflow-core/async-context";
 import { z, type ZodRawShape, type ZodTypeAny } from "zod";
-import type { Workflow, WorkflowEvent } from "@llama-flow/core";
+import type { Workflow, WorkflowEvent } from "@llamaindex/workflow-core";
 import { runWorkflow } from "./stream/run";
 import type { RequestHandlerExtra } from "@modelcontextprotocol/sdk/shared/protocol.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";

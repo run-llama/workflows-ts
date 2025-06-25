@@ -5,7 +5,7 @@ import {
   type WorkflowEvent,
   type WorkflowEventData,
   WorkflowStream,
-} from "@llama-flow/core";
+} from "@llamaindex/workflow-core";
 import { isPromiseLike } from "../core/utils";
 import {
   createHandlerDecorator,
