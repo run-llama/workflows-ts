@@ -54,7 +54,7 @@ importers:
         specifier: ^1.12.3
         version: 1.13.1
       hono:
-        specifier: ^4.8.0
+        specifier: ^4.8.3
         version: 4.8.3
       openai:
         specifier: ^5.5.1
@@ -198,8 +198,8 @@ importers:
         specifier: ^22.14.1
         version: 22.14.1
       hono:
-        specifier: ^4.7.7
-        version: 4.7.7
+        specifier: ^4.8.3
+        version: 4.8.3
       next:
         specifier: ^15.3.1
         version: 15.3.1(@opentelemetry/api@1.9.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
