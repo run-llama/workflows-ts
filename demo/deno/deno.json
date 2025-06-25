@@ -6,7 +6,7 @@
     "@std/assert": "jsr:@std/assert@1",
     "@llamaindex/workflow-core": "npm:@llamaindex/workflow-core"
   },
-  "patch": ["../../packages/core"],
+  "links": ["../../packages/core"],
   "unstable": ["npm-patch"],
   "nodeModulesDir": "auto"
 }
