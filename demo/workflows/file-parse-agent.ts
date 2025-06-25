@@ -1,8 +1,8 @@
-import { createWorkflow, workflowEvent } from "@llama-flow/core";
+import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";
 import { readdir, stat } from "node:fs/promises";
 import { resolve } from "node:path";
 import { AsyncLocalStorage } from "node:async_hooks";
-import { createStatefulMiddleware } from "@llama-flow/core/middleware/state";
+import { createStatefulMiddleware } from "@llamaindex/workflow-core/middleware/state";
 
 export const messageEvent = workflowEvent<string>({
   debugLabel: "message",

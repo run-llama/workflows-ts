@@ -1,4 +1,4 @@
-import { workflowEvent } from "@llama-flow/core";
+import { workflowEvent } from "@llamaindex/workflow-core";
 
 export const messageEvent = workflowEvent({
   debugLabel: "message",

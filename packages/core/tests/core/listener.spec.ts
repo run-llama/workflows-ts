@@ -1,5 +1,9 @@
 import { describe, expect, test, vi } from "vitest";
-import { createWorkflow, getContext, workflowEvent } from "@llama-flow/core";
+import {
+  createWorkflow,
+  getContext,
+  workflowEvent,
+} from "@llamaindex/workflow-core";
 
 describe("workflow listener api", () => {
   test("can listen message event", () => {

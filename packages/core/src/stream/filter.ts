@@ -2,7 +2,7 @@ import type {
   WorkflowEvent,
   WorkflowEventData,
   WorkflowStream,
-} from "@llama-flow/core";
+} from "@llamaindex/workflow-core";
 
 /**
  * @deprecated use `stream.filter` instead. This will be removed in the next minor version.

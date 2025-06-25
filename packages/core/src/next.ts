@@ -3,7 +3,7 @@ import type {
   Workflow,
   WorkflowEventData,
   WorkflowEvent,
-} from "@llama-flow/core";
+} from "@llamaindex/workflow-core";
 import { run } from "./stream/run";
 
 type WorkflowAPI = {

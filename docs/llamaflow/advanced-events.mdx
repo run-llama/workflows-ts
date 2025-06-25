@@ -14,7 +14,7 @@ Workflows allow you to work with different event types and compose them in power
 You can define multiple event types for different kinds of data flowing through your workflow:
 
 ```ts
-import { createWorkflow, workflowEvent } from "@llama-flow/core";
+import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";
 
 // Define different event types
 const textEvent = workflowEvent<string>();
@@ -64,7 +64,7 @@ for await (const event of stream) {
 You can create complex event flows with branching and merging patterns:
 
 ```ts
-import { createWorkflow, workflowEvent, getContext } from "@llama-flow/core";
+import { createWorkflow, workflowEvent, getContext } from "@llamaindex/workflow-core";
 import { pipeline } from "node:stream/promises";
 
 // Define events for a data processing pipeline with branching and merging
@@ -190,7 +190,7 @@ This pattern is useful for parallel processing with different business logic for
 You can filter and transform events to build sophisticated data processing pipelines:
 
 ```ts
-import { createWorkflow, workflowEvent, getContext } from "@llama-flow/core";
+import { createWorkflow, workflowEvent, getContext } from "@llamaindex/workflow-core";
 
 // Define events
 const dataEvent = workflowEvent<number>();
@@ -267,8 +267,8 @@ runFilterTransformWorkflow();
 You can use the `substream` feature to debug specific event flows:
 
 ```ts
-import { createWorkflow, workflowEvent, getContext } from "@llama-flow/core";
-import { withTraceEvents } from "@llama-flow/core/middleware/trace-events";
+import { createWorkflow, workflowEvent, getContext } from "@llamaindex/workflow-core";
+import { withTraceEvents } from "@llamaindex/workflow-core/middleware/trace-events";
 
 // Define events
 const queryEvent = workflowEvent<string>({
@@ -333,8 +333,8 @@ run();
 The `withValidation` middleware ensures your workflow connections are both type-safe and runtime-safe:
 
 ```ts
-import { createWorkflow, workflowEvent } from "@llama-flow/core";
-import { withValidation } from "@llama-flow/core/middleware/validation";
+import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";
+import { withValidation } from "@llamaindex/workflow-core/middleware/validation";
 
 // Define events with explicit types
 const inputEvent = workflowEvent<string>();
@@ -394,7 +394,7 @@ workflow.strictHandle([errorEvent], (sendEvent, event) => {
 You can extend your workflows to integrate with external systems:
 
 ```ts
-import { createWorkflow, workflowEvent, getContext } from "@llama-flow/core";
+import { createWorkflow, workflowEvent, getContext } from "@llamaindex/workflow-core";
 
 // Define events
 const fetchEvent = workflowEvent<string>();
@@ -458,7 +458,7 @@ workflow.handle([dbQueryEvent], async (event) => {
 LlamaIndex workflows excel at managing complex asynchronous patterns:
 
 ```ts
-import { createWorkflow, workflowEvent, getContext } from "@llama-flow/core";
+import { createWorkflow, workflowEvent, getContext } from "@llamaindex/workflow-core";
 
 // Events for an orchestration workflow
 const orchestrateEvent = workflowEvent<string[]>();

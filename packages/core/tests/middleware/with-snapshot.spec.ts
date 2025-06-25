@@ -1,11 +1,14 @@
 import { describe, expect, test, vi } from "vitest";
-import { withSnapshot, request } from "@llama-flow/core/middleware/snapshot";
+import {
+  withSnapshot,
+  request,
+} from "@llamaindex/workflow-core/middleware/snapshot";
 import {
   createWorkflow,
   eventSource,
   getContext,
   workflowEvent,
-} from "@llama-flow/core";
+} from "@llamaindex/workflow-core";
 
 const startEvent = workflowEvent({
   debugLabel: "start",

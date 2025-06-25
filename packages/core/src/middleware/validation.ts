@@ -4,7 +4,7 @@ import {
   type Workflow,
   type WorkflowEvent,
   type WorkflowEventData,
-} from "@llama-flow/core";
+} from "@llamaindex/workflow-core";
 
 export type ValidationHandler<
   Validation extends [

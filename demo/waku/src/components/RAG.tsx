@@ -1,5 +1,5 @@
 "use client";
-import { createClient } from "@llama-flow/http/client";
+import { createClient } from "@llamaindex/workflow-http/client";
 import * as events from "../workflow/events";
 import { useState, useCallback } from "react";
 

@@ -4,14 +4,14 @@ import {
   getContext,
   workflowEvent,
   type WorkflowEventData,
-} from "@llama-flow/core";
+} from "@llamaindex/workflow-core";
 import {
   withTraceEvents,
   runOnce,
   createHandlerDecorator,
   getEventOrigins,
-} from "@llama-flow/core/middleware/trace-events";
-import { collect } from "@llama-flow/core/stream/consumer";
+} from "@llamaindex/workflow-core/middleware/trace-events";
+import { collect } from "@llamaindex/workflow-core/stream/consumer";
 import { pipeline } from "node:stream/promises";
 
 const groupBy = <T>(

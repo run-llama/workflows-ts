@@ -1,4 +1,4 @@
-import { runWorkflow } from "@llama-flow/core/stream/run";
+import { runWorkflow } from "@llamaindex/workflow-core/stream/run";
 import {
   toolCallWorkflow,
   startEvent,

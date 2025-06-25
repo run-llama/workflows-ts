@@ -9,7 +9,7 @@
     "cf-typegen": "wrangler types"
   },
   "dependencies": {
-    "@llama-flow/core": "latest",
+    "@llamaindex/workflow-core": "latest",
     "hono": "^4.7.7"
   },
   "devDependencies": {

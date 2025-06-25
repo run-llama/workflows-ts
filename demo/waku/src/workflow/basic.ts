@@ -1,5 +1,5 @@
 import { neon } from "@neondatabase/serverless";
-import { createWorkflow, getContext } from "@llama-flow/core";
+import { createWorkflow, getContext } from "@llamaindex/workflow-core";
 import { storeEvent, stopEvent, searchEvent } from "./events";
 import { getEnv } from "waku";
 import { OpenAI } from "openai";

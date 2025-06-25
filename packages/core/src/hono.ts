@@ -3,7 +3,7 @@ import type {
   Workflow,
   WorkflowEvent,
   WorkflowEventData,
-} from "@llama-flow/core";
+} from "@llamaindex/workflow-core";
 import { run } from "./stream/run";
 
 export const createHonoHandler = <Start, Stop>(

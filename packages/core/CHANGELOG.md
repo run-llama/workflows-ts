@@ -1,4 +1,4 @@
-# @llama-flow/core
+# @llamaindex/workflow-core
 
 ## 0.4.4
 
@@ -34,16 +34,16 @@
 
   In this release, we built-in some stream helper (inspired from (TC39 Async Iterator Helpers)[https://github.com/tc39/proposal-async-iterator-helpers])
 
-  - move `@llama-flow/core/stream/until` into `stream.until`
-  - move `@llama-flow/core/stream/filter` into `stream.filter`
-  - move `@llama-flow/core/stream/consumer` into `stream.toArray()`
+  - move `@llamaindex/workflow-core/stream/until` into `stream.until`
+  - move `@llamaindex/workflow-core/stream/filter` into `stream.filter`
+  - move `@llamaindex/workflow-core/stream/consumer` into `stream.toArray()`
   - add `stream.take(limit)`
   - add `stream.toArray()`
 
   ```diff
-  - import { collect } from "@llama-flow/core/stream/consumer";
-  - import { until } from "@llama-flow/core/stream/until";
-  - import { filter } from "@llama-flow/core/stream/filter";
+  - import { collect } from "@llamaindex/workflow-core/stream/consumer";
+  - import { until } from "@llamaindex/workflow-core/stream/until";
+  - import { filter } from "@llamaindex/workflow-core/stream/filter";
 
   -  const results = await collect(
   -    until(
@@ -84,7 +84,7 @@
   ### Before
 
   ```typescript
-  import { withState } from "@llama-flow/core/middleware/state";
+  import { withState } from "@llamaindex/workflow-core/middleware/state";
 
   const workflow = withState(
     () => ({
@@ -101,7 +101,7 @@
   ### After
 
   ```typescript
-  import { createStatefulMiddleware } from "@llama-flow/core/middleware/state";
+  import { createStatefulMiddleware } from "@llamaindex/workflow-core/middleware/state";
 
   const { withState, getContext } = createStatefulMiddleware(() => ({
     count: 0,

@@ -10,7 +10,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@llama-flow/core": "workspace:*"
+    "@llamaindex/workflow-core": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^22.14.1",

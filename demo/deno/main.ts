@@ -1,4 +1,8 @@
-import { createWorkflow, workflowEvent, getContext } from "@llama-flow/core";
+import {
+  createWorkflow,
+  workflowEvent,
+  getContext,
+} from "@llamaindex/workflow-core";
 
 const workflow = createWorkflow();
 

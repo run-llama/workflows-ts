@@ -1,8 +1,8 @@
 import { describe, expect, test, vi, afterEach } from "vitest";
-import { createWorkflow, workflowEvent } from "@llama-flow/core";
-import { withValidation } from "@llama-flow/core/middleware/validation";
-import { find } from "@llama-flow/core/stream/find";
-import { runWorkflow } from "@llama-flow/core/stream/run";
+import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";
+import { withValidation } from "@llamaindex/workflow-core/middleware/validation";
+import { find } from "@llamaindex/workflow-core/stream/find";
+import { runWorkflow } from "@llamaindex/workflow-core/stream/run";
 
 describe("with directed graph", () => {
   const consoleWarnMock = vi

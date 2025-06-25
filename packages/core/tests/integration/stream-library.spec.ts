@@ -6,7 +6,7 @@ import {
   createWorkflow,
   getContext,
   type WorkflowEventData,
-} from "@llama-flow/core";
+} from "@llamaindex/workflow-core";
 
 describe("node:stream", () => {
   test("basic usage", async () => {

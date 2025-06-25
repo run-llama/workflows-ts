@@ -3,7 +3,7 @@ import {
   workflowEvent,
   type WorkflowEvent,
   type WorkflowEventConfig,
-} from "@llama-flow/core";
+} from "@llamaindex/workflow-core";
 
 export const zodEvent = <T, DebugLabel extends string>(
   schema: z.ZodType<T>,

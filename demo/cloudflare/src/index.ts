@@ -1,6 +1,6 @@
 import { Hono } from "hono";
-import { createWorkflow, workflowEvent } from "@llama-flow/core";
-import { createHonoHandler } from "@llama-flow/core/hono";
+import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";
+import { createHonoHandler } from "@llamaindex/workflow-core/hono";
 import { html } from "hono/html";
 
 const app = new Hono();

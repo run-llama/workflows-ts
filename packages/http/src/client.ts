@@ -2,7 +2,7 @@ import {
   type WorkflowEvent,
   WorkflowStream,
   type WorkflowEventData,
-} from "@llama-flow/core";
+} from "@llamaindex/workflow-core";
 
 export const createClient = (
   endpoint: string | URL,

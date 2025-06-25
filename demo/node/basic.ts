@@ -1,6 +1,10 @@
-import { createWorkflow, workflowEvent, getContext } from "@llama-flow/core";
+import {
+  createWorkflow,
+  workflowEvent,
+  getContext,
+} from "@llamaindex/workflow-core";
 import { pipeline } from "node:stream/promises";
-import { collect } from "@llama-flow/core/stream/consumer";
+import { collect } from "@llamaindex/workflow-core/stream/consumer";
 
 //#region define workflow events
 const startEvent = workflowEvent<string>();

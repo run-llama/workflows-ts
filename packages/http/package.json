@@ -1,5 +1,5 @@
 {
-  "name": "@llama-flow/http",
+  "name": "@llamaindex/workflow-http",
   "version": "0.0.4",
   "type": "module",
   "description": "HTTP protocol for Llama Flow",
@@ -24,10 +24,10 @@
     "dev": "bunchee --watch"
   },
   "devDependencies": {
-    "@llama-flow/core": "workspace:*",
+    "@llamaindex/workflow-core": "workspace:*",
     "bunchee": "^6.5.1"
   },
   "peerDependencies": {
-    "@llama-flow/core": "workspace:*"
+    "@llamaindex/workflow-core": "workspace:*"
   }
 }

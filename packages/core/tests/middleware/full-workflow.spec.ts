@@ -4,11 +4,11 @@ import {
   eventSource,
   type WorkflowEvent,
   type WorkflowEventData,
-} from "@llama-flow/core";
-import { createStateMiddleware } from "@llama-flow/core/middleware/store";
-import { withTraceEvents } from "@llama-flow/core/middleware/trace-events";
-import { withValidation } from "@llama-flow/core/middleware/validation";
-import { zodEvent } from "@llama-flow/core/util/zod";
+} from "@llamaindex/workflow-core";
+import { createStateMiddleware } from "@llamaindex/workflow-core/middleware/store";
+import { withTraceEvents } from "@llamaindex/workflow-core/middleware/trace-events";
+import { withValidation } from "@llamaindex/workflow-core/middleware/validation";
+import { zodEvent } from "@llamaindex/workflow-core/util/zod";
 import { z } from "zod";
 import { webcrypto } from "node:crypto";
 

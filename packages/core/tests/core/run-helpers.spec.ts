@@ -4,13 +4,13 @@ import {
   eventSource,
   getContext,
   workflowEvent,
-} from "@llama-flow/core";
-import type { WorkflowEventData } from "@llama-flow/core";
+} from "@llamaindex/workflow-core";
+import type { WorkflowEventData } from "@llamaindex/workflow-core";
 import {
   runWorkflow,
   runAndCollect,
   runStream,
-} from "@llama-flow/core/stream/run";
+} from "@llamaindex/workflow-core/stream/run";
 
 describe("workflow helper functions", () => {
   test("runWorkflow should execute workflow and return the final event", async () => {
