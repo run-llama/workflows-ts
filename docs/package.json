@@ -1,5 +1,5 @@
 {
-  "name": "@llama-flow/docs",
+  "name": "@llamaindex/workflow-docs",
   "version": "0.0.8",
   "files": [
     "llamaflow"
