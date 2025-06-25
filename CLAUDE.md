@@ -26,7 +26,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Architecture
 
-llama-flow is an **event-driven workflow engine** with these core concepts:
+`@llamaindex/workflow-core` is an **event-driven workflow engine** with these core concepts:
 
 ### Core Components
 

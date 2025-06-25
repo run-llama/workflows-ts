@@ -1,4 +1,4 @@
-# llama-flow-cjs-test
+# workflows-ts-cjs-test
 
 ## 1.0.2
 

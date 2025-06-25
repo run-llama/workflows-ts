@@ -2,7 +2,7 @@
 import type { WorkflowEvent, Workflow } from "@llamaindex/workflow-core";
 
 // Type the require imports properly for TypeScript
-const llamaFlow = require("@llamaindex/workflow-core") as {
+const workflows = require("@llamaindex/workflow-core") as {
   createWorkflow: () => Workflow;
   workflowEvent: <T = any>() => WorkflowEvent<T>;
 };
@@ -13,7 +13,7 @@ const stateLlama = require("@llamaindex/workflow-core/middleware/state") as {
 };
 
 const { createStatefulMiddleware } = stateLlama;
-const { createWorkflow, workflowEvent } = llamaFlow;
+const { createWorkflow, workflowEvent } = workflows;
 
 interface JokeResult {
   joke: string;

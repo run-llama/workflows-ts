@@ -1,8 +1,8 @@
 {
-  "name": "llama-flow-cjs-test",
+  "name": "workflows-ts-cjs-test",
   "version": "1.0.2",
   "private": true,
-  "description": "CommonJS test for llama-flow workflow functionality",
+  "description": "CommonJS test for workflows-ts functionality",
   "type": "commonjs",
   "scripts": {
     "test": "vitest run",

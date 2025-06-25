@@ -2,8 +2,8 @@
 
 🌊 is a simple, lightweight workflow engine, in TypeScript.
 
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz_small.svg)](https://stackblitz.com/github/run-llama/llama-flow/tree/main/demo/browser?file=src%2FApp.tsx)
-[![Build Status](https://img.shields.io/github/actions/workflow/status/run-llama/llama-flow/test.yml?branch=main&style=flat&colorA=000000&colorB=45dff8)](https://github.com/run-llama/llama-flow/actions/workflows/test.yml?query=branch%3Amain)
+[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz_small.svg)](https://stackblitz.com/github/run-llama/workflows-ts/tree/main/demo/browser?file=src%2FApp.tsx)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/run-llama/workflows-ts/test.yml?branch=main&style=flat&colorA=000000&colorB=45dff8)](https://github.com/run-llama/workflows-ts/actions/workflows/test.yml?query=branch%3Amain)
 [![Bundle Size](https://img.shields.io/bundlephobia/minzip/@llamaindex/workflow-core?style=flat&colorA=000000&colorB=45dff8)](https://bundlephobia.com/result?p=@llamaindex/workflow-core)
 
 - Minimal core API (<=2kb)

@@ -172,7 +172,7 @@ async function createRagTool(): Promise<QueryEngineTool> {
   // Load or define documents for the RAG tool
   const ragDocs = [
     new Document({
-      text: "The LlamaFlow workflow engine orchestrates complex tasks.",
+      text: "The workflow engine orchestrates complex tasks.",
     }),
     new Document({
       text: "LlamaIndex agents can use tools to interact with external systems.",
@@ -192,7 +192,7 @@ async function createRagTool(): Promise<QueryEngineTool> {
     metadata: {
       name: "llama_info_tool",
       description:
-        "Provides information about LlamaFlow, LlamaIndex Agents, and sometimes specific facts like SF budget figures.",
+        "Provides information about Workflows, LlamaIndex Agents, and sometimes specific facts like SF budget figures.",
     },
   });
 }
@@ -253,7 +253,7 @@ async function runAgentWorkflow() {
   await initializeAgent(); // Ensure agent is ready
 
   const { stream, sendEvent } = agentWorkflow.createContext();
-  const query = "What is LlamaFlow and what is 15 + 27?";
+  const query = "What are workflows and what is 15 + 27?";
   console.log(`Sending query to agent workflow: ${query}`);
   sendEvent(agentQueryEvent.with(query));
 
