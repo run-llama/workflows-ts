@@ -1,6 +1,6 @@
 {
   "name": "@llamaindex/workflow-core",
-  "version": "0.4.6",
+  "version": "1.0.0",
   "exports": {
     ".": "./src/core/index.ts",
     "./async-context": "./src/async-context/index.ts",
