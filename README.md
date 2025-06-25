@@ -1,6 +1,6 @@
-# LlamaIndex Workflow TS
+# LlamaIndex Workflows TS
 
- 🌊 is a simple, lightweight workflow engine, in TypeScript.
+🌊 is a simple, lightweight workflow engine, in TypeScript.
 
 [![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz_small.svg)](https://stackblitz.com/github/run-llama/llama-flow/tree/main/demo/browser?file=src%2FApp.tsx)
 [![Build Status](https://img.shields.io/github/actions/workflow/status/run-llama/llama-flow/test.yml?branch=main&style=flat&colorA=000000&colorB=45dff8)](https://github.com/run-llama/llama-flow/actions/workflows/test.yml?query=branch%3Amain)
