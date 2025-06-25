@@ -6,7 +6,11 @@
   "packageManager": "pnpm@10.8.1",
   "pnpm": {
     "onlyBuiltDependencies": [
-      "@swc/core"
+      "@swc/core",
+      "@tailwindcss/oxide",
+      "esbuild",
+      "sharp",
+      "workerd"
     ]
   },
   "scripts": {
@@ -17,15 +21,15 @@
     "prepare": "husky"
   },
   "devDependencies": {
-    "@changesets/cli": "^2.29.2",
+    "@changesets/cli": "^2.29.5",
     "@edge-runtime/vm": "^5.0.0",
-    "happy-dom": "^17.4.4",
+    "happy-dom": "^18.0.1",
     "husky": "^9.1.7",
-    "lint-staged": "^15.5.1",
-    "prettier": "^3.5.3",
-    "tsdown": "^0.11.12",
-    "turbo": "^2.5.0",
+    "lint-staged": "^16.1.2",
+    "prettier": "^3.6.1",
+    "tsdown": "^0.12.9",
+    "turbo": "^2.5.4",
     "vite-tsconfig-paths": "^5.1.4",
-    "vitest": "^3.1.1"
+    "vitest": "^3.2.4"
   }
 }
