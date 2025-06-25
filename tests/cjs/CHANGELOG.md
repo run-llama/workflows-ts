@@ -1,5 +1,12 @@
 # workflows-ts-cjs-test
 
+## 1.0.4
+
+### Patch Changes
+
+- Updated dependencies [095fb04]
+  - @llamaindex/workflow-core@1.0.0
+
 ## 1.0.3
 
 ### Patch Changes
