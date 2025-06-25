@@ -1,5 +1,11 @@
 # @llamaindex/workflow-core
 
+## 0.4.5
+
+### Patch Changes
+
+- 1fb29de: chore: rename package
+
 ## 0.4.4
 
 ### Patch Changes

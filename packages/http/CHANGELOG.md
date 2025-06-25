@@ -1,5 +1,13 @@
 # @llamaindex/workflow-http
 
+## 0.0.5
+
+### Patch Changes
+
+- 1fb29de: chore: rename package
+- Updated dependencies [1fb29de]
+  - @llamaindex/workflow-core@0.4.5
+
 ## 0.0.4
 
 ### Patch Changes
