@@ -3,16 +3,7 @@
   "private": true,
   "version": "0.0.1",
   "type": "module",
-  "packageManager": "pnpm@10.8.1",
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "@swc/core",
-      "@tailwindcss/oxide",
-      "esbuild",
-      "sharp",
-      "workerd"
-    ]
-  },
+  "packageManager": "pnpm@10.12.4",
   "scripts": {
     "typecheck": "tsc -b --verbose",
     "lint": "prettier . --check",
