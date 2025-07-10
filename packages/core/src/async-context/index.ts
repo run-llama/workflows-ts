@@ -1,11 +1,17 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 
-export const createAsyncContext = <T>() => {
-  const als = new AsyncLocalStorage<T>();
-  return {
-    getStore: () => als.getStore(),
-    run<R>(store: T, fn: () => R) {
-      return als.run(store, fn);
-    },
-  };
-};
+class AsyncVariable<T> {
+  als = new AsyncLocalStorage<T>();
+
+  get(): T | undefined {
+    return this.als.getStore();
+  }
+
+  run<R>(value: T, fn: () => R): R {
+    return this.als.run(value, fn);
+  }
+}
+
+export class AsyncContext {
+  static Variable = AsyncVariable;
+}

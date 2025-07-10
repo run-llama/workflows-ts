@@ -10,7 +10,7 @@ import {
   isPromiseLike,
   type Subscribable,
 } from "./utils";
-import { createAsyncContext } from "@llamaindex/workflow-core/async-context";
+import { AsyncContext } from "@llamaindex/workflow-core/async-context";
 import { WorkflowStream } from "./stream";
 
 export type Handler<
@@ -74,17 +74,19 @@ export type WorkflowContext = {
   >;
 };
 
-export const _executorAsyncLocalStorage = createAsyncContext<WorkflowContext>();
+export const _executorAsyncLocalStorage =
+  new AsyncContext.Variable<WorkflowContext>();
 
 export function getContext(): WorkflowContext {
-  const context = _executorAsyncLocalStorage.getStore();
+  const context = _executorAsyncLocalStorage.get();
   if (!context) {
     throw new Error("No current context found");
   }
   return context;
 }
 
-const handlerContextAsyncLocalStorage = createAsyncContext<HandlerContext>();
+const handlerContextAsyncLocalStorage =
+  new AsyncContext.Variable<HandlerContext>();
 
 const eventContextWeakMap = new WeakMap<
   WorkflowEventData<any>,

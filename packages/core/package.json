@@ -204,5 +204,8 @@
   },
   "publishConfig": {
     "access": "public"
+  },
+  "dependencies": {
+    "simple-async-context": "^1.0.4"
   }
 }

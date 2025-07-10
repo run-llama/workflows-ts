@@ -190,6 +190,10 @@ importers:
   docs: {}
 
   packages/core:
+    dependencies:
+      simple-async-context:
+        specifier: ^1.0.4
+        version: 1.0.4
     devDependencies:
       '@modelcontextprotocol/sdk':
         specifier: ^1.13.1
@@ -3617,6 +3621,9 @@ packages:
   signal-exit@4.1.0:
     resolution: {integrity: sha512-bzyZ1e88w9O1iNJbKnOlvYTrWPDl46O1bG0D3XInv+9tkPrxrN8jUUTiFlDkkmKWgn1M6CfIA13SuGqOa9Korw==}
     engines: {node: '>=14'}
+
+  simple-async-context@1.0.4:
+    resolution: {integrity: sha512-OPH9mLzjbamUjRYDf2Xk/KA72nbhzraJrc9NZl0eLC5/npJR2dpC4tGAXrPbZw7WPjoAlv45N27t9uL6WtwV+A==}
 
   simple-swizzle@0.2.2:
     resolution: {integrity: sha512-JA//kQgZtbuY83m+xT+tXJkmJncGMTFT+C+g2h2R9uxkYIrE2yy9sgmcLhCnw57/WSD+Eh3J97FPEDFnbXnDUg==}
@@ -7391,6 +7398,8 @@ snapshots:
   siginfo@2.0.0: {}
 
   signal-exit@4.1.0: {}
+
+  simple-async-context@1.0.4: {}
 
   simple-swizzle@0.2.2:
     dependencies:
