@@ -15,8 +15,8 @@ const stopEvent = workflowEvent<string>();
 const workflow = createWorkflow();
 
 workflow.handle([startEvent], () => {
-  const context = getContext();
   setTimeout(() => {
+    const context = getContext();
     context.sendEvent(stopEvent.with("Hello, World!"));
   }, 1000);
 });
