@@ -1,5 +1,11 @@
 # @llamaindex/workflow-core
 
+## 1.1.0
+
+### Minor Changes
+
+- f1f7954: feat: polyfill async context
+
 ## 1.0.0
 
 ### Major Changes
