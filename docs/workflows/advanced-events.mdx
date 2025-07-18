@@ -240,13 +240,11 @@ workflow.handle([initEvent], async (event) => {
   }
 
   // Collect transformed events
+  const limit = event.data
   let numResults = 0;
   const results = await stream
     .filter(transformedEvent)
-    .until((event) => {
-      numResults++;
-      return numResults >= event.data;
-    })
+    .until(() => ++numResults >= limit)
     .toArray();
 
   return resultEvent.with(results.map((r) => r.data));

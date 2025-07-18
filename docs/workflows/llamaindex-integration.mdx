@@ -126,10 +126,10 @@ import {
   Settings,
   Document,
   VectorStoreIndex,
-  agent, // Import the agent factory
   tool, // Import the tool factory
   QueryEngineTool, // Specific tool type for query engines
 } from "llamaindex";
+import { agent } from "@llamaindex/workflow"; // Import the agent factory
 import { OpenAI, OpenAIEmbedding } from "@llamaindex/openai";
 // import { SimpleDirectoryReader } from "@llamaindex/readers/directory"; // If loading from files
 import { z } from "zod"; // For defining tool parameters
