@@ -83,7 +83,6 @@
 - 9c65785: feat: add `withSnapshot` middleware API
 
   Add snapshot API, for human in the loop feature. The API is designed for cross JavaScript platform, including node.js, browser, and serverless platform such as cloudflare worker and edge runtime
-
   - `workflow.createContext(): Context`
   - `context.snapshot(): Promise<[requestEvent, snapshot]>`
   - `workflow.resume(data, snapshot)`
@@ -95,7 +94,6 @@
 - 1005e84: feat: add stream helper
 
   In this release, we built-in some stream helper (inspired from (TC39 Async Iterator Helpers)[https://github.com/tc39/proposal-async-iterator-helpers])
-
   - move `@llamaindex/workflow-core/stream/until` into `stream.until`
   - move `@llamaindex/workflow-core/stream/filter` into `stream.filter`
   - move `@llamaindex/workflow-core/stream/consumer` into `stream.toArray()`
@@ -183,7 +181,6 @@
   ### Migration Guide
 
   To migrate existing code:
-
   1. Replace `withState` import with `createStatefulMiddleware`
   2. Update state initialization to use the new API
   3. Replace `workflow.getState()` calls with `getContext().state`
