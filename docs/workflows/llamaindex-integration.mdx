@@ -24,15 +24,6 @@ import {
 } from "llamaindex";
 import { OpenAI, OpenAIEmbedding } from "@llamaindex/openai";
 
-// Define events
-const queryEvent = workflowEvent<string>();
-const retrieveEvent = workflowEvent<{ query: string; nodes: BaseNode[] }>();
-const generateEvent = workflowEvent<{ query: string; context: string }>();
-const responseEvent = workflowEvent<string>();
-
-// Create workflow
-const workflow = createWorkflow();
-
 // Set default global llm
 Settings.llm = new OpenAI({
   model: "gpt-4.1-mini",
@@ -44,76 +35,89 @@ Settings.embedModel = new OpenAIEmbedding({
   model: "text-embedding-3-small",
 });
 
-// Sample documents
-const documents = [
-  new Document({
-    text: "LlamaIndex is a data framework for LLM applications to ingest, structure, and access private or domain-specific data.",
-  }),
-  new Document({
-    text: "LlamaIndex workflows are a lightweight workflow engine for TypeScript, designed to create event-driven processes.",
-  }),
-];
+const main = async () => {
+  // Define events
+  const queryEvent = workflowEvent<string>();
+  const retrieveEvent = workflowEvent<{ query: string; nodes: BaseNode[] }>();
+  const generateEvent = workflowEvent<{ query: string; context: string }>();
+  const responseEvent = workflowEvent<string>();
 
-// Create vector store index
-const index = await VectorStoreIndex.fromDocuments(documents);
+  // Create workflow
+  const workflow = createWorkflow();
 
-// Handle query: Retrieve relevant documents
-workflow.handle([queryEvent], async (event) => {
-  const query = event.data;
-  console.log(`Processing query: ${query}`);
+  // Sample documents
+  const documents = [
+    new Document({
+      text: "LlamaIndex is a data framework for LLM applications to ingest, structure, and access private or domain-specific data.",
+    }),
+    new Document({
+      text: "LlamaIndex workflows are a lightweight workflow engine for TypeScript, designed to create event-driven processes.",
+    }),
+  ];
 
-  // Retrieve relevant documents
-  const retriever = index.asRetriever();
-  const nodes = await retriever.retrieve(query);
+  // Create vector store index
+  const index = await VectorStoreIndex.fromDocuments(documents);
 
-  return retrieveEvent.with({
-    query,
-    nodes: nodes.map((node) => node.node),
+  // Handle query: Retrieve relevant documents
+  workflow.handle([queryEvent], async (event) => {
+    const query = event.data;
+    console.log(`Processing query: ${query}`);
+
+    // Retrieve relevant documents
+    const retriever = index.asRetriever();
+    const nodes = await retriever.retrieve(query);
+
+    return retrieveEvent.with({
+      query,
+      nodes: nodes.map((node) => node.node),
+    });
   });
-});
 
-// Handle retrieval results: Generate response
-workflow.handle([retrieveEvent], async (event) => {
-  const { query, nodes } = event.data;
+  // Handle retrieval results: Generate response
+  workflow.handle([retrieveEvent], async (event) => {
+    const { query, nodes } = event.data;
 
-  // Combine document content as context
-  const context = nodes
-    .map((node) => node.getContent(MetadataMode.NONE))
-    .join("\n\n");
+    // Combine document content as context
+    const context = nodes
+      .map((node) => node.getContent(MetadataMode.NONE))
+      .join("\n\n");
 
-  return generateEvent.with({ query, context });
-});
+    return generateEvent.with({ query, context });
+  });
 
-// Handle generation: Produce final response
-workflow.handle([generateEvent], async (event) => {
-  const { query, context } = event.data;
+  // Handle generation: Produce final response
+  workflow.handle([generateEvent], async (event) => {
+    const { query, context } = event.data;
 
-  // Create a prompt with the context and query
-  const prompt = `
-Context information:
-${context}
+    // Create a prompt with the context and query
+    const prompt = `
+  Context information:
+  ${context}
 
-Based on the context information and no other knowledge, answer the following query:
-${query}
-  `;
+  Based on the context information and no other knowledge, answer the following query:
+  ${query}
+    `;
 
-  // Generate response with LLM
-  const response = await Settings.llm.complete({ prompt });
+    // Generate response with LLM
+    const response = await Settings.llm.complete({ prompt });
 
-  return responseEvent.with(response.text);
-});
+    return responseEvent.with(response.text);
+  });
 
-// Execute the workflow
-const { stream, sendEvent } = workflow.createContext();
-sendEvent(queryEvent.with("What is LlamaIndex?"));
+  // Execute the workflow
+  const { stream, sendEvent } = workflow.createContext();
+  sendEvent(queryEvent.with("What is LlamaIndex?"));
 
-// Process the stream
-for await (const event of stream) {
-  if (responseEvent.include(event)) {
-    console.log("Final response:", event.data);
-    break;
+  // Process the stream
+  for await (const event of stream) {
+    if (responseEvent.include(event)) {
+      console.log("Final response:", event.data);
+      break;
+    }
   }
-}
+};
+
+void main().catch(console.error);
 ```
 
 ## Building an Tool Calling Agent
@@ -126,10 +130,10 @@ import {
   Settings,
   Document,
   VectorStoreIndex,
-  agent, // Import the agent factory
   tool, // Import the tool factory
   QueryEngineTool, // Specific tool type for query engines
 } from "llamaindex";
+import { agent } from "@llamaindex/workflow"; // Import the agent factory
 import { OpenAI, OpenAIEmbedding } from "@llamaindex/openai";
 // import { SimpleDirectoryReader } from "@llamaindex/readers/directory"; // If loading from files
 import { z } from "zod"; // For defining tool parameters

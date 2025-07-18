@@ -37,30 +37,34 @@ With [workflowEvent](#) and [createWorkflow](#), you can create a simple workflo
 import { OpenAI } from "openai";
 import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
-const startEvent = workflowEvent<string>();
-const stopEvent = workflowEvent<string>();
-
-const workflow = createWorkflow();
-
-workflow.handle([startEvent], async (event) => {
-  const response = await openai.chat.completions.create({
-    // ...
-    messages: [{ role: "user", content: event.data }],
+const main = async () => {
+  const openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
   });
 
-  return stopEvent(response.choices[0].message.content);
-});
+  const startEvent = workflowEvent<string>();
+  const stopEvent = workflowEvent<string>();
 
-workflow.handle([stopEvent], (event) => {
-  console.log("Response:", event.data);
-});
+  const workflow = createWorkflow();
 
-const { sendEvent } = workflow.createContext();
-sendEvent(startEvent.with("Hello, Workflows!"));
+  workflow.handle([startEvent], async (event) => {
+    const response = await openai.chat.completions.create({
+      model: "gpt-4.1-mini",
+      messages: [{ role: "user", content: event.data }],
+    });
+
+    return stopEvent.with(response.choices[0].message.content ?? "");
+  });
+
+  workflow.handle([stopEvent], (event) => {
+    console.log("Response:", event.data);
+  });
+
+  const { sendEvent } = workflow.createContext();
+  sendEvent(startEvent.with("Hello, Workflows!"));
+};
+
+void main().catch(console.error);
 ```
 
 ## Parallel processing with async handlers
@@ -71,7 +75,11 @@ Tool calls are a common pattern in LLM applications, where the model generates a
 
 Workflows provide [abort signals](#) and [parallel processing](#) out of the box.
 
+For example, imagine you have a workflow handler for calling tools that an agent has selection:
+
 ```ts
+import { getContext } from "@llamaindex/workflow-core";
+
 workflow.handle([toolCallEvent], ({ data: { id, name, args } }) => {
   const { signal, sendEvent } = getContext();
   signal.onabort = () =>
@@ -82,7 +90,6 @@ workflow.handle([toolCallEvent], ({ data: { id, name, args } }) => {
         content: "ERROR WHILE CALLING FUNCTION" + signal.reason.message,
       }),
     );
-
   const result = callFunction(name, args);
   return toolCallResultEvent.with({
     role: "tool",

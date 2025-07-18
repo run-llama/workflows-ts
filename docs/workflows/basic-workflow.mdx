@@ -157,6 +157,7 @@ LlamaIndex workflows provide middleware that can enhance your workflows:
 The `withState` middleware adds a persistent state to your workflow context:
 
 ```ts
+import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";
 import { createStatefulMiddleware } from "@llamaindex/workflow-core/middleware/state";
 
 // Define your state type
@@ -165,11 +166,17 @@ type CounterState = {
   history: number[];
 };
 
-// Create a workflow with state middleware
-const { withState } = createStatefulMiddleware<CounterState>(() => ({
-  count: 0,
-  history: [],
-}));
+// Define events
+const startEvent = workflowEvent<void>();
+const incrementEvent = workflowEvent<number>();
+const resultEvent = workflowEvent<number>();
+
+const { withState, getContext } = createStatefulMiddleware<CounterState>(
+  () => ({
+    count: 0,
+    history: [],
+  }),
+);
 
 const workflow = withState(createWorkflow());
 
