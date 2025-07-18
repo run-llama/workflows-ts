@@ -244,7 +244,7 @@ workflow.handle([initEvent], async (event) => {
   }
 
   // Collect transformed events
-  const limit = event.data
+  const limit = event.data;
   let numResults = 0;
   const results = await stream
     .filter(transformedEvent)

@@ -171,10 +171,12 @@ const startEvent = workflowEvent<void>();
 const incrementEvent = workflowEvent<number>();
 const resultEvent = workflowEvent<number>();
 
-const { withState, getContext } = createStatefulMiddleware<CounterState>(() => ({
+const { withState, getContext } = createStatefulMiddleware<CounterState>(
+  () => ({
     count: 0,
     history: [],
-  }));
+  }),
+);
 
 const workflow = withState(createWorkflow());
 

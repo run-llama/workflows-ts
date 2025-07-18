@@ -62,7 +62,7 @@ const main = async () => {
 
   const { sendEvent } = workflow.createContext();
   sendEvent(startEvent.with("Hello, Workflows!"));
-}
+};
 
 void main().catch(console.error);
 ```
