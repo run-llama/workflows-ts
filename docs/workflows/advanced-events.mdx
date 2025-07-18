@@ -46,17 +46,21 @@ workflow.handle([booleanEvent], (event) => {
   });
 });
 
-// Run the workflow
-const { stream, sendEvent } = workflow.createContext();
+const main = async () => {
+  // Run the workflow
+  const { stream, sendEvent } = workflow.createContext();
 
-sendEvent(textEvent.with("Hello, world!"));
+  sendEvent(textEvent.with("Hello, world!"));
 
-for await (const event of stream) {
-  if (complexEvent.include(event)) {
-    console.log(event.data);
-    break;
+  for await (const event of stream) {
+    if (complexEvent.include(event)) {
+      console.log(event.data);
+      break;
+    }
   }
-}
+};
+
+void main().catch(console.error);
 ```
 
 ### Event Branching and Merging
