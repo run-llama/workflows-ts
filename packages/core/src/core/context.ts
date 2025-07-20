@@ -5,6 +5,7 @@ import type {
 import {
   createSubscribable,
   flattenEvents,
+  flattenEventsAny,
   getSubscribers,
   isEventData,
   isPromiseLike,
@@ -21,6 +22,21 @@ export type Handler<
     [K in keyof AcceptEvents]: ReturnType<AcceptEvents[K]["with"]>;
   }
 ) => Result | Promise<Result>;
+
+export type HandlerAny<
+  AcceptEvents extends WorkflowEvent<any>[],
+  Result extends WorkflowEventData<any> | void,
+> = (
+  ...event: {
+    [K in keyof AcceptEvents]?: ReturnType<AcceptEvents[K]["with"]>;
+  }
+) => Result | Promise<Result>;
+
+// Handler metadata to distinguish "all" vs "any" semantics
+export type HandlerEntry = {
+  handler: Handler<WorkflowEvent<any>[], WorkflowEventData<any> | void>;
+  mode: "all" | "any";
+};
 
 type BaseHandlerContext = {
   abortController: AbortController;
@@ -94,10 +110,7 @@ const eventContextWeakMap = new WeakMap<
 >();
 
 export type ExecutorParams = {
-  listeners: ReadonlyMap<
-    WorkflowEvent<any>[],
-    Set<Handler<WorkflowEvent<any>[], WorkflowEventData<any> | void>>
-  >;
+  listeners: ReadonlyMap<WorkflowEvent<any>[], Set<HandlerEntry>>;
 };
 
 export const createContext = ({
@@ -186,16 +199,50 @@ export const createContext = ({
     const queueSnapshot = [...queue];
     [...listeners]
       .filter(([events]) => {
-        const inputs = flattenEvents(events, queueSnapshot);
-        return inputs.length === events.length;
-      })
-      .map(([events, handlers]) => {
-        const inputs = flattenEvents(events, queueSnapshot);
-        inputs.forEach((input) => {
-          queue.splice(queue.indexOf(input), 1);
+        return [...listeners.get(events)!].some(({ mode }) => {
+          if (mode === "all") {
+            const inputs = flattenEvents(events, queueSnapshot);
+            return inputs.length === events.length;
+          } else {
+            // mode === 'any'
+            const inputs = flattenEventsAny(events, queueSnapshot);
+            return inputs.some(Boolean);
+          }
         });
-        for (const handler of handlers) {
-          runHandler(handler, events, inputs, handlerContext);
+      })
+      .map(([events, handlerEntries]) => {
+        for (const { handler, mode } of handlerEntries) {
+          let inputs: WorkflowEventData<any>[];
+
+          if (mode === "all") {
+            inputs = flattenEvents(events, queueSnapshot);
+            if (inputs.length === events.length) {
+              // Remove consumed events
+              inputs.forEach((input) => {
+                queue.splice(queue.indexOf(input), 1);
+              });
+              runHandler(handler, events, inputs, handlerContext);
+            }
+          } else {
+            // mode === 'any'
+            const sparseInputs = flattenEventsAny(events, queueSnapshot);
+            if (sparseInputs.some(Boolean)) {
+              // Remove only the matched events (filter out undefined)
+              const actualInputs = sparseInputs.filter(
+                Boolean,
+              ) as WorkflowEventData<any>[];
+              actualInputs.forEach((input) => {
+                queue.splice(queue.indexOf(input), 1);
+              });
+              // Pass the sparse array to the handler so it gets undefined for missing events
+              runHandler(
+                handler,
+                events,
+                sparseInputs as WorkflowEventData<any>[],
+                handlerContext,
+              );
+            }
+          }
         }
       });
   };

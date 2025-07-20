@@ -171,4 +171,97 @@ describe("workflow context api", () => {
     ]);
     expect(events).toHaveLength(4);
   });
+
+  test("handleAny should trigger on any event arrival", async () => {
+    const firstEvent = workflowEvent<string>({
+      debugLabel: "firstEvent",
+    });
+    const secondEvent = workflowEvent<number>({
+      debugLabel: "secondEvent",
+    });
+    const resultEvent = workflowEvent<string>({
+      debugLabel: "resultEvent",
+    });
+
+    const workflow = createWorkflow();
+
+    const handlerFn = vi.fn(
+      (
+        firstData?: WorkflowEventData<string>,
+        secondData?: WorkflowEventData<number>,
+      ) => {
+        // Should be called when either event arrives
+        if (firstData) {
+          return resultEvent.with(`Got first: ${firstData.data}`);
+        }
+        if (secondData) {
+          return resultEvent.with(`Got second: ${secondData.data}`);
+        }
+      },
+    );
+
+    workflow.handleAny([firstEvent, secondEvent], handlerFn);
+
+    const { stream, sendEvent } = workflow.createContext();
+
+    // Send only firstEvent - handleAny should trigger
+    sendEvent(firstEvent.with("hello"));
+
+    const events: WorkflowEventData<any>[] = await stream
+      .until(resultEvent)
+      .toArray();
+
+    expect(handlerFn).toHaveBeenCalledTimes(1);
+    expect(handlerFn).toHaveBeenCalledWith(
+      expect.objectContaining({ data: "hello" }),
+      undefined,
+    );
+    expect(events).toHaveLength(2);
+    expect(events[1]!.data).toBe("Got first: hello");
+  });
+
+  test("handleAny receives optional parameters correctly", async () => {
+    const eventA = workflowEvent<string>({
+      debugLabel: "eventA",
+    });
+    const eventB = workflowEvent<number>({
+      debugLabel: "eventB",
+    });
+    const resultEvent = workflowEvent<string>({
+      debugLabel: "result",
+    });
+
+    const workflow = createWorkflow();
+
+    const handler = vi.fn(
+      (
+        dataA?: WorkflowEventData<string>,
+        dataB?: WorkflowEventData<number>,
+      ) => {
+        // Should receive one defined parameter and one undefined
+        const defined = dataA ? "A" : dataB ? "B" : "none";
+        const value = dataA?.data || dataB?.data || "none";
+        return resultEvent.with(`${defined}:${value}`);
+      },
+    );
+
+    workflow.handleAny([eventA, eventB], handler);
+
+    const { stream, sendEvent } = workflow.createContext();
+
+    // Send eventA first
+    sendEvent(eventA.with("hello"));
+
+    const events: WorkflowEventData<any>[] = await stream
+      .until(resultEvent)
+      .toArray();
+
+    expect(handler).toHaveBeenCalledTimes(1);
+    expect(handler).toHaveBeenCalledWith(
+      expect.objectContaining({ data: "hello" }),
+      undefined,
+    );
+    expect(events).toHaveLength(2);
+    expect(events[1]!.data).toBe("A:hello");
+  });
 });

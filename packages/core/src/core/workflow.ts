@@ -1,5 +1,11 @@
 import { type WorkflowEvent, type WorkflowEventData } from "./event";
-import { createContext, type Handler, type WorkflowContext } from "./context";
+import {
+  createContext,
+  type Handler,
+  type HandlerAny,
+  type HandlerEntry,
+  type WorkflowContext,
+} from "./context";
 
 export type Workflow = {
   handle<
@@ -9,15 +15,19 @@ export type Workflow = {
     accept: AcceptEvents,
     handler: Handler<AcceptEvents, Result>,
   ): void;
+  handleAny<
+    const AcceptEvents extends WorkflowEvent<any>[],
+    Result extends ReturnType<WorkflowEvent<any>["with"]> | void,
+  >(
+    accept: AcceptEvents,
+    handler: HandlerAny<AcceptEvents, Result>,
+  ): void;
   createContext(): WorkflowContext;
 };
 
 export const createWorkflow = (): Workflow => {
   const config = {
-    steps: new Map<
-      WorkflowEvent<any>[],
-      Set<Handler<WorkflowEvent<any>[], WorkflowEventData<any> | void>>
-    >(),
+    steps: new Map<WorkflowEvent<any>[], Set<HandlerEntry>>(),
   };
 
   return {
@@ -28,20 +38,37 @@ export const createWorkflow = (): Workflow => {
       accept: AcceptEvents,
       handler: Handler<AcceptEvents, Result>,
     ): void => {
+      const entry: HandlerEntry = {
+        handler: handler as any,
+        mode: "all",
+      };
+
       if (config.steps.has(accept)) {
-        const set = config.steps.get(accept) as Set<
-          Handler<AcceptEvents, Result>
-        >;
-        set.add(handler);
+        config.steps.get(accept)!.add(entry);
       } else {
-        const set = new Set<Handler<AcceptEvents, Result>>();
-        set.add(handler);
-        config.steps.set(
-          accept,
-          set as Set<
-            Handler<WorkflowEvent<any>[], WorkflowEventData<any> | void>
-          >,
-        );
+        const set = new Set<HandlerEntry>();
+        set.add(entry);
+        config.steps.set(accept, set);
+      }
+    },
+    handleAny: <
+      const AcceptEvents extends WorkflowEvent<any>[],
+      Result extends ReturnType<WorkflowEvent<any>["with"]> | void,
+    >(
+      accept: AcceptEvents,
+      handler: HandlerAny<AcceptEvents, Result>,
+    ): void => {
+      const entry: HandlerEntry = {
+        handler: handler as any,
+        mode: "any",
+      };
+
+      if (config.steps.has(accept)) {
+        config.steps.get(accept)!.add(entry);
+      } else {
+        const set = new Set<HandlerEntry>();
+        set.add(entry);
+        config.steps.set(accept, set);
       }
     },
     createContext() {
