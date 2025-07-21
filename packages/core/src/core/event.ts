@@ -1,7 +1,12 @@
 declare const opaqueSymbol: unique symbol;
 
+type Callback = (evd: WorkflowEventData<any>) => void;
+
+type Cleanup = () => void;
+
 const eventMap = new WeakMap<WorkflowEvent<any>, WeakSet<object>>();
 const refMap = new WeakMap<WorkflowEventData<any>, WorkflowEvent<any>>();
+const initCallbackMap = new WeakMap<WorkflowEvent<any>, Set<Callback>>();
 let i = 0;
 let j = 0;
 
@@ -27,6 +32,7 @@ export type WorkflowEvent<Data, DebugLabel extends string = string> = {
   readonly uniqueId: string;
   with(data: Data): WorkflowEventData<Data, DebugLabel>;
   include(event: unknown): event is WorkflowEventData<Data, DebugLabel>;
+  onInit(callback: Callback): Cleanup;
 } & { readonly [opaqueSymbol]: DebugLabel };
 
 export type WorkflowEventConfig<DebugLabel extends string = string> = {
@@ -38,6 +44,7 @@ export const workflowEvent = <Data = void, DebugLabel extends string = string>(
   config?: WorkflowEventConfig<DebugLabel>,
 ): WorkflowEvent<Data, DebugLabel> => {
   const l1 = `${i++}`;
+  const cb = new Set<Callback>();
   const event = {
     debugLabel: config?.debugLabel ?? l1,
     include: (
@@ -62,12 +69,21 @@ export const workflowEvent = <Data = void, DebugLabel extends string = string>(
       } as unknown as WorkflowEventData<Data, DebugLabel>;
       s.add(ref);
       refMap.set(ref, event);
+      cb.forEach((c) => c(ref));
       return ref;
+    },
+    onInit: (callback: Callback) => {
+      cb.add(callback);
+      return () => {
+        cb.delete(callback);
+      };
     },
   } as unknown as WorkflowEvent<Data, DebugLabel>;
 
   const s = new WeakSet();
   eventMap.set(event, s);
+
+  initCallbackMap.set(event, cb);
 
   Object.defineProperty(event, Symbol.toStringTag, {
     get: () => event?.debugLabel ?? `WorkflowEvent<${l1}>`,
