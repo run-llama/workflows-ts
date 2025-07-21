@@ -201,7 +201,7 @@ describe("workflow context api", () => {
       },
     );
 
-    workflow.handle([or(firstEvent, secondEvent)], handlerFn);
+    workflow.handle([or(firstEvent, secondEvent)] as any, handlerFn);
 
     const { stream, sendEvent } = workflow.createContext();
 
@@ -246,7 +246,7 @@ describe("workflow context api", () => {
       },
     );
 
-    workflow.handle([or(eventA, eventB)], handler);
+    workflow.handle([or(eventA, eventB)] as any, handler);
 
     const { stream, sendEvent } = workflow.createContext();
 

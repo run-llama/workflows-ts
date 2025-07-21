@@ -8,11 +8,11 @@ import { createContext, type Handler, type WorkflowContext } from "./context";
 
 export type Workflow = {
   handle<
-    const AcceptEvents extends (WorkflowEvent<any> | OrEvent<any>)[],
+    const AcceptEvents extends WorkflowEvent<any>[],
     Result extends ReturnType<WorkflowEvent<any>["with"]> | void,
   >(
     accept: AcceptEvents,
-    handler: (...args: any[]) => Result | Promise<Result>,
+    handler: Handler<AcceptEvents, Result>,
   ): void;
 
   createContext(): WorkflowContext;
@@ -31,18 +31,20 @@ export const createWorkflow = (): Workflow => {
 
   return {
     handle: <
-      const AcceptEvents extends (WorkflowEvent<any> | OrEvent<any>)[],
+      const AcceptEvents extends WorkflowEvent<any>[],
       Result extends ReturnType<WorkflowEvent<any>["with"]> | void,
     >(
       accept: AcceptEvents,
-      handler: (...args: any[]) => Result | Promise<Result>,
+      handler: Handler<AcceptEvents, Result>,
     ): void => {
-      // Check if any of the events are OR events
-      const hasOrEvent = accept.some((event) => isOrEvent(event));
+      // Runtime check for OR events (accept is typed as WorkflowEvent[] for compatibility)
+      const hasOrEvent = (accept as any[]).some((event: any) =>
+        isOrEvent(event),
+      );
 
       if (hasOrEvent) {
         // If there's an OR event, expand it and treat as "any" mode
-        const expandedEvents = accept.flatMap((event) =>
+        const expandedEvents = (accept as any[]).flatMap((event: any) =>
           isOrEvent(event) ? event.events : [event],
         ) as WorkflowEvent<any>[];
 
@@ -58,18 +60,17 @@ export const createWorkflow = (): Workflow => {
           config.steps.set(expandedEvents, set);
         }
       } else {
-        // Regular "all" mode - cast to WorkflowEvent array since we know no OR events exist
-        const regularEvents = accept as WorkflowEvent<any>[];
+        // Regular "all" mode
         const entry = {
           handler: handler as any,
           mode: "all" as const,
         };
 
-        if (config.steps.has(regularEvents)) {
-          config.steps.get(regularEvents)!.add(entry);
+        if (config.steps.has(accept)) {
+          config.steps.get(accept)!.add(entry);
         } else {
           const set = new Set([entry]);
-          config.steps.set(regularEvents, set);
+          config.steps.set(accept, set);
         }
       }
     },
