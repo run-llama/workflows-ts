@@ -1,7 +1,6 @@
 import type {
   WorkflowEvent,
   WorkflowEventData,
-  OrEvent,
 } from "@llamaindex/workflow-core";
 import {
   createSubscribable,
@@ -10,7 +9,6 @@ import {
   getSubscribers,
   isEventData,
   isPromiseLike,
-  isOrEvent,
   type Subscribable,
 } from "./utils";
 import { AsyncContext } from "@llamaindex/workflow-core/async-context";
