@@ -114,3 +114,53 @@ export const eventSource = (
   typeof instance === "object" && instance !== null
     ? refMap.get(instance as any)
     : undefined;
+
+// OR Event Implementation
+const orEventMap = new WeakMap<OrEvent<any>, WeakSet<object>>();
+
+export type OrEvent<Events extends WorkflowEvent<any>[]> = {
+  _type: "or";
+  events: Events;
+  debugLabel: string;
+  uniqueId: string;
+  include(event: unknown): boolean;
+  with(data: any): never; // OR events cannot be instantiated directly
+} & { readonly [opaqueSymbol]: "or" };
+
+export const or = <const Events extends WorkflowEvent<any>[]>(
+  ...events: Events
+): OrEvent<Events> => {
+  const debugLabel = `or(${events.map((e) => e.debugLabel || e.uniqueId).join(", ")})`;
+  const uniqueId = `or_${events.map((e) => e.uniqueId).join("_")}`;
+
+  const orEvent = {
+    _type: "or" as const,
+    events,
+    debugLabel,
+    uniqueId,
+    include: (eventData: unknown): boolean => {
+      return events.some((event) => event.include(eventData));
+    },
+    with: () => {
+      throw new Error(
+        "OR events cannot be instantiated directly. Use the individual events instead.",
+      );
+    },
+    toString: () => debugLabel,
+  } as unknown as OrEvent<Events>;
+
+  const s = new WeakSet();
+  orEventMap.set(orEvent, s);
+
+  return orEvent;
+};
+
+export const isOrEvent = (instance: unknown): instance is OrEvent<any> =>
+  typeof instance === "object" &&
+  instance !== null &&
+  (instance as any)?._type === "or";
+
+export const isWorkflowEventOrOr = (
+  instance: unknown,
+): instance is WorkflowEvent<any> | OrEvent<any> =>
+  isWorkflowEvent(instance) || isOrEvent(instance);

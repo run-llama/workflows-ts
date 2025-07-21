@@ -1,6 +1,7 @@
 import type {
   WorkflowEvent,
   WorkflowEventData,
+  OrEvent,
 } from "@llamaindex/workflow-core";
 import {
   createSubscribable,
@@ -9,6 +10,7 @@ import {
   getSubscribers,
   isEventData,
   isPromiseLike,
+  isOrEvent,
   type Subscribable,
 } from "./utils";
 import { AsyncContext } from "@llamaindex/workflow-core/async-context";
@@ -22,21 +24,6 @@ export type Handler<
     [K in keyof AcceptEvents]: ReturnType<AcceptEvents[K]["with"]>;
   }
 ) => Result | Promise<Result>;
-
-export type HandlerAny<
-  AcceptEvents extends WorkflowEvent<any>[],
-  Result extends WorkflowEventData<any> | void,
-> = (
-  ...event: {
-    [K in keyof AcceptEvents]?: ReturnType<AcceptEvents[K]["with"]>;
-  }
-) => Result | Promise<Result>;
-
-// Handler metadata to distinguish "all" vs "any" semantics
-export type HandlerEntry = {
-  handler: Handler<WorkflowEvent<any>[], WorkflowEventData<any> | void>;
-  mode: "all" | "any";
-};
 
 type BaseHandlerContext = {
   abortController: AbortController;
@@ -110,7 +97,13 @@ const eventContextWeakMap = new WeakMap<
 >();
 
 export type ExecutorParams = {
-  listeners: ReadonlyMap<WorkflowEvent<any>[], Set<HandlerEntry>>;
+  listeners: ReadonlyMap<
+    WorkflowEvent<any>[],
+    Set<{
+      handler: Handler<WorkflowEvent<any>[], WorkflowEventData<any> | void>;
+      mode: "all" | "any";
+    }>
+  >;
 };
 
 export const createContext = ({

@@ -4,6 +4,7 @@ import {
   eventSource,
   getContext,
   workflowEvent,
+  or,
   type WorkflowEventData,
 } from "@llamaindex/workflow-core";
 
@@ -172,7 +173,7 @@ describe("workflow context api", () => {
     expect(events).toHaveLength(4);
   });
 
-  test("handleAny should trigger on any event arrival", async () => {
+  test("handle with or() should trigger on any event arrival", async () => {
     const firstEvent = workflowEvent<string>({
       debugLabel: "firstEvent",
     });
@@ -200,11 +201,11 @@ describe("workflow context api", () => {
       },
     );
 
-    workflow.handleAny([firstEvent, secondEvent], handlerFn);
+    workflow.handle([or(firstEvent, secondEvent)], handlerFn);
 
     const { stream, sendEvent } = workflow.createContext();
 
-    // Send only firstEvent - handleAny should trigger
+    // Send only firstEvent - should trigger
     sendEvent(firstEvent.with("hello"));
 
     const events: WorkflowEventData<any>[] = await stream
@@ -220,7 +221,7 @@ describe("workflow context api", () => {
     expect(events[1]!.data).toBe("Got first: hello");
   });
 
-  test("handleAny receives optional parameters correctly", async () => {
+  test("handle with or() receives optional parameters correctly", async () => {
     const eventA = workflowEvent<string>({
       debugLabel: "eventA",
     });
@@ -245,7 +246,7 @@ describe("workflow context api", () => {
       },
     );
 
-    workflow.handleAny([eventA, eventB], handler);
+    workflow.handle([or(eventA, eventB)], handler);
 
     const { stream, sendEvent } = workflow.createContext();
 

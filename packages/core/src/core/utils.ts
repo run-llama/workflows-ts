@@ -1,4 +1,4 @@
-import type { WorkflowEvent, WorkflowEventData } from "./event";
+import type { WorkflowEvent, WorkflowEventData, OrEvent } from "./event";
 
 export const isEventData = (data: unknown): data is WorkflowEventData<any> =>
   data != null && typeof data === "object" && "data" in data;
@@ -101,3 +101,6 @@ export function createSubscribable<
   __internal__subscribesSourcemap.set(obj, subscribers);
   return obj as any;
 }
+
+// Re-export isOrEvent from event.ts
+export { isOrEvent } from "./event";
