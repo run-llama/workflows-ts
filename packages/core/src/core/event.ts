@@ -159,8 +159,3 @@ export const isOrEvent = (instance: unknown): instance is OrEvent<any> =>
   typeof instance === "object" &&
   instance !== null &&
   (instance as any)?._type === "or";
-
-export const isWorkflowEventOrOr = (
-  instance: unknown,
-): instance is WorkflowEvent<any> | OrEvent<any> =>
-  isWorkflowEvent(instance) || isOrEvent(instance);
