@@ -187,8 +187,3 @@ export const or = <const Events extends WorkflowEvent<any>[]>(
 
   return orEvent;
 };
-
-export const isOrEvent = (instance: unknown): instance is OrEvent<any> =>
-  typeof instance === "object" &&
-  instance !== null &&
-  (instance as any)?._type === "or";

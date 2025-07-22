@@ -27,31 +27,6 @@ export function flattenEvents(
   return acceptance.filter(Boolean);
 }
 
-export function flattenEventsAny(
-  acceptEventTypes: WorkflowEvent<any>[],
-  inputEventData: WorkflowEventData<any>[],
-): (WorkflowEventData<any> | undefined)[] {
-  const acceptance: (WorkflowEventData<any> | undefined)[] = new Array(
-    acceptEventTypes.length,
-  ).fill(undefined);
-
-  for (const eventData of inputEventData) {
-    for (let i = 0; i < acceptEventTypes.length; i++) {
-      if (acceptance[i]) {
-        continue;
-      }
-      if (acceptEventTypes[i]!.include(eventData)) {
-        acceptance[i] = eventData;
-        break;
-      }
-    }
-  }
-
-  // For "any" mode, we return the sparse array (with undefined gaps)
-  // and check if at least one event was matched
-  return acceptance.some(Boolean) ? acceptance : [];
-}
-
 export type Subscribable<Args extends any[], R> = {
   subscribe: (callback: (...args: Args) => R) => () => void;
   publish: (...args: Args) => unknown[];
@@ -101,6 +76,3 @@ export function createSubscribable<
   __internal__subscribesSourcemap.set(obj, subscribers);
   return obj as any;
 }
-
-// Re-export isOrEvent from event.ts
-export { isOrEvent } from "./event";

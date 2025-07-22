@@ -9,7 +9,6 @@ export {
   eventSource,
   workflowEvent,
   or,
-  isOrEvent,
   type WorkflowEvent,
   type WorkflowEventData,
   type WorkflowEventConfig,
