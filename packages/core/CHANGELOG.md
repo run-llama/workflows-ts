@@ -1,5 +1,11 @@
 # @llamaindex/workflow-core
 
+## 1.2.0
+
+### Minor Changes
+
+- 0bc6a46: Add new `.handle([or(ev1, ev2)], ..)` api
+
 ## 1.1.0
 
 ### Minor Changes

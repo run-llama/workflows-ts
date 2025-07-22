@@ -1,6 +1,6 @@
 {
   "name": "@llamaindex/workflow-core",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "event-based workflow engine",
   "type": "module",
   "main": "dist/index.cjs",
