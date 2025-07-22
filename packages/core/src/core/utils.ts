@@ -1,4 +1,4 @@
-import type { WorkflowEvent, WorkflowEventData, OrEvent } from "./event";
+import type { WorkflowEvent, WorkflowEventData } from "./event";
 
 export const isEventData = (data: unknown): data is WorkflowEventData<any> =>
   data != null && typeof data === "object" && "data" in data;
