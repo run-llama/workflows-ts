@@ -1,0 +1,441 @@
+# Working with Workflows
+
+## `createWorkflow`
+
+Creates a new workflow instance that can register event handlers and create execution contexts.
+
+### Syntax
+
+```ts
+createWorkflow(): Workflow
+```
+
+### Returns
+
+Returns a `Workflow` object with the following methods:
+- [`handle()`](#handle) - Register event handlers
+- [`createContext()`](#createcontext) - Create execution contexts
+
+### Example
+
+```ts
+import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";
+
+// Create a new workflow
+const workflow = createWorkflow();
+
+// Define events
+const startEvent = workflowEvent<string>();
+const stopEvent = workflowEvent<string>();
+
+// Register handlers
+workflow.handle([startEvent], (event) => {
+  return stopEvent.with(`Processed: ${event.data}`);
+});
+```
+
+<div id="handle"></div>
+## `workflow.handle()`
+
+Registers event handlers that respond to specific events in the workflow.
+
+### Syntax
+
+```ts
+workflow.handle(
+  accept: WorkflowEvent[],
+  handler: (
+    ...events: WorkflowEventData[]
+  ) => WorkflowEventData | void | Promise<WorkflowEventData | void>
+): void
+```
+
+### Parameters
+
+#### `accept: WorkflowEvent[]`
+
+An array of event types that this handler accepts. When any of these events are emitted, the handler will be triggered.
+
+```ts
+import { or } from "@llamaindex/workflow-core";
+
+// Single event
+workflow.handle([startEvent], handler);
+
+// Multiple events (handler runs when ALL events are available)
+workflow.handle([eventA, eventB], handler);
+
+// Multiple events (handler runs when ANY event is available)
+workflow.handle([or(eventA, eventB)], handler);
+```
+
+#### `handler: (...events: WorkflowEventData[]) => WorkflowEventData | void | Promise<WorkflowEventData | void>`
+
+The function that processes the events. The handler receives the event data as parameters and can:
+- Return a new event (synchronously)
+- Return a Promise that resolves to an event (asynchronously)  
+- Return void/undefined
+- Use `getContext()` to access workflow context
+
+**Handler Signature:**
+```ts
+type Handler<AcceptEvents, Result> = (
+  ...events: {
+    [K in keyof AcceptEvents]: ReturnType<AcceptEvents[K]["with"]>;
+  }
+) => Result | Promise<Result>
+```
+
+### Examples
+
+#### Basic Handler
+
+```ts
+import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";
+
+const startEvent = workflowEvent<string>();
+const processEvent = workflowEvent<number>();
+const stopEvent = workflowEvent<string>();
+
+const workflow = createWorkflow();
+
+// Simple transformation handler
+workflow.handle([startEvent], (event) => {
+  const length = event.data.length;
+  return processEvent.with(length);
+});
+
+// Handler with multiple events
+workflow.handle([processEvent, startEvent], (processEvt, startEvt) => {
+  return stopEvent.with(`"${startEvt.data}" has ${processEvt.data} characters`);
+});
+```
+
+#### Async Handler with Context
+
+```ts
+import { getContext } from "@llamaindex/workflow-core";
+
+workflow.handle([startEvent], async (event) => {
+  const { sendEvent, stream, signal } = getContext();
+  
+  // Emit multiple events
+  for (let i = 0; i < 5; i++) {
+    sendEvent(progressEvent.with(`Step ${i + 1}/5`));
+    await new Promise(resolve => setTimeout(resolve, 100));
+  }
+  
+  return stopEvent.with("Process complete");
+});
+```
+
+#### Handler with Fan-out Pattern
+
+```ts
+workflow.handle([startEvent], async (event) => {
+  const { sendEvent, stream } = getContext();
+  
+  // Emit multiple parallel tasks
+  const tasks = ['task1', 'task2', 'task3'];
+  tasks.forEach(task => {
+    sendEvent(taskEvent.with(task));
+  });
+  
+  // Wait for all results
+  const results = await stream
+    .filter(resultEvent)
+    .take(tasks.length)
+    .toArray();
+  
+  return completeEvent.with(results.map(r => r.data));
+});
+```
+
+### Error Handling in Handlers
+
+```ts
+workflow.handle([startEvent], async (event) => {
+  try {
+    const result = await someAsyncOperation(event.data);
+    return successEvent.with(result);
+  } catch (error) {
+    return errorEvent.with(error.message);
+  }
+});
+```
+
+<div id="createContext"></div>
+## `workflow.createContext()`
+
+Creates a new execution context for the workflow, providing access to the event stream and the ability to send events.
+
+### Syntax
+
+```ts
+const context = workflow.createContext(): WorkflowContext
+```
+
+### Parameters
+
+None.
+
+### Returns
+
+Returns a `WorkflowContext` object with:
+- `stream: WorkflowStream` - Stream of events emitted by the workflow
+- `sendEvent(...events)` - Function to emit events into the workflow
+- `signal: AbortSignal` - Signal for cancellation
+
+### Example
+
+```ts
+const { stream, sendEvent } = workflow.createContext();
+
+// Send initial event
+sendEvent(startEvent.with("Hello, world!"));
+
+// Process events from the stream
+for await (const event of stream) {
+  if (stopEvent.include(event)) {
+    console.log("Final result:", event.data);
+    break;
+  }
+}
+```
+
+## Working with WorkflowContext
+
+### `sendEvent(...events)`
+
+Emits one or more events into the workflow execution.
+
+```ts
+const { sendEvent } = workflow.createContext();
+
+// Send single event
+sendEvent(startEvent.with("input data"));
+
+// Send multiple events
+sendEvent(
+  eventA.with("data A"),
+  eventB.with("data B")
+);
+```
+
+### `stream: WorkflowStream`
+
+A readable stream of all events emitted by the workflow, with additional utility methods.
+
+#### Stream Utilities
+
+```ts
+const { stream } = workflow.createContext();
+
+// Filter events by type
+const filteredStream = stream.filter(specificEvent);
+
+// Take only the first N events
+const limitedStream = stream.take(5);
+
+// Process until a condition is met
+const conditionalStream = stream.until(stopEvent);
+
+// Convert to array
+const events = await stream.until(stopEvent).toArray();
+
+// Process one by one
+for await (const event of stream) {
+  if (stopEvent.include(event)) break;
+}
+```
+
+### `signal: AbortSignal`
+
+Used for cancellation and cleanup.
+
+```ts
+workflow.handle([startEvent], () => {
+  const { signal } = getContext();
+  
+  const timeout = setTimeout(() => {
+    // Long running operation
+  }, 5000);
+  
+  // Cleanup when aborted
+  signal.addEventListener('abort', () => {
+    clearTimeout(timeout);
+  });
+});
+```
+
+## `getContext()`
+
+Available inside workflow handlers to access the current execution context.
+
+### Syntax
+
+```ts
+import { getContext } from "@llamaindex/workflow-core";
+
+const context = getContext(): WorkflowContext
+```
+
+### Usage in Handlers
+
+```ts
+workflow.handle([startEvent], () => {
+  const { sendEvent, stream, signal } = getContext();
+  
+  // Use context methods
+  sendEvent(nextEvent.with("data"));
+  
+  // Access abort signal
+  signal.addEventListener('abort', () => {
+    console.log('Handler was aborted');
+  });
+});
+```
+
+## Complete Example
+
+Here's a comprehensive example showing all concepts together:
+
+```ts
+import { 
+  createWorkflow, 
+  workflowEvent, 
+  getContext 
+} from "@llamaindex/workflow-core";
+
+// Define events
+const startEvent = workflowEvent<{ text: string; count: number }>();
+const processEvent = workflowEvent<string>();
+const progressEvent = workflowEvent<{ step: number; total: number }>();
+const resultEvent = workflowEvent<string>();
+const stopEvent = workflowEvent<{ results: string[]; totalTime: number }>();
+
+// Create workflow
+const workflow = createWorkflow();
+
+// Handler 1: Process start event and emit multiple process events
+workflow.handle([startEvent], async (start) => {
+  const { sendEvent, stream } = getContext();
+  const startTime = Date.now();
+  
+  // Emit processing events for each iteration
+  for (let i = 0; i < start.data.count; i++) {
+    sendEvent(processEvent.with(`${start.data.text}-${i}`));
+    sendEvent(progressEvent.with({ step: i + 1, total: start.data.count }));
+  }
+  
+  // Wait for all results
+  const results = await stream
+    .filter(resultEvent)
+    .take(start.data.count)
+    .toArray();
+  
+  const totalTime = Date.now() - startTime;
+  return stopEvent.with({
+    results: results.map(r => r.data),
+    totalTime
+  });
+});
+
+// Handler 2: Process individual items
+workflow.handle([processEvent], async (process) => {
+  // Simulate async work
+  await new Promise(resolve => setTimeout(resolve, 100));
+  
+  return resultEvent.with(`Processed: ${process.data}`);
+});
+
+// Handler 3: Log progress updates
+workflow.handle([progressEvent], (progress) => {
+  console.log(`Progress: ${progress.data.step}/${progress.data.total}`);
+});
+
+// Handler 4: Handle completion
+workflow.handle([stopEvent], (stop) => {
+  console.log(`Completed ${stop.data.results.length} items in ${stop.data.totalTime}ms`);
+  console.log('Results:', stop.data.results);
+});
+
+// Execute the workflow
+async function runWorkflow() {
+  const { stream, sendEvent } = workflow.createContext();
+  
+  // Start the workflow
+  sendEvent(startEvent.with({ 
+    text: "item", 
+    count: 3 
+  }));
+  
+  // Process all events until completion
+  await stream.until(stopEvent).toArray();
+}
+
+runWorkflow().catch(console.error);
+```
+
+## Helper Functions
+
+The workflow package provides utility functions for common patterns:
+
+### `run()`
+
+Runs a workflow with initial events and returns the stream.
+
+```ts
+import { run } from "@llamaindex/workflow-core/stream/run";
+
+const stream = run(workflow, startEvent.with("input"));
+const results = await stream.until(stopEvent).toArray();
+```
+
+### Advanced Patterns
+
+#### Conditional Branching
+
+```ts
+workflow.handle([inputEvent], (event) => {
+  if (event.data > 0) {
+    return positiveEvent.with(event.data);
+  } else {
+    return negativeEvent.with(event.data);
+  }
+});
+```
+
+#### Event Composition
+
+```ts
+// Handler that waits for multiple events
+workflow.handle([userEvent, systemEvent], (user, system) => {
+  return combinedEvent.with({
+    user: user.data,
+    system: system.data,
+    timestamp: Date.now()
+  });
+});
+```
+
+#### Parallel Processing with Results Collection
+
+```ts
+workflow.handle([batchEvent], async (batch) => {
+  const { sendEvent, stream } = getContext();
+  
+  // Start parallel tasks
+  batch.data.items.forEach(item => {
+    sendEvent(taskEvent.with(item));
+  });
+  
+  // Collect results as they complete
+  const results = await stream
+    .filter(taskResultEvent)
+    .take(batch.data.items.length)
+    .toArray();
+  
+  return batchCompleteEvent.with(results.map(r => r.data));
+});
+```

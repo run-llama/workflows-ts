@@ -3,11 +3,5 @@
   "description": "Event-driven workflow engine",
   "root": true,
   "defaultOpen": false,
-  "pages": [
-    "index",
-    "basic-workflow",
-    "streaming",
-    "advanced-events",
-    "llamaindex-integration"
-  ]
+  "pages": ["index", "tutorials/express_agent", "common_patterns", "details"]
 }
