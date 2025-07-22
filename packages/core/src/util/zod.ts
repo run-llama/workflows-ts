@@ -10,13 +10,11 @@ export const zodEvent = <T, DebugLabel extends string>(
   config?: WorkflowEventConfig<DebugLabel>,
 ): WorkflowEvent<T, DebugLabel> & { readonly schema: z.ZodType<T> } => {
   const event = workflowEvent<T, DebugLabel>(config);
-  const originalWith = event.with;
+  event.onInit(({ data }) => {
+    schema.parse(data);
+  });
 
   return Object.assign(event, {
-    with: (data: T) => {
-      schema.parse(data);
-      return originalWith(data);
-    },
     get schema() {
       return schema;
     },
