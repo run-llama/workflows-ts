@@ -164,6 +164,7 @@
     "p-retry": "^6.2.1",
     "rimraf": "^6.0.1",
     "rxjs": "^7.8.2",
+    "simple-async-context": "^1.0.4",
     "stream-chain": "^3.4.0",
     "tsdown": "^0.12.9",
     "typescript": "^5.8.3",
@@ -204,8 +205,5 @@
   },
   "publishConfig": {
     "access": "public"
-  },
-  "dependencies": {
-    "simple-async-context": "^1.0.4"
   }
 }
