@@ -160,6 +160,7 @@
     "@modelcontextprotocol/sdk": "^1.13.1",
     "@types/node": "^24.0.4",
     "hono": "^4.8.3",
+    "next": "^15.3.4",
     "p-retry": "^6.2.1",
     "rimraf": "^6.0.1",
     "rxjs": "^7.8.2",
@@ -172,6 +173,7 @@
   "peerDependencies": {
     "@modelcontextprotocol/sdk": "^1.7.0",
     "hono": "^4.7.4",
+    "next": "^15.2.2",
     "p-retry": "^6.2.1",
     "rxjs": "^7.8.2",
     "zod": "^3.24.2"
@@ -182,6 +184,9 @@
       "optional": true
     },
     "hono": {
+      "optional": true
+    },
+    "next": {
       "optional": true
     },
     "p-retry": {
