@@ -130,3 +130,76 @@ export const eventSource = (
   typeof instance === "object" && instance !== null
     ? refMap.get(instance as any)
     : undefined;
+
+// OR Event Implementation
+
+export type OrEvent<Events extends WorkflowEvent<any>[]> =
+  WorkflowEvent<any> & {
+    _type: "or";
+    events: Events;
+  };
+
+export const or = <const Events extends WorkflowEvent<any>[]>(
+  ...events: Events
+): OrEvent<Events> => {
+  const debugLabel = `or(${events.map((e) => e.debugLabel || e.uniqueId).join(", ")})`;
+  const l1 = `or_${i++}`;
+
+  const orEvent = {
+    _type: "or" as const,
+    events,
+    debugLabel,
+    include: (eventData: unknown): eventData is WorkflowEventData<any> => {
+      // Accept events from any constituent event OR events created by this OR event
+      return (
+        events.some((event) => event.include(eventData)) ||
+        s.has(eventData as any)
+      );
+    },
+    with: (data: any) => {
+      const l2 = `${j++}`;
+      const ref = {
+        [Symbol.toStringTag]: debugLabel,
+        toString: () => debugLabel,
+        toJSON: () => ({
+          type: debugLabel,
+          data,
+        }),
+        get data() {
+          return data;
+        },
+      } as unknown as WorkflowEventData<any>;
+      s.add(ref);
+      refMap.set(ref, orEvent);
+      return ref;
+    },
+  } as unknown as OrEvent<Events>;
+
+  const s = new WeakSet();
+  eventMap.set(orEvent as any, s);
+
+  let uniqueId: string;
+  Object.defineProperty(orEvent, "uniqueId", {
+    get: () => {
+      if (!uniqueId) {
+        uniqueId = l1;
+      }
+      return uniqueId;
+    },
+    set: () => {
+      throw new Error("uniqueId is readonly");
+    },
+  });
+
+  Object.defineProperty(orEvent, Symbol.toStringTag, {
+    get: () => debugLabel,
+  });
+
+  Object.defineProperty(orEvent, "displayName", {
+    value: debugLabel,
+  });
+
+  (orEvent as any).toString = () => debugLabel;
+
+  return orEvent;
+};

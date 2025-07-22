@@ -4,6 +4,7 @@ import {
   eventSource,
   getContext,
   workflowEvent,
+  or,
   type WorkflowEventData,
 } from "@llamaindex/workflow-core";
 
@@ -170,5 +171,90 @@ describe("workflow context api", () => {
       stopEvent,
     ]);
     expect(events).toHaveLength(4);
+  });
+
+  test("handle with or() should trigger on any event arrival", async () => {
+    const firstEvent = workflowEvent<string>({
+      debugLabel: "firstEvent",
+    });
+    const secondEvent = workflowEvent<number>({
+      debugLabel: "secondEvent",
+    });
+    const resultEvent = workflowEvent<string>({
+      debugLabel: "resultEvent",
+    });
+
+    const workflow = createWorkflow();
+
+    const handlerFn = vi.fn((eventData: WorkflowEventData<string | number>) => {
+      // Should be called when either event arrives
+      if (firstEvent.include(eventData)) {
+        return resultEvent.with(`Got first: ${eventData.data}`);
+      }
+      if (secondEvent.include(eventData)) {
+        return resultEvent.with(`Got second: ${eventData.data}`);
+      }
+    });
+
+    workflow.handle([or(firstEvent, secondEvent)], handlerFn);
+
+    const { stream, sendEvent } = workflow.createContext();
+
+    // Send only firstEvent - should trigger because or(firstEvent, secondEvent).include(firstEvent.with(...)) is true
+    sendEvent(firstEvent.with("hello"));
+
+    const events: WorkflowEventData<any>[] = await stream
+      .until(resultEvent)
+      .toArray();
+
+    expect(handlerFn).toHaveBeenCalledTimes(1);
+    expect(handlerFn).toHaveBeenCalledWith(
+      expect.objectContaining({ data: "hello" }),
+    );
+    expect(events).toHaveLength(2);
+    expect(events[1]!.data).toBe("Got first: hello");
+  });
+
+  test("or() event can be instantiated directly", async () => {
+    const eventA = workflowEvent<string>({
+      debugLabel: "eventA",
+    });
+    const eventB = workflowEvent<number>({
+      debugLabel: "eventB",
+    });
+    const orEvent = or(eventA, eventB);
+    const resultEvent = workflowEvent<string>({
+      debugLabel: "result",
+    });
+
+    const workflow = createWorkflow();
+
+    const handler = vi.fn((eventData: WorkflowEventData<any>) => {
+      return resultEvent.with(`Got data: ${eventData.data}`);
+    });
+
+    workflow.handle([orEvent], handler);
+
+    const { stream, sendEvent } = workflow.createContext();
+
+    // Test that the OR event can be instantiated and used directly
+    sendEvent(orEvent.with("direct"));
+
+    const events: WorkflowEventData<any>[] = await stream
+      .until(resultEvent)
+      .toArray();
+
+    expect(handler).toHaveBeenCalledTimes(1);
+    expect(handler).toHaveBeenCalledWith(
+      expect.objectContaining({ data: "direct" }),
+    );
+    expect(events).toHaveLength(2);
+    expect(events[1]!.data).toBe("Got data: direct");
+
+    // Test that the OR event includes its own instances
+    expect(orEvent.include(orEvent.with("test"))).toBe(true);
+    // Test that the OR event includes constituent events
+    expect(orEvent.include(eventA.with("test"))).toBe(true);
+    expect(orEvent.include(eventB.with(123))).toBe(true);
   });
 });

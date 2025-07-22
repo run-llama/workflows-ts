@@ -8,10 +8,12 @@ export {
   isWorkflowEventData,
   eventSource,
   workflowEvent,
+  or,
   type WorkflowEvent,
   type WorkflowEventData,
   type WorkflowEventConfig,
   type InferWorkflowEventData,
+  type OrEvent,
 } from "./event";
 // stream
 export { WorkflowStream } from "./stream";
