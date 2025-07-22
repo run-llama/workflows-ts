@@ -116,41 +116,74 @@ export const eventSource = (
     : undefined;
 
 // OR Event Implementation
-const orEventMap = new WeakMap<OrEvent<any>, WeakSet<object>>();
 
-export type OrEvent<Events extends WorkflowEvent<any>[]> = {
-  _type: "or";
-  events: Events;
-  debugLabel: string;
-  uniqueId: string;
-  include(event: unknown): boolean;
-  with(data: any): never; // OR events cannot be instantiated directly
-} & { readonly [opaqueSymbol]: "or" };
+export type OrEvent<Events extends WorkflowEvent<any>[]> =
+  WorkflowEvent<any> & {
+    _type: "or";
+    events: Events;
+  };
 
 export const or = <const Events extends WorkflowEvent<any>[]>(
   ...events: Events
 ): OrEvent<Events> => {
   const debugLabel = `or(${events.map((e) => e.debugLabel || e.uniqueId).join(", ")})`;
-  const uniqueId = `or_${events.map((e) => e.uniqueId).join("_")}`;
+  const l1 = `or_${i++}`;
 
   const orEvent = {
     _type: "or" as const,
     events,
     debugLabel,
-    uniqueId,
-    include: (eventData: unknown): boolean => {
-      return events.some((event) => event.include(eventData));
-    },
-    with: () => {
-      throw new Error(
-        "OR events cannot be instantiated directly. Use the individual events instead.",
+    include: (eventData: unknown): eventData is WorkflowEventData<any> => {
+      // Accept events from any constituent event OR events created by this OR event
+      return (
+        events.some((event) => event.include(eventData)) ||
+        s.has(eventData as any)
       );
     },
-    toString: () => debugLabel,
+    with: (data: any) => {
+      const l2 = `${j++}`;
+      const ref = {
+        [Symbol.toStringTag]: debugLabel,
+        toString: () => debugLabel,
+        toJSON: () => ({
+          type: debugLabel,
+          data,
+        }),
+        get data() {
+          return data;
+        },
+      } as unknown as WorkflowEventData<any>;
+      s.add(ref);
+      refMap.set(ref, orEvent);
+      return ref;
+    },
   } as unknown as OrEvent<Events>;
 
   const s = new WeakSet();
-  orEventMap.set(orEvent, s);
+  eventMap.set(orEvent as any, s);
+
+  let uniqueId: string;
+  Object.defineProperty(orEvent, "uniqueId", {
+    get: () => {
+      if (!uniqueId) {
+        uniqueId = l1;
+      }
+      return uniqueId;
+    },
+    set: () => {
+      throw new Error("uniqueId is readonly");
+    },
+  });
+
+  Object.defineProperty(orEvent, Symbol.toStringTag, {
+    get: () => debugLabel,
+  });
+
+  Object.defineProperty(orEvent, "displayName", {
+    value: debugLabel,
+  });
+
+  (orEvent as any).toString = () => debugLabel;
 
   return orEvent;
 };

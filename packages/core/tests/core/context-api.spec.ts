@@ -186,26 +186,21 @@ describe("workflow context api", () => {
 
     const workflow = createWorkflow();
 
-    const handlerFn = vi.fn(
-      (
-        firstData?: WorkflowEventData<string>,
-        secondData?: WorkflowEventData<number>,
-      ) => {
-        // Should be called when either event arrives
-        if (firstData) {
-          return resultEvent.with(`Got first: ${firstData.data}`);
-        }
-        if (secondData) {
-          return resultEvent.with(`Got second: ${secondData.data}`);
-        }
-      },
-    );
+    const handlerFn = vi.fn((eventData: WorkflowEventData<string | number>) => {
+      // Should be called when either event arrives
+      if (firstEvent.include(eventData)) {
+        return resultEvent.with(`Got first: ${eventData.data}`);
+      }
+      if (secondEvent.include(eventData)) {
+        return resultEvent.with(`Got second: ${eventData.data}`);
+      }
+    });
 
-    workflow.handle([or(firstEvent, secondEvent)] as any, handlerFn);
+    workflow.handle([or(firstEvent, secondEvent)], handlerFn);
 
     const { stream, sendEvent } = workflow.createContext();
 
-    // Send only firstEvent - should trigger
+    // Send only firstEvent - should trigger because or(firstEvent, secondEvent).include(firstEvent.with(...)) is true
     sendEvent(firstEvent.with("hello"));
 
     const events: WorkflowEventData<any>[] = await stream
@@ -215,43 +210,35 @@ describe("workflow context api", () => {
     expect(handlerFn).toHaveBeenCalledTimes(1);
     expect(handlerFn).toHaveBeenCalledWith(
       expect.objectContaining({ data: "hello" }),
-      undefined,
     );
     expect(events).toHaveLength(2);
     expect(events[1]!.data).toBe("Got first: hello");
   });
 
-  test("handle with or() receives optional parameters correctly", async () => {
+  test("or() event can be instantiated directly", async () => {
     const eventA = workflowEvent<string>({
       debugLabel: "eventA",
     });
     const eventB = workflowEvent<number>({
       debugLabel: "eventB",
     });
+    const orEvent = or(eventA, eventB);
     const resultEvent = workflowEvent<string>({
       debugLabel: "result",
     });
 
     const workflow = createWorkflow();
 
-    const handler = vi.fn(
-      (
-        dataA?: WorkflowEventData<string>,
-        dataB?: WorkflowEventData<number>,
-      ) => {
-        // Should receive one defined parameter and one undefined
-        const defined = dataA ? "A" : dataB ? "B" : "none";
-        const value = dataA?.data || dataB?.data || "none";
-        return resultEvent.with(`${defined}:${value}`);
-      },
-    );
+    const handler = vi.fn((eventData: WorkflowEventData<any>) => {
+      return resultEvent.with(`Got data: ${eventData.data}`);
+    });
 
-    workflow.handle([or(eventA, eventB)] as any, handler);
+    workflow.handle([orEvent], handler);
 
     const { stream, sendEvent } = workflow.createContext();
 
-    // Send eventA first
-    sendEvent(eventA.with("hello"));
+    // Test that the OR event can be instantiated and used directly
+    sendEvent(orEvent.with("direct"));
 
     const events: WorkflowEventData<any>[] = await stream
       .until(resultEvent)
@@ -259,10 +246,15 @@ describe("workflow context api", () => {
 
     expect(handler).toHaveBeenCalledTimes(1);
     expect(handler).toHaveBeenCalledWith(
-      expect.objectContaining({ data: "hello" }),
-      undefined,
+      expect.objectContaining({ data: "direct" }),
     );
     expect(events).toHaveLength(2);
-    expect(events[1]!.data).toBe("A:hello");
+    expect(events[1]!.data).toBe("Got data: direct");
+
+    // Test that the OR event includes its own instances
+    expect(orEvent.include(orEvent.with("test"))).toBe(true);
+    // Test that the OR event includes constituent events
+    expect(orEvent.include(eventA.with("test"))).toBe(true);
+    expect(orEvent.include(eventB.with(123))).toBe(true);
   });
 });

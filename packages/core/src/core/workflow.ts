@@ -1,9 +1,4 @@
-import {
-  type WorkflowEvent,
-  type WorkflowEventData,
-  type OrEvent,
-  isOrEvent,
-} from "./event";
+import { type WorkflowEvent, type WorkflowEventData } from "./event";
 import { createContext, type Handler, type WorkflowContext } from "./context";
 
 export type Workflow = {
@@ -22,10 +17,7 @@ export const createWorkflow = (): Workflow => {
   const config = {
     steps: new Map<
       WorkflowEvent<any>[],
-      Set<{
-        handler: Handler<WorkflowEvent<any>[], WorkflowEventData<any> | void>;
-        mode: "all" | "any";
-      }>
+      Set<Handler<WorkflowEvent<any>[], WorkflowEventData<any> | void>>
     >(),
   };
 
@@ -37,41 +29,11 @@ export const createWorkflow = (): Workflow => {
       accept: AcceptEvents,
       handler: Handler<AcceptEvents, Result>,
     ): void => {
-      // Runtime check for OR events (accept is typed as WorkflowEvent[] for compatibility)
-      const hasOrEvent = (accept as any[]).some((event: any) =>
-        isOrEvent(event),
-      );
-
-      if (hasOrEvent) {
-        // If there's an OR event, expand it and treat as "any" mode
-        const expandedEvents = (accept as any[]).flatMap((event: any) =>
-          isOrEvent(event) ? event.events : [event],
-        ) as WorkflowEvent<any>[];
-
-        const entry = {
-          handler: handler as any,
-          mode: "any" as const,
-        };
-
-        if (config.steps.has(expandedEvents)) {
-          config.steps.get(expandedEvents)!.add(entry);
-        } else {
-          const set = new Set([entry]);
-          config.steps.set(expandedEvents, set);
-        }
+      if (config.steps.has(accept)) {
+        config.steps.get(accept)!.add(handler as any);
       } else {
-        // Regular "all" mode
-        const entry = {
-          handler: handler as any,
-          mode: "all" as const,
-        };
-
-        if (config.steps.has(accept)) {
-          config.steps.get(accept)!.add(entry);
-        } else {
-          const set = new Set([entry]);
-          config.steps.set(accept, set);
-        }
+        const set = new Set([handler as any]);
+        config.steps.set(accept, set);
       }
     },
     createContext() {
