@@ -9,7 +9,6 @@ export type Workflow = {
     accept: AcceptEvents,
     handler: Handler<AcceptEvents, Result>,
   ): void;
-
   createContext(): WorkflowContext;
 };
 
@@ -30,10 +29,19 @@ export const createWorkflow = (): Workflow => {
       handler: Handler<AcceptEvents, Result>,
     ): void => {
       if (config.steps.has(accept)) {
-        config.steps.get(accept)!.add(handler as any);
+        const set = config.steps.get(accept) as Set<
+          Handler<AcceptEvents, Result>
+        >;
+        set.add(handler);
       } else {
-        const set = new Set([handler as any]);
-        config.steps.set(accept, set);
+        const set = new Set<Handler<AcceptEvents, Result>>();
+        set.add(handler);
+        config.steps.set(
+          accept,
+          set as Set<
+            Handler<WorkflowEvent<any>[], WorkflowEventData<any> | void>
+          >,
+        );
       }
     },
     createContext() {
