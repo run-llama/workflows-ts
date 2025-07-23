@@ -1,0 +1,7 @@
+{
+  "title": "Middleware",
+  "description": "Middleware for workflows",
+  "root": false,
+  "defaultOpen": false,
+  "pages": ["servers", "state"]
+}

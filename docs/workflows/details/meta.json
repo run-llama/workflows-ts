@@ -1,0 +1,7 @@
+{
+  "title": "Details",
+  "description": "Details about the Workflows API",
+  "root": false,
+  "defaultOpen": false,
+  "pages": ["workflow", "events", "middleware"]
+}
