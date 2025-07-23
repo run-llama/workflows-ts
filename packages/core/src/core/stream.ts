@@ -403,8 +403,16 @@ export class WorkflowStream<R = any>
    */
   filter(
     predicate: R extends WorkflowEventData<any>
-      ? WorkflowEvent<InferWorkflowEventData<R>> | ((event: R) => boolean) | R
-      : ((event: R) => boolean) | R,
+      ? WorkflowEvent<InferWorkflowEventData<R>>
+      : never,
+  ): WorkflowStream<R>;
+  filter(predicate: R): WorkflowStream<R>;
+  filter(predicate: (event: R) => boolean): WorkflowStream<R>;
+  filter(
+    predicate:
+      | WorkflowEvent<InferWorkflowEventData<R>>
+      | ((event: R) => boolean)
+      | R,
   ): WorkflowStream<R> {
     return this.pipeThrough(
       new TransformStream({
@@ -443,8 +451,16 @@ export class WorkflowStream<R = any>
    */
   until(
     predicate: R extends WorkflowEventData<any>
-      ? WorkflowEvent<InferWorkflowEventData<R>> | ((item: R) => boolean) | R
-      : ((item: R) => boolean) | R,
+      ? WorkflowEvent<InferWorkflowEventData<R>>
+      : never,
+  ): WorkflowStream<R>;
+  until(predicate: (item: R) => boolean): WorkflowStream<R>;
+  until(item: R): WorkflowStream<R>;
+  until(
+    predicate:
+      | WorkflowEvent<InferWorkflowEventData<R>>
+      | R
+      | ((item: R) => boolean),
   ): WorkflowStream<R> {
     return this.pipeThrough(
       new TransformStream({
