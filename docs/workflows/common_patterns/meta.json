@@ -1,0 +1,7 @@
+{
+  "title": "Common Patterns",
+  "description": "Common patterns for building workflows",
+  "root": false,
+  "defaultOpen": false,
+  "pages": ["branching", "loops", "map_reduce", "human_in_the_loop"]
+}

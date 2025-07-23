@@ -76,12 +76,14 @@ jobs:
       - name: Install dependencies for workflows-ts
         run: pnpm install
         working-directory: workflows-ts
+      - name: Build API documentation from current branch
+        run: pnpm run build:docs
+        working-directory: workflows-ts
       - name: Install dependencies for llamaindex
         run: pnpm install
         working-directory: llamaindex
-      - name: Link workflows-ts docs to LlamaIndex
-        run: |
-          pnpm link ${{github.workspace}}/workflows/docs
+      - name: Override workflow docs with local version
+        run: pnpm add @llamaindex/workflow-docs@file:${{github.workspace}}/workflows-ts/docs
         working-directory: llamaindex/apps/next
       - name: Install Vercel CLI
         run: npm install --global vercel@latest
