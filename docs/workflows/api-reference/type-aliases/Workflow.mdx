@@ -1,0 +1,110 @@
+---
+title: "Type Alias: Workflow"
+description: Represents a workflow that processes events through registered handlers.
+category: Types
+sidebar_label: Workflow
+---
+[Workflow Core API](../README.mdx) / Workflow
+
+> **Workflow** = `object`
+
+Defined in: [workflow.ts:29](https://github.com/run-llama/llama-flow/blob/33aca370356eefe2f82d1ad3bc7aa2fbb48a0277/packages/core/src/core/workflow.ts#L29)
+
+Represents a workflow that processes events through registered handlers.
+
+A workflow is the central orchestrator for event-driven processing, allowing
+you to register handlers for specific events and create execution contexts
+to process those events.
+
+## Example
+
+```typescript
+const workflow = createWorkflow();
+
+// Register a handler for user events
+workflow.handle([UserEvent], async (context, event) => {
+  console.log('Processing user:', event.data.name);
+  return ProcessedEvent.with({ status: 'complete' });
+});
+
+// Create context and process events
+const context = workflow.createContext();
+await context.send(UserEvent.with({ name: 'John' }));
+```
+
+## Methods
+
+### createContext()
+
+> **createContext**(): [`WorkflowContext`](WorkflowContext.mdx)
+
+Defined in: [workflow.ts:83](https://github.com/run-llama/llama-flow/blob/33aca370356eefe2f82d1ad3bc7aa2fbb48a0277/packages/core/src/core/workflow.ts#L83)
+
+Creates a new workflow context for event processing.
+
+The context provides the runtime environment for executing handlers
+and managing event flow. Each context maintains its own execution
+state and event queue.
+
+#### Example
+
+```typescript
+const context = workflow.createContext();
+
+// Send events through the context
+await context.send(MyEvent.with({ data: 'hello' }));
+
+// Listen for specific events
+const result = await context.waitFor(CompletionEvent);
+```
+
+#### Returns
+
+[`WorkflowContext`](WorkflowContext.mdx)
+
+A new workflow context instance
+
+***
+
+### handle()
+
+> **handle**\<`AcceptEvents`, `Result`\>(`accept`, `handler`): `void`
+
+Defined in: [workflow.ts:55](https://github.com/run-llama/llama-flow/blob/33aca370356eefe2f82d1ad3bc7aa2fbb48a0277/packages/core/src/core/workflow.ts#L55)
+
+Registers a handler function for one or more workflow events.
+
+The handler will be invoked whenever any of the accepted events are sent
+through a workflow context. Handlers can process events and optionally
+return new events to continue the workflow.
+
+#### Example
+
+```typescript
+// Handle multiple event types
+workflow.handle([StartEvent, RestartEvent], async (context, event) => {
+  if (StartEvent.include(event)) {
+    return ProcessEvent.with({ action: 'start' });
+  } else {
+    return ProcessEvent.with({ action: 'restart' });
+  }
+});
+```
+
+#### Type Parameters
+
+| Type Parameter | Description |
+| ------ | ------ |
+| `AcceptEvents` *extends* [`WorkflowEvent`](WorkflowEvent.mdx)\<`any`\>[] | Array of event types this handler accepts |
+| `Result` *extends* `void` \| [`WorkflowEventData`](WorkflowEventData.mdx)\<`any`, `string`\> | Return type of the handler (event data or void) |
+
+#### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `accept` | `AcceptEvents` | Array of event types that trigger this handler |
+| `handler` | `Handler`\<`AcceptEvents`, `Result`\> | Function to execute when matching events are received |
+
+#### Returns
+
+`void`

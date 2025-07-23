@@ -1,0 +1,57 @@
+---
+title: "Type Alias: WorkflowEvent"
+description: Represents a workflow event type that can be instantiated with data.
+category: Types
+sidebar_label: WorkflowEvent
+---
+[Workflow Core API](../README.mdx) / WorkflowEvent
+
+> **WorkflowEvent**\<`Data`, `DebugLabel`\> = `object` & `object`
+
+Defined in: [event.ts:65](https://github.com/run-llama/llama-flow/blob/33aca370356eefe2f82d1ad3bc7aa2fbb48a0277/packages/core/src/core/event.ts#L65)
+
+Represents a workflow event type that can be instantiated with data.
+
+Events are the core building blocks of workflows. They define the structure
+of data that flows through the system and can be used to trigger handlers.
+
+## Example
+
+```typescript
+// Create an event type
+const UserLoginEvent = workflowEvent<{ userId: string; timestamp: Date }>();
+
+// Create event data
+const loginData = UserLoginEvent.with({ 
+  userId: 'user123', 
+  timestamp: new Date() 
+});
+
+// Check if data belongs to this event type
+if (UserLoginEvent.include(someEventData)) {
+  console.log('User ID:', someEventData.data.userId);
+}
+```
+
+## Type declaration
+
+| Name | Type | Description | Defined in |
+| ------ | ------ | ------ | ------ |
+| `debugLabel?` | `DebugLabel` | Optional label used for debugging and logging purposes. | [event.ts:69](https://github.com/run-llama/llama-flow/blob/33aca370356eefe2f82d1ad3bc7aa2fbb48a0277/packages/core/src/core/event.ts#L69) |
+| `include()` | (`event`) => `event is WorkflowEventData<Data, DebugLabel>` | Type guard to check if unknown event data belongs to this event type. | [event.ts:89](https://github.com/run-llama/llama-flow/blob/33aca370356eefe2f82d1ad3bc7aa2fbb48a0277/packages/core/src/core/event.ts#L89) |
+| `onInit()` | (`callback`) => `Cleanup` | Registers a callback to be called when this event type is instantiated. | [event.ts:97](https://github.com/run-llama/llama-flow/blob/33aca370356eefe2f82d1ad3bc7aa2fbb48a0277/packages/core/src/core/event.ts#L97) |
+| `uniqueId` | `string` | Unique identifier for the event type, used for serialization and network communication. | [event.ts:73](https://github.com/run-llama/llama-flow/blob/33aca370356eefe2f82d1ad3bc7aa2fbb48a0277/packages/core/src/core/event.ts#L73) |
+| `with()` | (`data`) => [`WorkflowEventData`](WorkflowEventData.mdx)\<`Data`, `DebugLabel`\> | Creates event data with the provided payload. | [event.ts:81](https://github.com/run-llama/llama-flow/blob/33aca370356eefe2f82d1ad3bc7aa2fbb48a0277/packages/core/src/core/event.ts#L81) |
+
+## Type declaration
+
+| Name | Type | Defined in |
+| ------ | ------ | ------ |
+| `[opaqueSymbol]` | `DebugLabel` | [event.ts:98](https://github.com/run-llama/llama-flow/blob/33aca370356eefe2f82d1ad3bc7aa2fbb48a0277/packages/core/src/core/event.ts#L98) |
+
+## Type Parameters
+
+| Type Parameter | Default type | Description |
+| ------ | ------ | ------ |
+| `Data` | - | The type of data this event can carry |
+| `DebugLabel` *extends* `string` | `string` | Optional debug label for development/debugging |

@@ -1,0 +1,361 @@
+---
+title: "Class: WorkflowStream"
+description: A reactive stream for processing workflow events.
+category: Classes
+sidebar_label: WorkflowStream
+---
+[Workflow Core API](../README.mdx) / WorkflowStream
+
+Defined in: [stream.ts:106](https://github.com/run-llama/llama-flow/blob/33aca370356eefe2f82d1ad3bc7aa2fbb48a0277/packages/core/src/core/stream.ts#L106)
+
+A reactive stream for processing workflow events.
+
+WorkflowStream extends the standard ReadableStream to provide specialized
+methods for filtering, transforming, and consuming workflow events.
+It supports reactive patterns and can be used to build complex event
+processing pipelines.
+
+## Example
+
+```typescript
+// Get stream from workflow context
+const stream = context.stream;
+
+// Filter for specific events
+const userEvents = stream.filter(UserEvent);
+
+// Transform events
+const processed = stream.map(event => ({
+  type: event.constructor.name,
+  timestamp: Date.now(),
+  data: event.data
+}));
+
+// Consume events
+for await (const event of stream.take(10)) {
+  console.log('Received:', event);
+}
+```
+
+## Extends
+
+- `ReadableStream`\<`R`\>
+
+## Type Parameters
+
+| Type Parameter | Default type | Description |
+| ------ | ------ | ------ |
+| `R` | `any` | The type of data flowing through the stream |
+
+## Implements
+
+- `AsyncIterable`\<`R`\>
+
+## Methods
+
+### fromReadableStream()
+
+> `static` **fromReadableStream**\<`T`\>(`stream`): `WorkflowStream`\<`T`\>
+
+Defined in: [stream.ts:192](https://github.com/run-llama/llama-flow/blob/33aca370356eefe2f82d1ad3bc7aa2fbb48a0277/packages/core/src/core/stream.ts#L192)
+
+Create a WorkflowStream from a standard ReadableStream.
+
+#### Type Parameters
+
+| Type Parameter | Default type |
+| ------ | ------ |
+| `T` | `any` |
+
+#### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `stream` | `ReadableStream`\<[`WorkflowEventData`](../type-aliases/WorkflowEventData.mdx)\<`any`\>\> | The ReadableStream to wrap |
+
+#### Returns
+
+`WorkflowStream`\<`T`\>
+
+A new WorkflowStream instance
+
+***
+
+### fromResponse()
+
+> `static` **fromResponse**(`response`, `eventMap`): `WorkflowStream`\<[`WorkflowEventData`](../type-aliases/WorkflowEventData.mdx)\<`any`\>\>
+
+Defined in: [stream.ts:214](https://github.com/run-llama/llama-flow/blob/33aca370356eefe2f82d1ad3bc7aa2fbb48a0277/packages/core/src/core/stream.ts#L214)
+
+Create a WorkflowStream from an HTTP Response.
+
+#### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `response` | `Response` | The HTTP Response containing workflow events |
+| `eventMap` | `Record`\<`string`, [`WorkflowEvent`](../type-aliases/WorkflowEvent.mdx)\<`any`\>\> | Map of event unique IDs to event constructors |
+
+#### Returns
+
+`WorkflowStream`\<[`WorkflowEventData`](../type-aliases/WorkflowEventData.mdx)\<`any`\>\>
+
+A new WorkflowStream instance
+
+***
+
+### filter()
+
+> **filter**(`predicate`): `WorkflowStream`\<`R`\>
+
+Defined in: [stream.ts:404](https://github.com/run-llama/llama-flow/blob/33aca370356eefe2f82d1ad3bc7aa2fbb48a0277/packages/core/src/core/stream.ts#L404)
+
+Filter the stream to include only items matching the predicate.
+
+#### Example
+
+```typescript
+// Filter by event type
+const userEvents = stream.filter(UserEvent);
+
+// Filter by function
+const importantEvents = stream.filter(event => event.priority === 'high');
+
+// Filter by specific value
+const specificEvent = stream.filter(myEventInstance);
+```
+
+#### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `predicate` | `R` *extends* [`WorkflowEventData`](../type-aliases/WorkflowEventData.mdx)\<`any`\> ? `R`\<`R`\> \| [`WorkflowEvent`](../type-aliases/WorkflowEvent.mdx)\<`InferWorkflowEventData`\<`R`\<`R`\>\>\> \| (`event`) => `boolean` : `R` \| (`event`) => `boolean` | Event type, function, or value to filter by |
+
+#### Returns
+
+`WorkflowStream`\<`R`\>
+
+A new WorkflowStream containing only matching items
+
+***
+
+### forEach()
+
+> **forEach**(`callback`): `Promise`\<`void`\>
+
+Defined in: [stream.ts:314](https://github.com/run-llama/llama-flow/blob/33aca370356eefe2f82d1ad3bc7aa2fbb48a0277/packages/core/src/core/stream.ts#L314)
+
+Process each item in the stream with a callback function.
+
+#### Example
+
+```typescript
+await stream.forEach(event => {
+  console.log('Processing:', event);
+});
+```
+
+#### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `callback` | (`item`) => `void` | Function to call for each item |
+
+#### Returns
+
+`Promise`\<`void`\>
+
+Promise that resolves when all items are processed
+
+***
+
+### map()
+
+> **map**\<`T`\>(`callback`): `WorkflowStream`\<`T`\>
+
+Defined in: [stream.ts:338](https://github.com/run-llama/llama-flow/blob/33aca370356eefe2f82d1ad3bc7aa2fbb48a0277/packages/core/src/core/stream.ts#L338)
+
+Transform each item in the stream.
+
+#### Example
+
+```typescript
+const timestamps = stream.map(event => ({
+  ...event,
+  timestamp: Date.now()
+}));
+```
+
+#### Type Parameters
+
+| Type Parameter |
+| ------ |
+| `T` |
+
+#### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `callback` | (`item`) => `T` | Function to transform each item |
+
+#### Returns
+
+`WorkflowStream`\<`T`\>
+
+A new WorkflowStream with transformed items
+
+***
+
+### on()
+
+> **on**\<`T`\>(`event`, `handler`): () => `void`
+
+Defined in: [stream.ts:130](https://github.com/run-llama/llama-flow/blob/33aca370356eefe2f82d1ad3bc7aa2fbb48a0277/packages/core/src/core/stream.ts#L130)
+
+Subscribe to specific workflow events.
+
+#### Example
+
+```typescript
+const unsubscribe = stream.on(UserEvent, (event) => {
+  console.log('User event:', event.data);
+});
+
+// Later...
+unsubscribe();
+```
+
+#### Type Parameters
+
+| Type Parameter |
+| ------ |
+| `T` |
+
+#### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `event` | [`WorkflowEvent`](../type-aliases/WorkflowEvent.mdx)\<`T`\> | The event type to listen for |
+| `handler` | (`event`) => `void` | Function to handle the event |
+
+#### Returns
+
+Unsubscribe function
+
+> (): `void`
+
+##### Returns
+
+`void`
+
+***
+
+### take()
+
+> **take**(`limit`): `WorkflowStream`\<`R`\>
+
+Defined in: [stream.ts:369](https://github.com/run-llama/llama-flow/blob/33aca370356eefe2f82d1ad3bc7aa2fbb48a0277/packages/core/src/core/stream.ts#L369)
+
+Take only the first N items from the stream.
+
+#### Example
+
+```typescript
+const firstTen = stream.take(10);
+for await (const event of firstTen) {
+  console.log(event);
+}
+```
+
+#### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `limit` | `number` | Maximum number of items to take |
+
+#### Returns
+
+`WorkflowStream`\<`R`\>
+
+A new WorkflowStream limited to the specified number of items
+
+***
+
+### toArray()
+
+> **toArray**(): `Promise`\<`R`[]\>
+
+Defined in: [stream.ts:478](https://github.com/run-llama/llama-flow/blob/33aca370356eefe2f82d1ad3bc7aa2fbb48a0277/packages/core/src/core/stream.ts#L478)
+
+Collect all items from the stream into an array.
+
+#### Example
+
+```typescript
+const events = await stream.take(5).toArray();
+console.log('Collected events:', events);
+```
+
+#### Returns
+
+`Promise`\<`R`[]\>
+
+Promise resolving to an array of all stream items
+
+***
+
+### toResponse()
+
+> **toResponse**(`init?`, `transformer?`): `R` *extends* [`WorkflowEventData`](../type-aliases/WorkflowEventData.mdx)\<`any`\> ? `Response` : `never`
+
+Defined in: [stream.ts:237](https://github.com/run-llama/llama-flow/blob/33aca370356eefe2f82d1ad3bc7aa2fbb48a0277/packages/core/src/core/stream.ts#L237)
+
+Convert the stream to an HTTP Response.
+
+#### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `init?` | `ResponseInit` | Optional ResponseInit parameters |
+| `transformer?` | `JsonEncodeTransform` | Optional custom transformer (defaults to JSON encoding) |
+
+#### Returns
+
+`R` *extends* [`WorkflowEventData`](../type-aliases/WorkflowEventData.mdx)\<`any`\> ? `Response` : `never`
+
+HTTP Response containing the stream data
+
+***
+
+### until()
+
+> **until**(`predicate`): `WorkflowStream`\<`R`\>
+
+Defined in: [stream.ts:444](https://github.com/run-llama/llama-flow/blob/33aca370356eefe2f82d1ad3bc7aa2fbb48a0277/packages/core/src/core/stream.ts#L444)
+
+Continue the stream until the predicate is met, then terminate.
+
+#### Example
+
+```typescript
+// Stop at completion event
+const processingEvents = stream.until(CompletionEvent);
+
+// Stop when condition is met
+const beforeError = stream.until(event => event.type === 'error');
+
+// Stop at specific event instance
+const beforeSpecific = stream.until(myEventInstance);
+```
+
+#### Parameters
+
+| Parameter | Type | Description |
+| ------ | ------ | ------ |
+| `predicate` | `R` *extends* [`WorkflowEventData`](../type-aliases/WorkflowEventData.mdx)\<`any`\> ? `R`\<`R`\> \| [`WorkflowEvent`](../type-aliases/WorkflowEvent.mdx)\<`InferWorkflowEventData`\<`R`\<`R`\>\>\> \| (`item`) => `boolean` : `R` \| (`item`) => `boolean` | Event type, function, or value to stop at |
+
+#### Returns
+
+`WorkflowStream`\<`R`\>
+
+A new WorkflowStream that terminates when the predicate is met

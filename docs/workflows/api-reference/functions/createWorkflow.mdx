@@ -1,0 +1,41 @@
+---
+title: "Function: createWorkflow"
+description: Creates a new workflow instance.
+category: Functions
+sidebar_label: createWorkflow
+---
+[Workflow Core API](../README.mdx) / createWorkflow
+
+> **createWorkflow**(): [`Workflow`](../type-aliases/Workflow.mdx)
+
+Defined in: [workflow.ts:115](https://github.com/run-llama/llama-flow/blob/33aca370356eefe2f82d1ad3bc7aa2fbb48a0277/packages/core/src/core/workflow.ts#L115)
+
+Creates a new workflow instance.
+
+This is the primary factory function for creating workflows. Each workflow
+maintains its own registry of event handlers and can create multiple
+independent execution contexts.
+
+## Example
+
+```typescript
+// Create a simple workflow
+const workflow = createWorkflow();
+
+// Register handlers
+workflow.handle([InputEvent], async (context, event) => {
+  const processed = await processInput(event.data);
+  return OutputEvent.with(processed);
+});
+
+// Use the workflow
+const context = workflow.createContext();
+const input = InputEvent.with({ text: 'Hello World' });
+await context.send(input);
+```
+
+## Returns
+
+[`Workflow`](../type-aliases/Workflow.mdx)
+
+A new workflow instance

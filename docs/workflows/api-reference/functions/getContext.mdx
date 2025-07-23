@@ -1,0 +1,41 @@
+---
+title: "Function: getContext"
+description: Gets the current workflow context.
+category: Functions
+sidebar_label: getContext
+---
+[Workflow Core API](../README.mdx) / getContext
+
+> **getContext**(): [`WorkflowContext`](../type-aliases/WorkflowContext.mdx)
+
+Defined in: [context.ts:153](https://github.com/run-llama/llama-flow/blob/33aca370356eefe2f82d1ad3bc7aa2fbb48a0277/packages/core/src/core/context.ts#L153)
+
+Gets the current workflow context.
+
+This function retrieves the workflow context for the currently executing handler.
+It uses AsyncContext to maintain context across async boundaries.
+
+## Example
+
+```typescript
+workflow.handle([MyEvent], async (context, event) => {
+  // Context is passed as parameter, but you can also get it globally
+  const ctx = getContext();
+  
+  // Both are the same reference
+  console.log(context === ctx); // true
+  
+  // Send additional events
+  ctx.sendEvent(LogEvent.with({ message: 'Handler started' }));
+});
+```
+
+## Returns
+
+[`WorkflowContext`](../type-aliases/WorkflowContext.mdx)
+
+The current workflow context
+
+## Throws
+
+Error if called outside of a workflow handler

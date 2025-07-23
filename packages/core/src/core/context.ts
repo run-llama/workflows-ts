@@ -56,9 +56,57 @@ export type ContextNext = (
   next: (context: HandlerContext) => void,
 ) => void;
 
+/**
+ * Execution context for workflow event processing.
+ *
+ * The workflow context provides the runtime environment for executing handlers
+ * and managing event flow. It offers access to the event stream, abort signals,
+ * and methods for sending events within the workflow.
+ *
+ * @example
+ * ```typescript
+ * import { getContext } from "@llamaindex/workflow-core";
+ *
+ * // Get the current context (inside a handler)
+ * const { sendEvent, stream, signal } = getContext();
+ *
+ * // Send events
+ * sendEvent(
+ *   ProcessEvent.with({ step: 'validation' }),
+ *   LogEvent.with({ message: 'Processing started' })
+ * );
+ *
+ * // Access the event stream
+ * await stream.filter(CompletionEvent).take(1).toArray();
+ *
+ * // Check for cancellation
+ * if (signal.aborted) {
+ *   throw new Error('Operation cancelled');
+ * }
+ * ```
+ *
+ * @category Context
+ * @public
+ */
 export type WorkflowContext = {
+  /**
+   * Stream of all events flowing through this workflow context.
+   * Can be used to listen for specific events or create reactive processing chains.
+   */
   get stream(): WorkflowStream<WorkflowEventData<any>>;
+
+  /**
+   * Abort signal that indicates if the workflow has been cancelled.
+   * Handlers should check this periodically for long-running operations.
+   */
   get signal(): AbortSignal;
+
+  /**
+   * Sends one or more events into the workflow for processing.
+   * Events will be delivered to all matching handlers asynchronously.
+   *
+   * @param events - Event data instances to send
+   */
   sendEvent: (...events: WorkflowEventData<any>[]) => void;
 
   /**
@@ -77,6 +125,31 @@ export type WorkflowContext = {
 export const _executorAsyncLocalStorage =
   new AsyncContext.Variable<WorkflowContext>();
 
+/**
+ * Gets the current workflow context.
+ *
+ * This function retrieves the workflow context for the currently executing handler.
+ * It uses AsyncContext to maintain context across async boundaries.
+ *
+ * @returns The current workflow context
+ * @throws Error if called outside of a workflow handler
+ *
+ * @example
+ * ```typescript
+ * import { getContext } from "@llamaindex/workflow-core";
+ *
+ * workflow.handle([MyEvent], async (context, event) => {
+ *   // Context is passed as parameter, but you can also get it globally
+ *   const { sendEvent } = getContext();
+ *
+ *   // Send additional events
+ *   sendEvent(LogEvent.with({ message: 'Handler started' }));
+ * });
+ * ```
+ *
+ * @category Context
+ * @public
+ */
 export function getContext(): WorkflowContext {
   const context = _executorAsyncLocalStorage.get();
   if (!context) {

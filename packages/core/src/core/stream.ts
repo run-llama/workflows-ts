@@ -69,6 +69,40 @@ class JsonDecodeTransform extends TransformStream<
   }
 }
 
+/**
+ * A reactive stream for processing workflow events.
+ *
+ * WorkflowStream extends the standard ReadableStream to provide specialized
+ * methods for filtering, transforming, and consuming workflow events.
+ * It supports reactive patterns and can be used to build complex event
+ * processing pipelines.
+ *
+ * @typeParam R - The type of data flowing through the stream
+ *
+ * @example
+ * ```typescript
+ * // Get stream from workflow context
+ * const stream = context.stream;
+ *
+ * // Filter for specific events
+ * const userEvents = stream.filter(UserEvent);
+ *
+ * // Transform events
+ * const processed = stream.map(event => ({
+ *   type: event.constructor.name,
+ *   timestamp: Date.now(),
+ *   data: event.data
+ * }));
+ *
+ * // Consume events
+ * for await (const event of stream.take(10)) {
+ *   console.log('Received:', event);
+ * }
+ * ```
+ *
+ * @category Streaming
+ * @public
+ */
 export class WorkflowStream<R = any>
   extends ReadableStream<R>
   implements AsyncIterable<R>
@@ -76,6 +110,23 @@ export class WorkflowStream<R = any>
   #stream: ReadableStream<R>;
   #subscribable: Subscribable<[data: R], void>;
 
+  /**
+   * Subscribe to specific workflow events.
+   *
+   * @param event - The event type to listen for
+   * @param handler - Function to handle the event
+   * @returns Unsubscribe function
+   *
+   * @example
+   * ```typescript
+   * const unsubscribe = stream.on(UserEvent, (event) => {
+   *   console.log('User event:', event.data);
+   * });
+   *
+   * // Later...
+   * unsubscribe();
+   * ```
+   */
   on<T>(
     event: WorkflowEvent<T>,
     handler: (event: WorkflowEventData<T>) => void,
@@ -132,6 +183,12 @@ export class WorkflowStream<R = any>
     }
   }
 
+  /**
+   * Create a WorkflowStream from a standard ReadableStream.
+   *
+   * @param stream - The ReadableStream to wrap
+   * @returns A new WorkflowStream instance
+   */
   static fromReadableStream<T = any>(
     stream: ReadableStream<WorkflowEventData<any>>,
   ): WorkflowStream<T> {
@@ -147,6 +204,13 @@ export class WorkflowStream<R = any>
     );
   }
 
+  /**
+   * Create a WorkflowStream from an HTTP Response.
+   *
+   * @param response - The HTTP Response containing workflow events
+   * @param eventMap - Map of event unique IDs to event constructors
+   * @returns A new WorkflowStream instance
+   */
   static fromResponse(
     response: Response,
     eventMap: Record<string, WorkflowEvent<any>>,
@@ -163,6 +227,13 @@ export class WorkflowStream<R = any>
     );
   }
 
+  /**
+   * Convert the stream to an HTTP Response.
+   *
+   * @param init - Optional ResponseInit parameters
+   * @param transformer - Optional custom transformer (defaults to JSON encoding)
+   * @returns HTTP Response containing the stream data
+   */
   toResponse(
     init?: ResponseInit,
     transformer = new JsonEncodeTransform(),
@@ -175,26 +246,33 @@ export class WorkflowStream<R = any>
     ) as any;
   }
 
+  // ReadableStream compatibility methods - marked as internal to hide from main API docs
+  /** @internal */
   get locked() {
     return this.#stream.locked;
   }
 
+  /** @internal */
   [Symbol.asyncIterator](): ReadableStreamAsyncIterator<R> {
     return this.#stream[Symbol.asyncIterator]();
   }
 
+  /** @internal */
   cancel(reason?: any): Promise<void> {
     return this.#stream.cancel(reason);
   }
 
-  // make type compatible with Web ReadableStream API
+  /** @internal */
   getReader(options: { mode: "byob" }): ReadableStreamBYOBReader;
+  /** @internal */
   getReader(): ReadableStreamDefaultReader<R>;
+  /** @internal */
   getReader(options?: ReadableStreamGetReaderOptions): ReadableStreamReader<R>;
   getReader(): any {
     return this.#stream.getReader();
   }
 
+  /** @internal */
   pipeThrough<T>(
     transform: ReadableWritablePair<T, R>,
     options?: StreamPipeOptions,
@@ -203,6 +281,7 @@ export class WorkflowStream<R = any>
     return new WorkflowStream<T>(null, stream);
   }
 
+  /** @internal */
   pipeTo(
     destination: WritableStream<R>,
     options?: StreamPipeOptions,
@@ -210,6 +289,7 @@ export class WorkflowStream<R = any>
     return this.#stream.pipeTo(destination, options);
   }
 
+  /** @internal */
   tee(): [WorkflowStream<R>, WorkflowStream<R>] {
     const [l, r] = this.#stream.tee();
     return [
@@ -218,6 +298,19 @@ export class WorkflowStream<R = any>
     ];
   }
 
+  /**
+   * Process each item in the stream with a callback function.
+   *
+   * @param callback - Function to call for each item
+   * @returns Promise that resolves when all items are processed
+   *
+   * @example
+   * ```typescript
+   * await stream.forEach(event => {
+   *   console.log('Processing:', event);
+   * });
+   * ```
+   */
   forEach(callback: (item: R) => void): Promise<void> {
     return this.#stream.pipeTo(
       new WritableStream({
@@ -228,6 +321,20 @@ export class WorkflowStream<R = any>
     );
   }
 
+  /**
+   * Transform each item in the stream.
+   *
+   * @param callback - Function to transform each item
+   * @returns A new WorkflowStream with transformed items
+   *
+   * @example
+   * ```typescript
+   * const timestamps = stream.map(event => ({
+   *   ...event,
+   *   timestamp: Date.now()
+   * }));
+   * ```
+   */
   map<T>(callback: (item: R) => T): WorkflowStream<T> {
     return this.pipeThrough<T>(
       new TransformStream({
@@ -238,12 +345,27 @@ export class WorkflowStream<R = any>
     );
   }
 
+  /** @internal */
   values(
     options?: ReadableStreamIteratorOptions,
   ): ReadableStreamAsyncIterator<R> {
     return this.#stream.values(options);
   }
 
+  /**
+   * Take only the first N items from the stream.
+   *
+   * @param limit - Maximum number of items to take
+   * @returns A new WorkflowStream limited to the specified number of items
+   *
+   * @example
+   * ```typescript
+   * const firstTen = stream.take(10);
+   * for await (const event of firstTen) {
+   *   console.log(event);
+   * }
+   * ```
+   */
   take(limit: number): WorkflowStream<R> {
     let count = 0;
     return this.pipeThrough(
@@ -261,18 +383,28 @@ export class WorkflowStream<R = any>
     );
   }
 
+  /**
+   * Filter the stream to include only items matching the predicate.
+   *
+   * @param predicate - Event type, function, or value to filter by
+   * @returns A new WorkflowStream containing only matching items
+   *
+   * @example
+   * ```typescript
+   * // Filter by event type
+   * const userEvents = stream.filter(UserEvent);
+   *
+   * // Filter by function
+   * const importantEvents = stream.filter(event => event.priority === 'high');
+   *
+   * // Filter by specific value
+   * const specificEvent = stream.filter(myEventInstance);
+   * ```
+   */
   filter(
     predicate: R extends WorkflowEventData<any>
-      ? WorkflowEvent<InferWorkflowEventData<R>>
-      : never,
-  ): WorkflowStream<R>;
-  filter(predicate: R): WorkflowStream<R>;
-  filter(predicate: (event: R) => boolean): WorkflowStream<R>;
-  filter(
-    predicate:
-      | WorkflowEvent<InferWorkflowEventData<R>>
-      | ((event: R) => boolean)
-      | R,
+      ? WorkflowEvent<InferWorkflowEventData<R>> | ((event: R) => boolean) | R
+      : ((event: R) => boolean) | R,
   ): WorkflowStream<R> {
     return this.pipeThrough(
       new TransformStream({
@@ -291,18 +423,28 @@ export class WorkflowStream<R = any>
     );
   }
 
+  /**
+   * Continue the stream until the predicate is met, then terminate.
+   *
+   * @param predicate - Event type, function, or value to stop at
+   * @returns A new WorkflowStream that terminates when the predicate is met
+   *
+   * @example
+   * ```typescript
+   * // Stop at completion event
+   * const processingEvents = stream.until(CompletionEvent);
+   *
+   * // Stop when condition is met
+   * const beforeError = stream.until(event => event.type === 'error');
+   *
+   * // Stop at specific event instance
+   * const beforeSpecific = stream.until(myEventInstance);
+   * ```
+   */
   until(
     predicate: R extends WorkflowEventData<any>
-      ? WorkflowEvent<InferWorkflowEventData<R>>
-      : never,
-  ): WorkflowStream<R>;
-  until(predicate: (item: R) => boolean): WorkflowStream<R>;
-  until(item: R): WorkflowStream<R>;
-  until(
-    predicate:
-      | WorkflowEvent<InferWorkflowEventData<R>>
-      | R
-      | ((item: R) => boolean),
+      ? WorkflowEvent<InferWorkflowEventData<R>> | ((item: R) => boolean) | R
+      : ((item: R) => boolean) | R,
   ): WorkflowStream<R> {
     return this.pipeThrough(
       new TransformStream({
@@ -322,6 +464,17 @@ export class WorkflowStream<R = any>
     );
   }
 
+  /**
+   * Collect all items from the stream into an array.
+   *
+   * @returns Promise resolving to an array of all stream items
+   *
+   * @example
+   * ```typescript
+   * const events = await stream.take(5).toArray();
+   * console.log('Collected events:', events);
+   * ```
+   */
   async toArray(): Promise<R[]> {
     const events: R[] = [];
     await this.pipeTo(

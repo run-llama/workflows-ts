@@ -3,5 +3,10 @@
   "description": "Event-driven workflow engine",
   "root": true,
   "defaultOpen": false,
-  "pages": ["index", "tutorials/express_agent", "common_patterns", "details"]
+  "pages": [
+    "index",
+    "tutorials/express_agent",
+    "common_patterns",
+    "api-reference"
+  ]
 }
