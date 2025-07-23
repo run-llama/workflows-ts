@@ -30,6 +30,11 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
+      - name: Generate API Documentation
+        run: |
+          pnpm run build:docs
+          echo "API documentation generated"
+
       - name: Update jsr.json
         run: |
           jq --arg version "$(jq -r '.version' ./packages/core/package.json)" '.version = $version' ./packages/core/jsr.json > tmp.json && mv tmp.json ./packages/core/jsr.json
@@ -43,9 +48,9 @@ jobs:
         continue-on-error: true
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "chore: update jsr.json"
+          commit_message: "chore: update jsr.json and API docs"
           branch: changeset-release/main
-          file_pattern: "**/jsr.json **/CHANGELOG.md"
+          file_pattern: "**/jsr.json **/CHANGELOG.md docs/workflows/api-reference/**"
 #  Blocked by upstream issue: https://github.com/jsr-io/jsr/issues/543
 #
 #  publish:
