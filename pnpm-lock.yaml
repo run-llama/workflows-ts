@@ -190,6 +190,10 @@ importers:
   docs: {}
 
   packages/core:
+    dependencies:
+      async-context-polyfill:
+        specifier: ^1.0.4
+        version: 1.0.4(typescript@5.8.3)
     devDependencies:
       '@modelcontextprotocol/sdk':
         specifier: ^1.13.1
@@ -2097,6 +2101,9 @@ packages:
   ast-kit@2.1.0:
     resolution: {integrity: sha512-ROM2LlXbZBZVk97crfw8PGDOBzzsJvN2uJCmwswvPUNyfH14eg90mSN3xNqsri1JS1G9cz0VzeDUhxJkTrr4Ew==}
     engines: {node: '>=20.18.0'}
+
+  async-context-polyfill@1.0.4:
+    resolution: {integrity: sha512-OmzYlCv8oDaF3fKQosMgqVlDdIe6l584MyhSgwESWxKhf76hjj+qP1eL5OidUSuyKNa1Wi8TsjLW7h/Eigf9ag==}
 
   balanced-match@1.0.2:
     resolution: {integrity: sha512-3oSeUO0TMV67hN1AmbXsK4yaqU7tjiHlbxRDZOpH0KW9+CeX4bRAaX0Anxt0tx2MrpRpWwQaPwIlISEJhYU5Pw==}
@@ -5832,6 +5839,12 @@ snapshots:
     dependencies:
       '@babel/parser': 7.27.5
       pathe: 2.0.3
+
+  async-context-polyfill@1.0.4(typescript@5.8.3):
+    dependencies:
+      bunchee: 6.5.4(typescript@5.8.3)
+    transitivePeerDependencies:
+      - typescript
 
   balanced-match@1.0.2: {}
 

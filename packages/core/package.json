@@ -205,5 +205,8 @@
   },
   "publishConfig": {
     "access": "public"
+  },
+  "dependencies": {
+    "async-context-polyfill": "^1.0.4"
   }
 }
