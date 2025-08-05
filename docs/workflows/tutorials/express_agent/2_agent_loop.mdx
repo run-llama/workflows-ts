@@ -3,6 +3,316 @@ title: "Agent Loop"
 description: "Building an agent loop with Workflows"
 ---
 
-# Agent Loop
+At its most basic definition, an agent loop is a loop that:
+- processes user input
+- decides to either call a tool or respond to the user
+- if a tool is selected, calls the tool and gets the response
+- loops until no tools are selected and a final response is generated
 
-TODO
+Using pseudo-code, we can represent this as:
+
+```typescript
+let userInput = getUserInput();
+let messages = [{ role: "user", content: userInput }];
+while (true) {
+  const response = await llm(messages, tools);
+  messages.push({ role: "assistant", content: response.content, tool_calls: response.tool_calls });
+
+  if (response.tool_calls) {
+    for (const toolCall of response.tool_calls) {
+      const toolResponse = await callTool(toolCall, tools);
+      messages.push({ role: "tool", content: toolResponse, tool_call_id: toolCall.id });
+    }
+  } else {
+    break;
+  }
+}
+
+console.log(response);
+```
+
+Let's explore this in more detail, first with a basic implementation, then using workflows.
+
+## Basic Implementation
+
+Let's start by implementing the agent loop using the same structure as our pseudo-code, but with real functions. This will help us understand the core logic before we structure it with workflows.
+
+```typescript
+import { OpenAI } from "openai";
+import { ChatCompletionMessageParam } from "openai/resources/chat/completions";
+
+// Initialize OpenAI client
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+// Define available tools
+const tools = [
+  {
+    type: "function" as const,
+    function: {
+      name: "get_weather",
+      description: "Get the current weather for a location",
+      parameters: {
+        type: "object",
+        properties: {
+          location: {
+            type: "string",
+            description: "The city and state, e.g. San Francisco, CA",
+          },
+        },
+        required: ["location"],
+      },
+    },
+  },
+];
+
+// LLM function - handles the AI reasoning
+async function llm(messages: ChatCompletionMessageParam[], availableTools: any[]) {
+  const completion = await openai.chat.completions.create({
+    model: "gpt-4.1-mini",
+    messages: messages,
+    tools: availableTools,
+    tool_choice: "auto",
+  });
+
+  const message = completion.choices[0]?.message;
+  if (!message) {
+    throw new Error("No response from LLM");
+  }
+
+  return {
+    content: message.content,
+    tool_calls: message.tool_calls,
+  };
+}
+
+// Tool calling function - executes the requested tools
+async function callTool(toolCall: any, availableTools: any[]) {
+  const toolName = toolCall.function.name;
+  const toolInput = JSON.parse(toolCall.function.arguments);
+
+  // Execute the requested tool
+  switch (toolName) {
+    case "get_weather":
+      // Mock weather API call
+      const location = toolInput.location;
+      return `The weather in ${location} is sunny and 72°F`;
+    default:
+      return `Unknown tool: ${toolName}`;
+  }
+}
+
+// Now implement our agent loop
+async function runAgentLoop(userInput: string) {
+  let messages: ChatCompletionMessageParam[] = [{ role: "user", content: userInput }];
+  
+  while (true) {
+    const response = await llm(messages, tools);
+    
+    // Add the assistant's response to the conversation
+    messages.push({
+      role: "assistant",
+      content: response.content,
+      tool_calls: response.tool_calls,
+    });
+
+    if (response.tool_calls) {
+      // Process each tool call
+      for (const toolCall of response.tool_calls) {
+        const toolResponse = await callTool(toolCall, tools);
+        messages.push({
+          role: "tool",
+          content: toolResponse,
+          tool_call_id: toolCall.id,
+        });
+      }
+    } else {
+      // No tools needed, we have our final response
+      return response.content;
+    }
+  }
+}
+
+// Run the agent
+const result = await runAgentLoop("What's the weather in San Francisco?");
+console.log(result);
+```
+
+This implementation follows our pseudo-code exactly, but with real OpenAI API calls. The logic is straightforward:
+1. Call the LLM with current conversation
+2. If it wants to use tools, execute them and add results to conversation
+3. If no tools, return the final response
+
+## Converting to Workflows
+
+Now let's see how workflows can help us structure this same logic. Workflows provide several benefits:
+- **Event-driven**: Each step is triggered by events, making the flow more explicit
+- **Composable**: We can easily add new handlers or modify existing ones
+- **Streaming**: We can stream events and responses in real-time
+- **Scalable**: Multiple handlers can process events concurrently
+
+### Scaffolding our workflow
+
+Let's convert our agent loop to use workflows. We'll keep the same `llm()` and `callTool()` functions, but structure the flow using events and handlers:
+
+```typescript
+import { createWorkflow, workflowEvent, getContext } from "@llamaindex/workflow-core";
+import { OpenAI } from "openai";
+import { ChatCompletionMessageParam } from "openai/resources/chat/completions";
+
+const workflow = createWorkflow();
+
+// Define our events
+const userInputEvent = workflowEvent<{ messages: ChatCompletionMessageParam[] }>();
+const toolCallEvent = workflowEvent<{
+  toolName: string;
+  toolInput: Record<string, any>;
+  toolId: string;
+}>();
+const toolResponseEvent = workflowEvent<{
+  toolResponse: string;
+  toolId: string;
+}>();
+const finalResponseEvent = workflowEvent<string>();
+
+// Initialize OpenAI client (same as before)
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+// Define available tools (same as before)
+const tools = [...];
+
+// Same LLM function as before
+async function llm(messages: ChatCompletionMessageParam[], availableTools: any[]) {
+  ...
+}
+
+// Same tool calling function as before
+async function callTool(toolCall: any, availableTools: any[]) {
+  ...
+}
+
+// Handler for processing user input and LLM responses
+workflow.handle([userInputEvent], async (event) => {
+  const { sendEvent, stream } = getContext();
+  const { messages } = event.data;
+
+  try {
+    // Use our same llm() function
+    const response = await llm(messages, tools);
+
+    // Add the assistant's response to the conversation
+    const updatedMessages = [
+      ...messages,
+      {
+        role: "assistant" as const,
+        content: response.content,
+        tool_calls: response.tool_calls,
+      },
+    ];
+
+    // Check if the LLM wants to call tools
+    if (response.tool_calls && response.tool_calls.length > 0) {
+      // Send tool call events for each requested tool
+      for (const toolCall of response.tool_calls) {
+        sendEvent(toolCallEvent.with({
+          toolName: toolCall.function.name,
+          toolInput: JSON.parse(toolCall.function.arguments),
+          toolId: toolCall.id,
+        }));
+      }
+
+      // Collect ALL tool responses before continuing
+      const expectedToolCount = response.tool_calls.length;
+      const toolResponses: Array<{ toolResponse: string; toolId: string }> = [];
+
+      // Listen for tool responses until we have all of them
+      await stream.filter(toolResponseEvent).forEach(responseEvent => {
+        toolResponses.push(responseEvent.data);
+        
+        // Once we have all responses, continue the conversation
+        if (toolResponses.length === expectedToolCount) {
+          // Add tool response messages
+          const finalMessages = [
+            ...updatedMessages,
+            ...toolResponses.map(response => ({
+              role: "tool" as const,
+              content: response.toolResponse,
+              tool_call_id: response.toolId,
+            })),
+          ];
+
+          // Continue the loop with the updated conversation
+          sendEvent(userInputEvent.with({ messages: finalMessages }));
+          return; // Exit the forEach to stop listening
+        }
+      });
+    } else {
+      // No tools requested, send final response
+      sendEvent(finalResponseEvent.with(response.content || ""));
+    }
+  } catch (error) {
+    console.error("Error calling LLM:", error);
+    sendEvent(finalResponseEvent.with("Error processing request"));
+  }
+});
+
+// Handler for executing tool calls
+workflow.handle([toolCallEvent], async (event) => {
+  const { sendEvent } = getContext();
+  const { toolName, toolInput, toolId } = event.data;
+
+  try {
+    // Use our same callTool() function
+    const toolResponse = await callTool({
+      function: { name: toolName, arguments: JSON.stringify(toolInput) },
+      id: toolId
+    }, tools);
+
+    // Send the tool response back
+    sendEvent(toolResponseEvent.with({
+      toolResponse,
+      toolId,
+    }));
+  } catch (error) {
+    console.error(`Error executing tool ${toolName}:`, error);
+    sendEvent(toolResponseEvent.with({
+      toolResponse: `Error executing ${toolName}: ${error}`,
+      toolId,
+    }));
+  }
+});
+
+// Run the workflow
+const { stream, sendEvent } = workflow.createContext();
+
+sendEvent(userInputEvent.with({ 
+  messages: [{ role: "user", content: "What's the weather in San Francisco?" }] 
+}));
+
+const result = await stream.until(finalResponseEvent).toArray();
+console.log(result[result.length - 1].data);
+```
+
+### Key Differences
+
+Notice how the workflow version accomplishes the same thing as our basic implementation, but with these key differences:
+
+1. **Event-driven flow**: Instead of a `while` loop, each step triggers the next through events
+2. **Separation of concerns**: LLM reasoning and tool execution are handled by separate event handlers
+3. **Async coordination**: The workflow handles waiting for multiple tool responses before continuing
+4. **Streaming capability**: Events can be streamed in real-time to clients
+5. **Same core logic**: We kept the same `llm()` and `callTool()` functions, just integrated them into the workflow
+
+The workflow approach makes it easier to:
+- Add logging or monitoring at each step
+- Handle errors at different points in the flow  
+- Stream partial results to users
+- Scale individual components (e.g., run tool calls in parallel)
+- Compose with other workflows
+
+## Next Steps
+
+Next, we will cover adding state into our agent loop! This will help us keep track of errors, and even share state between tools.

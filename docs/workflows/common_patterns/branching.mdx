@@ -3,4 +3,41 @@ title: "Branching"
 description: "Details about branching in workflows"
 ---
 
-# Branching in Workflows
+Branching in Workflows is the concept of one handler emitting mulitple possible event types.
+
+In the most simple form, you might have a workflow that has differnent handlers for different input types.
+
+```ts
+import { createWorkflow, workflowEvent, getContext } from "@llamaindex/workflow-core";
+
+const workflow = createWorkflow();
+const inputEvent = workflowEvent<string | number>();
+const processStringEvent = workflowEvent<string>();
+const processNumberEvent = workflowEvent<number>();
+const successEvent = workflowEvent<string>();
+
+workflow.handle([inputEvent], async (event) => {
+  const { sendEvent } = getContext();
+  if (typeof event.data === "string") {
+    sendEvent(processStringEvent.with({ data: event.data }));
+  } else {
+    sendEvent(processNumberEvent.with({ data: event.data }));
+  }
+});
+
+workflow.handle([processStringEvent], async (event) => {
+  const { sendEvent } = getContext();
+  sendEvent(successEvent.with({ data: `Processed string ${event.data}` }));
+});
+
+workflow.handle([processNumberEvent], async (event) => {
+  const { sendEvent } = getContext();
+  sendEvent(successEvent.with({ data: `Processed number ${event.data}` }));
+});
+
+const { stream } = workflow.createContext();
+sendEvent(inputEvent.with("I am some data"));
+
+const result = await stream.until(successEvent).take(1).toArray();
+console.log(result);
+```
