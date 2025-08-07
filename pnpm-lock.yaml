@@ -129,6 +129,19 @@ importers:
         specifier: ^4.21.2
         version: 4.21.2(@cloudflare/workers-types@4.20250620.0)
 
+  demo/express:
+    dependencies:
+      '@llamaindex/workflow-core':
+        specifier: workspace:^
+        version: link:../../packages/core
+      openai:
+        specifier: ^5.7.0
+        version: 5.7.0(ws@8.18.0)(zod@3.25.67)
+    devDependencies:
+      tsx:
+        specifier: ^4.20.3
+        version: 4.20.3
+
   demo/waku:
     dependencies:
       '@llamaindex/workflow-core':
