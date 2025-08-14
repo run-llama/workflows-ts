@@ -52,10 +52,13 @@ type WithSnapshotWorkflow<Workflow extends WorkflowCore> = Omit<
   Workflow,
   "createContext"
 > & {
-  createContext: () => SnapshotWorkflowContext<Workflow>;
+  createContext: (
+    ...args: Parameters<Workflow["createContext"]>
+  ) => SnapshotWorkflowContext<Workflow>;
   resume: (
     data: any[],
     serializable: Omit<SnapshotData, "unrecoverableQueue">,
+    ...args: Parameters<Workflow["createContext"]>
   ) => SnapshotWorkflowContext<Workflow>;
 };
 
@@ -260,11 +263,12 @@ export function withSnapshot<Workflow extends WorkflowCore>(
     resume(
       data: any[],
       serializable: Omit<SnapshotData, "unrecoverableQueue">,
+      ...args: Parameters<Workflow["createContext"]>
     ): any {
       const events = data.map((d, i) =>
         getCounterEvent(serializable.missing[i]!).with(d),
       );
-      const context = workflow.createContext();
+      const context = (workflow.createContext as any)(...args);
       initContext(context);
       const stream = context.stream;
       context.sendEvent(
@@ -309,8 +313,8 @@ export function withSnapshot<Workflow extends WorkflowCore>(
         },
       };
     },
-    createContext(): any {
-      const context = workflow.createContext();
+    createContext(...args: Parameters<Workflow["createContext"]>): any {
+      const context = (workflow.createContext as any)(...args);
       initContext(context);
       const stream = context.stream;
       let lazyInitStream: WorkflowStream | null = null;
