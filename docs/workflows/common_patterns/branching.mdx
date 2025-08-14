@@ -8,7 +8,11 @@ Branching in Workflows is the concept of one handler emitting mulitple possible 
 In the most simple form, you might have a workflow that has differnent handlers for different input types.
 
 ```ts
-import { createWorkflow, workflowEvent, getContext } from "@llamaindex/workflow-core";
+import {
+  createWorkflow,
+  workflowEvent,
+  getContext,
+} from "@llamaindex/workflow-core";
 
 const workflow = createWorkflow();
 const inputEvent = workflowEvent<string | number>();

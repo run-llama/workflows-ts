@@ -4,6 +4,7 @@ description: "Building an agent loop with Workflows"
 ---
 
 At its most basic definition, an agent loop is a loop that:
+
 - processes user input
 - decides to either call a tool or respond to the user
 - if a tool is selected, calls the tool and gets the response
@@ -16,12 +17,20 @@ let userInput = getUserInput();
 let messages = [{ role: "user", content: userInput }];
 while (true) {
   const response = await llm(messages, tools);
-  messages.push({ role: "assistant", content: response.content, tool_calls: response.tool_calls });
+  messages.push({
+    role: "assistant",
+    content: response.content,
+    tool_calls: response.tool_calls,
+  });
 
   if (response.tool_calls) {
     for (const toolCall of response.tool_calls) {
       const toolResponse = await callTool(toolCall, tools);
-      messages.push({ role: "tool", content: toolResponse, tool_call_id: toolCall.id });
+      messages.push({
+        role: "tool",
+        content: toolResponse,
+        tool_call_id: toolCall.id,
+      });
     }
   } else {
     break;
@@ -68,7 +77,10 @@ const tools = [
 ];
 
 // LLM function - handles the AI reasoning
-async function llm(messages: ChatCompletionMessageParam[], availableTools: any[]) {
+async function llm(
+  messages: ChatCompletionMessageParam[],
+  availableTools: any[],
+) {
   const completion = await openai.chat.completions.create({
     model: "gpt-4.1-mini",
     messages: messages,
@@ -105,11 +117,13 @@ async function callTool(toolCall: any, availableTools: any[]) {
 
 // Now implement our agent loop
 async function runAgentLoop(userInput: string) {
-  let messages: ChatCompletionMessageParam[] = [{ role: "user", content: userInput }];
-  
+  let messages: ChatCompletionMessageParam[] = [
+    { role: "user", content: userInput },
+  ];
+
   while (true) {
     const response = await llm(messages, tools);
-    
+
     // Add the assistant's response to the conversation
     messages.push({
       role: "assistant",
@@ -140,6 +154,7 @@ console.log(result);
 ```
 
 This implementation follows our pseudo-code exactly, but with real OpenAI API calls. The logic is straightforward:
+
 1. Call the LLM with current conversation
 2. If it wants to use tools, execute them and add results to conversation
 3. If no tools, return the final response
@@ -147,6 +162,7 @@ This implementation follows our pseudo-code exactly, but with real OpenAI API ca
 ## Converting to Workflows
 
 Now let's see how workflows can help us structure this same logic. Workflows provide several benefits:
+
 - **Event-driven**: Each step is triggered by events, making the flow more explicit
 - **Composable**: We can easily add new handlers or modify existing ones
 - **Streaming**: We can stream events and responses in real-time
@@ -231,7 +247,7 @@ workflow.handle([userInputEvent], async (event) => {
       // Listen for tool responses until we have all of them
       await stream.filter(toolResponseEvent).forEach(responseEvent => {
         toolResponses.push(responseEvent.data);
-        
+
         // Once we have all responses, continue the conversation
         if (toolResponses.length === expectedToolCount) {
           // Add tool response messages
@@ -288,8 +304,8 @@ workflow.handle([toolCallEvent], async (event) => {
 // Run the workflow
 const { stream, sendEvent } = workflow.createContext();
 
-sendEvent(userInputEvent.with({ 
-  messages: [{ role: "user", content: "What's the weather in San Francisco?" }] 
+sendEvent(userInputEvent.with({
+  messages: [{ role: "user", content: "What's the weather in San Francisco?" }]
 }));
 
 const result = await stream.until(finalResponseEvent).toArray();
@@ -307,8 +323,9 @@ Notice how the workflow version accomplishes the same thing as our basic impleme
 5. **Same core logic**: We kept the same `llm()` and `callTool()` functions, just integrated them into the workflow
 
 The workflow approach makes it easier to:
+
 - Add logging or monitoring at each step
-- Handle errors at different points in the flow  
+- Handle errors at different points in the flow
 - Stream partial results to users
 - Scale individual components (e.g., run tool calls in parallel)
 - Compose with other workflows
