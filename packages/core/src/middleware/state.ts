@@ -5,7 +5,7 @@ import type {
 } from "@llamaindex/workflow-core";
 import { getContext } from "@llamaindex/workflow-core";
 
-type WithState<State, Input> = Input extends void | undefined
+export type WorkflowWithState<State, Input> = Input extends void | undefined
   ? {
       <Workflow extends WorkflowCore>(
         workflow: Workflow,
@@ -29,7 +29,7 @@ type CreateState<State, Input, Context extends WorkflowContext> = {
   getContext(): Context & {
     get state(): State;
   };
-  withState: WithState<State, Input>;
+  withState: WorkflowWithState<State, Input>;
 };
 
 export function createStatefulMiddleware<
@@ -63,6 +63,6 @@ export function createStatefulMiddleware<
           return context as any;
         },
       };
-    }) as unknown as WithState<State, Input>,
+    }) as unknown as WorkflowWithState<State, Input>,
   };
 }

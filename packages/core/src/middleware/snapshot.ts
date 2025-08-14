@@ -32,7 +32,7 @@ export type SnapshotFn = () => Promise<
   [requestEvents: WorkflowEvent<any>[], serializable: SnapshotData]
 >;
 
-type SnapshotWorkflowContext<Workflow extends WorkflowCore> = ReturnType<
+export type SnapshotWorkflowContext<Workflow extends WorkflowCore> = ReturnType<
   Workflow["createContext"]
 > & {
   onRequest: <Event extends WorkflowEvent<any>>(
@@ -59,7 +59,7 @@ type WithSnapshotWorkflow<Workflow extends WorkflowCore> = Omit<
   ) => SnapshotWorkflowContext<Workflow>;
 };
 
-interface SnapshotData {
+export interface SnapshotData {
   queue: [data: any, id: number][];
   /**
    * These events are not recoverable because they are not in any handler
