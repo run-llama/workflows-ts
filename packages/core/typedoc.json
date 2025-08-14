@@ -1,0 +1,101 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": ["./src/core/index.ts"],
+  "out": "../../docs/workflows/api-reference",
+  "plugin": ["typedoc-plugin-markdown"],
+  "outputFileStrategy": "members",
+  "fileExtension": ".mdx",
+  "hideGenerator": true,
+  "hidePageHeader": true,
+  "hideBreadcrumbs": false,
+  "includeVersion": true,
+  "name": "Workflow Core API",
+  "readme": "none",
+  "entryPointStrategy": "expand",
+  "categorizeByGroup": true,
+  "defaultCategory": "Core",
+  "categoryOrder": [
+    "Workflow",
+    "Events",
+    "Context",
+    "Streaming",
+    "Utilities",
+    "*"
+  ],
+  "groupOrder": [
+    "Classes",
+    "Interfaces",
+    "Type Aliases",
+    "Functions",
+    "Variables",
+    "*"
+  ],
+  "sort": ["static-first", "alphabetical"],
+  "kindSortOrder": [
+    "Document",
+    "Project",
+    "Module",
+    "Namespace",
+    "Class",
+    "Interface",
+    "TypeAlias",
+    "Variable",
+    "Function",
+    "Accessor",
+    "Method",
+    "Constructor",
+    "Property",
+    "Parameter",
+    "TypeParameter",
+    "TypeLiteral",
+    "CallSignature",
+    "ConstructorSignature",
+    "IndexSignature",
+    "GetSignature",
+    "SetSignature"
+  ],
+  "exclude": [
+    "**/node_modules/**",
+    "**/dist/**",
+    "**/*.test.ts",
+    "**/*.spec.ts",
+    "**/tests/**"
+  ],
+  "excludeInternal": true,
+  "excludePrivate": true,
+  "excludeProtected": true,
+  "excludeNotDocumented": true,
+  "excludeExternals": true,
+  "excludeReferences": true,
+  "parametersFormat": "table",
+  "typeDeclarationFormat": "table",
+  "propertiesFormat": "table",
+  "enumMembersFormat": "table",
+  "useCodeBlocks": false,
+  "expandObjects": false,
+  "expandParameters": false,
+  "blockTagsPreserveOrder": ["@param", "@returns", "@example"],
+  "tsconfig": "./tsconfig.json",
+  "validation": {
+    "notExported": false,
+    "invalidLink": true,
+    "notDocumented": false
+  },
+  "navigationLinks": {
+    "GitHub": "https://github.com/run-llama/workflows-ts"
+  },
+  "sidebarLinks": {
+    "Documentation": "https://workflows.llamaindex.ai/workflows",
+    "Examples": "https://workflows.llamaindex.ai/workflows/tutorials/express_agent"
+  },
+  "visibilityFilters": {
+    "protected": false,
+    "private": false,
+    "inherited": false,
+    "external": false
+  },
+  "searchInComments": false,
+  "searchInDocuments": false,
+  "treatWarningsAsErrors": false,
+  "skipErrorChecking": true
+}

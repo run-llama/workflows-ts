@@ -17,29 +17,132 @@ export type InferWorkflowEventData<T> =
       ? U
       : never;
 
+/**
+ * Represents event data flowing through a workflow.
+ *
+ * Event data is created when an event is instantiated with the `.with()` method.
+ * It carries the actual payload and can be processed by event handlers.
+ *
+ * @typeParam Data - The type of data this event carries
+ * @typeParam DebugLabel - Optional debug label for development/debugging
+ *
+ * @category Events
+ * @public
+ */
 export type WorkflowEventData<Data, DebugLabel extends string = string> = {
   get data(): Data;
 } & { readonly [opaqueSymbol]: DebugLabel };
 
+/**
+ * Represents a workflow event type that can be instantiated with data.
+ *
+ * Events are the core building blocks of workflows. They define the structure
+ * of data that flows through the system and can be used to trigger handlers.
+ *
+ * @typeParam Data - The type of data this event can carry
+ * @typeParam DebugLabel - Optional debug label for development/debugging
+ *
+ * @example
+ * ```typescript
+ * // Create an event type
+ * const UserLoginEvent = workflowEvent<{ userId: string; timestamp: Date }>();
+ *
+ * // Create event data
+ * const loginData = UserLoginEvent.with({
+ *   userId: 'user123',
+ *   timestamp: new Date()
+ * });
+ *
+ * // Check if data belongs to this event type
+ * if (UserLoginEvent.include(someEventData)) {
+ *   console.log('User ID:', someEventData.data.userId);
+ * }
+ * ```
+ *
+ * @category Events
+ * @public
+ */
 export type WorkflowEvent<Data, DebugLabel extends string = string> = {
   /**
-   * This is the label used for debugging purposes.
+   * Optional label used for debugging and logging purposes.
    */
   debugLabel?: DebugLabel;
   /**
-   * This is the unique identifier for the event, which is used for sharing cross the network boundaries.
+   * Unique identifier for the event type, used for serialization and network communication.
    */
   readonly uniqueId: string;
+
+  /**
+   * Creates event data with the provided payload.
+   *
+   * @param data - The data payload for this event instance
+   * @returns Event data that can be sent through workflow contexts
+   */
   with(data: Data): WorkflowEventData<Data, DebugLabel>;
+
+  /**
+   * Type guard to check if unknown event data belongs to this event type.
+   *
+   * @param event - Unknown event data to check
+   * @returns True if the event data is of this event type
+   */
   include(event: unknown): event is WorkflowEventData<Data, DebugLabel>;
+
+  /**
+   * Registers a callback to be called when this event type is instantiated.
+   *
+   * @param callback - Function to call when event is created
+   * @returns Cleanup function to remove the callback
+   */
   onInit(callback: Callback): Cleanup;
 } & { readonly [opaqueSymbol]: DebugLabel };
 
+/**
+ * Configuration options for creating workflow events.
+ *
+ * @typeParam DebugLabel - Optional debug label type
+ *
+ * @category Events
+ * @public
+ */
 export type WorkflowEventConfig<DebugLabel extends string = string> = {
+  /** Optional debug label for development and logging */
   debugLabel?: DebugLabel;
+  /** Optional unique identifier for the event type */
   uniqueId?: string;
 };
 
+/**
+ * Creates a new workflow event type.
+ *
+ * This is the primary factory function for creating event types that can be used
+ * in workflows. Each event type can carry specific data and be used to trigger
+ * handlers throughout the workflow system.
+ *
+ * @typeParam Data - The type of data this event will carry (defaults to void)
+ * @typeParam DebugLabel - Optional debug label type for development
+ *
+ * @param config - Optional configuration for the event type
+ * @returns A new workflow event type that can be instantiated with data
+ *
+ * @example
+ * ```typescript
+ * // Create a simple event with no data
+ * const StartEvent = workflowEvent();
+ *
+ * // Create an event that carries user data
+ * const UserEvent = workflowEvent<{ name: string; email: string }>({
+ *   debugLabel: 'UserEvent'
+ * });
+ *
+ * // Create event instances
+ * const start = StartEvent.with();
+ * const user = UserEvent.with({ name: 'John', email: 'john@example.com' });
+ * ```
+ *
+ * @category Events
+ * @public
+ */
 export const workflowEvent = <Data = void, DebugLabel extends string = string>(
   config?: WorkflowEventConfig<DebugLabel>,
 ): WorkflowEvent<Data, DebugLabel> => {

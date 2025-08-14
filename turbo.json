@@ -5,6 +5,10 @@
       "outputs": ["dist/**"],
       "dependsOn": ["^build"]
     },
+    "build:docs": {
+      "outputs": ["../../docs/workflows/api-reference/**"],
+      "dependsOn": ["build"]
+    },
     "test": {
       "dependsOn": ["^build"]
     },
