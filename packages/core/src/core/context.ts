@@ -104,6 +104,7 @@ export const createContext = ({
   listeners,
 }: ExecutorParams): WorkflowContext => {
   const queue: WorkflowEventData<any>[] = [];
+  let rootWorkflowContext: WorkflowContext;
   const runHandler = (
     handler: Handler<WorkflowEvent<any>[], any>,
     inputEvents: WorkflowEvent<any>[],
@@ -134,7 +135,13 @@ export const createContext = ({
       },
     };
     handlerContext.prev.next.add(handlerContext);
-    const workflowContext = createWorkflowContext(handlerContext);
+    // Use prototype chain to inherit the properties of the root workflow context for the specific context for the handler
+    const specificContext = createWorkflowContext(handlerContext);
+    const workflowContext = Object.create(rootWorkflowContext);
+    Object.defineProperties(
+      workflowContext,
+      Object.getOwnPropertyDescriptors(specificContext),
+    );
     handlerContextAsyncLocalStorage.run(handlerContext, () => {
       const cbs = [
         ...new Set([
@@ -267,6 +274,6 @@ export const createContext = ({
     },
   };
 
-  const rootWorkflowContext = createWorkflowContext(handlerRootContext);
+  rootWorkflowContext = createWorkflowContext(handlerRootContext);
   return rootWorkflowContext;
 };

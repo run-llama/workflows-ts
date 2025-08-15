@@ -45,22 +45,15 @@ export function createStatefulMiddleware<
         createContext: (input: Input) => {
           const state = init(input);
           const context = workflow.createContext();
-          context.__internal__call_context.subscribe((_, next) => {
-            // todo: make sure getContext is consistent with `workflow.createContext`
-            const context = getContext();
-            if (!Reflect.has(context, "state")) {
-              Object.defineProperty(context, "state", {
-                get: () => state,
-              });
-            }
-            next(_);
+          // It's crucial to mutate the original context object.
+          // The handler-scoped contexts are created to prototypically inherit from this root context.
+          // If we returned a new object (e.g., using a spread `{...context}`),
+          // the inheritance chain would be broken, and `getContext().state` would not work inside handlers.
+          return Object.assign(context, {
+            get state() {
+              return state;
+            },
           });
-          if (!Reflect.has(context, "state")) {
-            Object.defineProperty(context, "state", {
-              get: () => state,
-            });
-          }
-          return context as any;
         },
       };
     }) as unknown as WorkflowWithState<State, Input>,
