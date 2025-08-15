@@ -8,6 +8,7 @@ import {
   WorkflowStream,
 } from "@llamaindex/workflow-core";
 import type { HandlerContext } from "../core/context";
+import { extendContext } from "../core/context";
 import { createStableHash } from "./snapshot/stable-hash";
 import { createSubscribable, isPromiseLike } from "../core/utils";
 
@@ -244,6 +245,27 @@ export function withSnapshot<Workflow extends WorkflowCore>(
     });
   }
 
+  // Create a function to generate stream transform wrappers
+  const createStreamWrapper = (context: WorkflowContext) =>
+    new TransformStream({
+      transform: (event, controller) => {
+        if (snapshotEvent.include(event)) {
+          const data = event.data;
+          const results = requests.publish(data, reasonWeakMap.get(event));
+          const pendingRequests = getPendingRequestSet(context);
+          results.filter(isPromiseLike).forEach((promise) => {
+            const task = promise.then(() => {
+              pendingRequests.delete(task);
+            });
+            pendingRequests.add(task);
+          });
+        } else {
+          // ignore snapshot event from stream
+          controller.enqueue(event);
+        }
+      },
+    });
+
   return {
     ...workflow,
     handle: (events: WorkflowEvent<any>[], handler: any) => {
@@ -281,85 +303,88 @@ export function withSnapshot<Workflow extends WorkflowCore>(
 
       let lazyInitStream: WorkflowStream | null = null;
       const snapshotFn = createSnapshotFn(context);
-      return {
-        ...context,
-        snapshot: snapshotFn,
-        onRequest: (
-          event: WorkflowEvent<any>,
-          callback: (reason: any) => void | Promise<void>,
-        ): (() => void) =>
-          requests.subscribe((ev, reason) => {
-            if (ev === event) {
-              return callback(reason);
-            }
-          }),
-        get stream() {
-          if (!lazyInitStream) {
-            lazyInitStream = stream.pipeThrough(
-              new TransformStream({
-                transform: (event, controller) => {
-                  if (snapshotEvent.include(event)) {
-                    const data = event.data;
-                    requests.publish(data, reasonWeakMap.get(event));
-                  } else {
-                    // ignore snapshot event from stream
-                    controller.enqueue(event);
-                  }
-                },
-              }),
-            );
-          }
-          return lazyInitStream;
+      extendContext(
+        context,
+        {
+          snapshot: snapshotFn,
+          onRequest: (
+            event: WorkflowEvent<any>,
+            callback: (reason: any) => void | Promise<void>,
+          ): (() => void) =>
+            requests.subscribe((ev, reason) => {
+              if (ev === event) {
+                return callback(reason);
+              }
+            }),
         },
-      };
+        {
+          stream: (currentContext, originalDescriptor) => {
+            let lazyWrappedStream: WorkflowStream | null = null;
+
+            return {
+              ...originalDescriptor,
+              get() {
+                if (!lazyWrappedStream) {
+                  const originalStream =
+                    originalDescriptor.get?.call(currentContext);
+                  if (originalStream) {
+                    lazyWrappedStream = originalStream.pipeThrough(
+                      createStreamWrapper(context),
+                    );
+                  }
+                }
+                return lazyWrappedStream;
+              },
+            };
+          },
+        },
+      );
+      return context;
     },
     createContext(...args: Parameters<Workflow["createContext"]>): any {
       const context = (workflow.createContext as any)(...args);
       initContext(context);
-      const stream = context.stream;
-      let lazyInitStream: WorkflowStream | null = null;
+
       const snapshotFn = createSnapshotFn(context);
-      return {
-        ...context,
-        snapshot: snapshotFn,
-        onRequest: (
-          event: WorkflowEvent<any>,
-          callback: (reason: any) => void | Promise<void>,
-        ): (() => void) =>
-          requests.subscribe((ev, reason) => {
-            if (ev === event) {
-              return callback(reason);
-            }
-          }),
-        get stream() {
-          if (!lazyInitStream) {
-            lazyInitStream = stream.pipeThrough(
-              new TransformStream({
-                transform: (event, controller) => {
-                  if (snapshotEvent.include(event)) {
-                    const data = event.data;
-                    const results = requests.publish(
-                      data,
-                      reasonWeakMap.get(event),
-                    );
-                    const pendingRequests = getPendingRequestSet(context);
-                    results.filter(isPromiseLike).forEach((promise) => {
-                      const task = promise.then(() => {
-                        pendingRequests.delete(task);
-                      });
-                      pendingRequests.add(task);
-                    });
-                  } else {
-                    // ignore snapshot event from stream
-                    controller.enqueue(event);
-                  }
-                },
-              }),
-            );
-          }
-          return lazyInitStream;
+
+      extendContext(
+        context,
+        {
+          snapshot: snapshotFn,
+          onRequest: (
+            event: WorkflowEvent<any>,
+            callback: (reason: any) => void | Promise<void>,
+          ): (() => void) =>
+            requests.subscribe((ev, reason) => {
+              if (ev === event) {
+                return callback(reason);
+              }
+            }),
         },
-      };
+        {
+          stream: (currentContext, originalDescriptor) => {
+            let lazyWrappedStream: WorkflowStream | null = null;
+
+            return {
+              ...originalDescriptor,
+              get() {
+                if (!lazyWrappedStream) {
+                  const originalStream =
+                    originalDescriptor.get?.call(currentContext);
+                  if (originalStream) {
+                    lazyWrappedStream = originalStream.pipeThrough(
+                      createStreamWrapper(context),
+                    );
+                  }
+                }
+                return lazyWrappedStream;
+              },
+            };
+          },
+        },
+      );
+
+      return context;
     },
   } as unknown as WithSnapshotWorkflow<Workflow>;
 }

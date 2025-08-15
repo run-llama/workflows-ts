@@ -72,7 +72,16 @@ export type WorkflowContext = {
     [event: WorkflowEventData<any>, handlerContext: HandlerContext],
     void
   >;
+  __internal__property_inheritance_handlers?: Map<
+    string,
+    InheritanceTransformer
+  >;
 };
+
+export type InheritanceTransformer = (
+  handlerContext: WorkflowContext,
+  originalDescriptor: PropertyDescriptor,
+) => PropertyDescriptor;
 
 export const _executorAsyncLocalStorage =
   new AsyncContext.Variable<WorkflowContext>();
@@ -83,6 +92,41 @@ export function getContext(): WorkflowContext {
     throw new Error("No current context found");
   }
   return context;
+}
+
+export function extendContext(
+  context: WorkflowContext,
+  properties: Record<string, any>,
+  inheritanceTransformers?: Record<string, InheritanceTransformer>,
+): void {
+  // Add simple properties directly to the context (these inherit normally via prototype chain)
+  Object.assign(context, properties);
+
+  // Register inheritance transformers for properties that need custom inheritance behavior
+  if (inheritanceTransformers) {
+    if (!context.__internal__property_inheritance_handlers) {
+      context.__internal__property_inheritance_handlers = new Map();
+    }
+
+    for (const [propertyKey, transformer] of Object.entries(
+      inheritanceTransformers,
+    )) {
+      context.__internal__property_inheritance_handlers.set(
+        propertyKey,
+        transformer,
+      );
+
+      // Apply the transformer to the root context immediately
+      const rootDescriptor = Object.getOwnPropertyDescriptor(
+        context,
+        propertyKey,
+      );
+      if (rootDescriptor) {
+        const newDescriptor = transformer(context, rootDescriptor);
+        Object.defineProperty(context, propertyKey, newDescriptor);
+      }
+    }
+  }
 }
 
 const handlerContextAsyncLocalStorage =
@@ -138,10 +182,29 @@ export const createContext = ({
     // Use prototype chain to inherit the properties of the root workflow context for the specific context for the handler
     const specificContext = createWorkflowContext(handlerContext);
     const workflowContext = Object.create(rootWorkflowContext);
-    Object.defineProperties(
-      workflowContext,
-      Object.getOwnPropertyDescriptors(specificContext),
-    );
+    const specificDescriptors =
+      Object.getOwnPropertyDescriptors(specificContext);
+
+    // Apply inheritance transformers if available
+    if (rootWorkflowContext.__internal__property_inheritance_handlers) {
+      for (const [
+        propertyKey,
+        transformer,
+      ] of rootWorkflowContext.__internal__property_inheritance_handlers) {
+        if (propertyKey in specificDescriptors) {
+          const originalDescriptor = specificDescriptors[propertyKey];
+          if (originalDescriptor) {
+            const newDescriptor = transformer(
+              workflowContext,
+              originalDescriptor,
+            );
+            specificDescriptors[propertyKey] = newDescriptor;
+          }
+        }
+      }
+    }
+
+    Object.defineProperties(workflowContext, specificDescriptors);
     handlerContextAsyncLocalStorage.run(handlerContext, () => {
       const cbs = [
         ...new Set([
