@@ -3,7 +3,7 @@ import type {
   Workflow as WorkflowCore,
   WorkflowContext,
 } from "@llamaindex/workflow-core";
-import { getContext } from "@llamaindex/workflow-core";
+import { extendContext, getContext } from "@llamaindex/workflow-core";
 
 export type WorkflowWithState<State, Input> = Input extends void | undefined
   ? {
@@ -45,15 +45,12 @@ export function createStatefulMiddleware<
         createContext: (input: Input) => {
           const state = init(input);
           const context = workflow.createContext();
-          // It's crucial to mutate the original context object.
-          // The handler-scoped contexts are created to prototypically inherit from this root context.
-          // If we returned a new object (e.g., using a spread `{...context}`),
-          // the inheritance chain would be broken, and `getContext().state` would not work inside handlers.
-          return Object.assign(context, {
+          extendContext(context, {
             get state() {
               return state;
             },
           });
+          return context;
         },
       };
     }) as unknown as WorkflowWithState<State, Input>,

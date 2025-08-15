@@ -94,6 +94,16 @@ export function getContext(): WorkflowContext {
   return context;
 }
 
+/**
+ * Use this function to add or extend properties of the root context.
+ * Called by middleware's createContext to update the root context.
+ * Handler-scoped contexts will automatically inherit these properties from the root context.
+ * Never create a new object (e.g., using a spread `{...context}`) in your middleware's createContext.
+ *
+ * @param context The context to extend
+ * @param properties The properties to add to the context
+ * @param inheritanceTransformers The inheritance transformers to apply to existing properties (optional)
+ */
 export function extendContext(
   context: WorkflowContext,
   properties: Record<string, any>,
