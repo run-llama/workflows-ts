@@ -17,7 +17,10 @@ import {
   ChatCompletionMessageToolCall,
   ChatCompletionTool,
 } from "openai/resources/chat/completions";
-import { createStatefulMiddleware } from "@llamaindex/workflow-core/middleware/state";
+import {
+  createStatefulMiddleware,
+  StateWorkflowContext,
+} from "@llamaindex/workflow-core/middleware/state";
 import * as readline from "readline/promises";
 
 type ToolResponseEventData = {
@@ -29,6 +32,7 @@ type AgentWorkflowState = {
   expectedToolCount: number;
   messages: ChatCompletionMessageParam[];
   toolResponses: Array<ToolResponseEventData>;
+  humanToolId: string | null;
 };
 
 const stateful = createStatefulMiddleware((state: AgentWorkflowState) => state);
@@ -121,7 +125,8 @@ async function callTool(
 
 // Handler for processing user input and LLM responses
 workflow.handle([userInputEvent], async (event) => {
-  const { sendEvent, state } = stateful.getContext();
+  const { sendEvent, state } =
+    getContext() as unknown as StateWorkflowContext<AgentWorkflowState>;
   const { messages } = event.data;
 
   try {
@@ -154,7 +159,8 @@ workflow.handle([userInputEvent], async (event) => {
 
 // Handler for aggregating tool call responses
 workflow.handle([toolResponseEvent], async (event) => {
-  const { sendEvent, stream, state } = stateful.getContext();
+  const { sendEvent, stream, state } =
+    getContext() as unknown as StateWorkflowContext<AgentWorkflowState>;
 
   // Collect all tool responses until we have all of them
   state.toolResponses.push(event.data);
@@ -179,9 +185,9 @@ workflow.handle([toolResponseEvent], async (event) => {
 
 // Handler for executing tool calls
 workflow.handle([toolCallEvent], async (event) => {
-  const { sendEvent, snapshot } = getContext() as SnapshotWorkflowContext<
-    typeof workflow
-  >;
+  const { sendEvent, snapshot, state } =
+    getContext() as unknown as SnapshotWorkflowContext<typeof workflow> &
+      StateWorkflowContext<AgentWorkflowState>;
   const { toolCall } = event.data;
 
   try {
@@ -190,7 +196,9 @@ workflow.handle([toolCallEvent], async (event) => {
       sendEvent(request(humanResponseEvent));
       const [_, snapshotData_] = await snapshot();
       snapshotData = snapshotData_;
+      state.humanToolId = toolCall.id;
       // stop workflow
+      // TODO: this shows a 'sendEvent after snapshot is not allowed' warning
       sendEvent(finalResponseEvent.with("Waiting for human response"));
     } else {
       // normal machine tool call
@@ -214,6 +222,19 @@ workflow.handle([toolCallEvent], async (event) => {
   }
 });
 
+workflow.handle([humanResponseEvent], async (event) => {
+  const { sendEvent, state } =
+    getContext() as unknown as StateWorkflowContext<AgentWorkflowState>;
+  console.log("human response", event.data);
+  console.log("state", state);
+  sendEvent(
+    toolResponseEvent.with({
+      toolResponse: event.data,
+      toolId: state.humanToolId!,
+    }),
+  );
+});
+
 // Run the workflow
 const { stream, sendEvent } = (
   workflow as unknown as typeof statefulWorkflow
@@ -221,6 +242,7 @@ const { stream, sendEvent } = (
   expectedToolCount: 0,
   messages: [],
   toolResponses: [],
+  humanToolId: null,
 });
 
 sendEvent(
@@ -239,6 +261,8 @@ await stream.until(finalResponseEvent).toArray();
 
 if (!snapshotData) {
   throw new Error("No snapshot data");
+} else {
+  console.log("snapshot data", JSON.stringify(snapshotData, null, 2));
 }
 
 const rl = readline.createInterface({
