@@ -78,6 +78,12 @@ export interface SnapshotData {
    */
   version: string;
   missing: number[];
+
+  /**
+   * Save the current serializable state of the workflow
+   * This state will be restored when you resume the workflow
+   */
+  state?: any;
 }
 
 type OnRequestFn<Event extends WorkflowEvent<any> = WorkflowEvent<any>> = (
@@ -177,6 +183,7 @@ export function withSnapshot<Workflow extends WorkflowCore>(
           // if you are request an event that is not in the handler, it's meaningless (from a logic perspective)
           .filter((event) => eventCounterWeakMap.has(event))
           .map((event) => getEventCounter(event)),
+        state: (context as any).state ? JSON.stringify((context as any).state) : undefined,
       };
       return [requestEvents, serializable];
     };
@@ -287,6 +294,7 @@ export function withSnapshot<Workflow extends WorkflowCore>(
       serializable: Omit<SnapshotData, "unrecoverableQueue">,
       ...args: Parameters<Workflow["createContext"]>
     ): any {
+      const resumedState = serializable.state ? JSON.parse(serializable.state) : undefined;
       const events = data.map((d, i) =>
         getCounterEvent(serializable.missing[i]!).with(d),
       );
@@ -307,6 +315,7 @@ export function withSnapshot<Workflow extends WorkflowCore>(
         context,
         {
           snapshot: snapshotFn,
+          state: resumedState,
           onRequest: (
             event: WorkflowEvent<any>,
             callback: (reason: any) => void | Promise<void>,
