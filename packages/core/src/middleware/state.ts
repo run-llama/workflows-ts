@@ -1,21 +1,17 @@
-import type {
-  Workflow,
-  WorkflowContext,
-  Workflow as WorkflowCore,
-  WorkflowEvent,
-  WorkflowEventData,
-} from "@llamaindex/workflow-core";
 import {
-  createWorkflow,
   eventSource,
-  extendContext,
-  getContext,
+  type Workflow as WorkflowCore,
+  type WorkflowContext,
+  type WorkflowEvent,
   workflowEvent,
+  type WorkflowEventData,
   WorkflowStream,
+  type Workflow,
 } from "@llamaindex/workflow-core";
 import type { HandlerContext } from "../core/context";
-import { createSubscribable, isPromiseLike } from "../core/utils";
+import { extendContext, getContext } from "../core/context";
 import { createStableHash } from "./snapshot/stable-hash";
+import { createSubscribable, isPromiseLike } from "../core/utils";
 
 /**
  * @internal We don't want to expose this special event to the user
@@ -32,6 +28,40 @@ export const request = <T>(
   const ev = snapshotEvent.with(event);
   reasonWeakMap.set(ev, reason);
   return ev;
+};
+
+export type SnapshotFn = () => Promise<
+  [requestEvents: WorkflowEvent<any>[], serializable: SnapshotData]
+>;
+
+export type SnapshotWorkflowContext<Workflow extends WorkflowCore> = ReturnType<
+  Workflow["createContext"]
+> & {
+  onRequest: <Event extends WorkflowEvent<any>>(
+    event: Event,
+    callback: (reason: any) => void | Promise<void>,
+  ) => () => void;
+  /**
+   * Snapshot will lock the context and wait for there is no pending event.
+   *
+   * This is useful when you want to take a current snapshot of the workflow
+   *
+   */
+  snapshot: SnapshotFn;
+};
+
+type WithSnapshotWorkflow<Workflow extends WorkflowCore> = Omit<
+  Workflow,
+  "createContext"
+> & {
+  createContext: (
+    ...args: Parameters<Workflow["createContext"]>
+  ) => SnapshotWorkflowContext<Workflow>;
+  resume: (
+    data: any[],
+    serializable: Omit<SnapshotData, "unrecoverableQueue">,
+    ...args: Parameters<Workflow["createContext"]>
+  ) => SnapshotWorkflowContext<Workflow>;
 };
 
 export interface SnapshotData {
@@ -56,10 +86,6 @@ export interface SnapshotData {
    */
   state?: string | undefined;
 }
-
-export type SnapshotFn = () => Promise<
-  [requestEvents: WorkflowEvent<any>[], serializable: SnapshotData]
->;
 
 type OnRequestFn<Event extends WorkflowEvent<any> = WorkflowEvent<any>> = (
   eventData: Event,
@@ -115,191 +141,196 @@ export function createStatefulMiddleware<
   Input = void,
   Context extends WorkflowContext = WorkflowContext,
 >(init: (input: Input) => State): CreateState<State, Input, Context> {
-  // Snapshot-related state
-  const requests = createSubscribable<OnRequestFn>();
-  const pendingRequestSetMap = new WeakMap<
-    WorkflowContext,
-    Set<PromiseLike<unknown>>
-  >();
-  const getPendingRequestSet = (context: WorkflowContext) => {
-    if (!pendingRequestSetMap.has(context)) {
-      pendingRequestSetMap.set(context, new Set());
-    }
-    return pendingRequestSetMap.get(context)!;
-  };
-  const stableHash = createStableHash();
-  /**
-   * This is to indicate the version of the snapshot
-   *
-   * It happens when you modify the workflow, all old snapshots should be invalidated
-   */
-  const versionObj: [number[], Function][] = [];
-  const getVersion = () => stableHash(versionObj);
-
-  const registeredEvents = new Set<WorkflowEvent<any>>();
-  const isContextLockedWeakMap = new WeakMap<WorkflowContext, boolean>();
-  const isContextLocked = (context: WorkflowContext): boolean => {
-    return isContextLockedWeakMap.get(context) === true;
-  };
-  const isContextSnapshotReadyWeakSet = new WeakSet<WorkflowContext>();
-  const isContextSnapshotReady = (context: WorkflowContext) => {
-    return isContextSnapshotReadyWeakSet.has(context);
-  };
-
-  const contextEventQueueWeakMap = new WeakMap<
-    WorkflowContext,
-    WorkflowEventData<any>[]
-  >();
-  const handlerContextSetWeakMap = new WeakMap<
-    WorkflowContext,
-    Set<HandlerContext>
-  >();
-  const collectedEventHandlerContextWeakMap = new WeakMap<
-    WorkflowEventData<any>,
-    Set<HandlerContext>
-  >();
-
-  const createSnapshotFn = (context: WorkflowContext): SnapshotFn => {
-    return async function snapshotHandler() {
-      if (isContextLocked(context)) {
-        throw new Error(
-          "Context is already locked, you cannot snapshot a same context twice",
-        );
-      }
-      isContextLockedWeakMap.set(context, true);
-
-      // 1. wait for all context is ready
-      const handlerContexts = handlerContextSetWeakMap.get(context)!;
-
-      await Promise.all(
-        [...handlerContexts]
-          .filter((context) => context.async)
-          .map((context) => context.pending),
-      );
-      // 2. collect all necessary data for a snapshot after lock
-      const collectedEvents = contextEventQueueWeakMap.get(context)!;
-      const requestEvents = collectedEvents
-        .filter((event) => snapshotEvent.include(event))
-        .map((event) => event.data);
-      // there might have pending events in the queue, we need to collect them
-      const queue = collectedEvents.filter(
-        (event) => !snapshotEvent.include(event),
-      );
-
-      // 3. serialize the data
-      isContextSnapshotReadyWeakSet.add(context);
-
-      if (requestEvents.some((event) => !registeredEvents.has(event))) {
-        console.warn("request event is not registered in the workflow");
-      }
-
-      const serializable: SnapshotData = {
-        queue: queue
-          .filter((event) => eventCounterWeakMap.has(eventSource(event)!))
-          .map((event) => [event.data, getEventCounter(eventSource(event)!)]),
-        unrecoverableQueue: queue
-          .filter((event) => !eventCounterWeakMap.has(eventSource(event)!))
-          .map((event) => [event.data, getEventCounter(eventSource(event)!)]),
-        version: getVersion(),
-        missing: requestEvents
-          // if you are request an event that is not in the handler, it's meaningless (from a logic perspective)
-          .filter((event) => eventCounterWeakMap.has(event))
-          .map((event) => getEventCounter(event)),
-        state: (context as any).state
-          ? JSON.stringify((context as any).state)
-          : undefined,
-      };
-      return [requestEvents, serializable];
-    };
-  };
-
-  let counter = 0;
-  const eventCounterWeakMap = new WeakMap<WorkflowEvent<any>, number>();
-  const counterEventMap = new Map<number, WorkflowEvent<any>>();
-  const getEventCounter = (event: WorkflowEvent<any>) => {
-    if (!eventCounterWeakMap.has(event)) {
-      eventCounterWeakMap.set(event, counter++);
-    }
-    return eventCounterWeakMap.get(event)!;
-  };
-  const getCounterEvent = (counter: number) => {
-    if (!counterEventMap.has(counter)) {
-      throw new Error(`event counter ${counter} not found`);
-    }
-    return counterEventMap.get(counter)!;
-  };
-
-  function initContext(context: WorkflowContext) {
-    handlerContextSetWeakMap.set(context, new Set());
-    contextEventQueueWeakMap.set(context, []);
-    context.__internal__call_send_event.subscribe(
-      (eventData, handlerContext) => {
-        contextEventQueueWeakMap.get(context)!.push(eventData);
-        if (isContextLocked(context)) {
-          if (isContextSnapshotReady(context)) {
-            console.warn(
-              "snapshot is already ready, sendEvent after snapshot is not allowed",
-            );
-          }
-          if (!collectedEventHandlerContextWeakMap.has(eventData)) {
-            collectedEventHandlerContextWeakMap.set(eventData, new Set());
-          }
-          collectedEventHandlerContextWeakMap
-            .get(eventData)!
-            .add(handlerContext);
-        }
-      },
-    );
-    context.__internal__call_context.subscribe((handlerContext, next) => {
-      if (isContextLocked(context)) {
-        // replace it with noop, avoid calling the handler after snapshot
-        handlerContext.handler = noop;
-        next(handlerContext);
-      } else {
-        const queue = contextEventQueueWeakMap.get(context)!;
-        handlerContext.inputs.forEach((input) => {
-          queue.splice(queue.indexOf(input), 1);
-        });
-        const originalHandler = handlerContext.handler;
-        const pendingRequests = getPendingRequestSet(context);
-        const isPendingTask = pendingRequests.size !== 0;
-        if (isPendingTask) {
-          handlerContext.handler = async (...events) => {
-            return Promise.all([...pendingRequests]).finally(() => {
-              return originalHandler(...events);
-            });
-          };
-        }
-        handlerContextSetWeakMap.get(context)!.add(handlerContext);
-        next(handlerContext);
-      }
-    });
-  }
-
-  // Create a function to generate stream transform wrappers
-  const createStreamWrapper = (context: WorkflowContext) =>
-    new TransformStream({
-      transform: (event, controller) => {
-        if (snapshotEvent.include(event)) {
-          const data = event.data;
-          const results = requests.publish(data, reasonWeakMap.get(event));
-          const pendingRequests = getPendingRequestSet(context);
-          results.filter(isPromiseLike).forEach((promise) => {
-            const task = promise.then(() => {
-              pendingRequests.delete(task);
-            });
-            pendingRequests.add(task);
-          });
-        } else {
-          // ignore snapshot event from stream
-          controller.enqueue(event);
-        }
-      },
-    });
-
   return {
     getContext: getContext as never,
     withState: ((workflow: Workflow) => {
+      const requests = createSubscribable<OnRequestFn>();
+      const pendingRequestSetMap = new WeakMap<
+        WorkflowContext,
+        Set<PromiseLike<unknown>>
+      >();
+      const getPendingRequestSet = (context: WorkflowContext) => {
+        if (!pendingRequestSetMap.has(context)) {
+          pendingRequestSetMap.set(context, new Set());
+        }
+        return pendingRequestSetMap.get(context)!;
+      };
+      const stableHash = createStableHash();
+      /**
+       * This is to indicate the version of the snapshot
+       *
+       * It happens when you modify the workflow, all old snapshots should be invalidated
+       */
+      const versionObj: [number[], Function][] = [];
+      const getVersion = () => stableHash(versionObj);
+
+      const registeredEvents = new Set<WorkflowEvent<any>>();
+      const isContextLockedWeakMap = new WeakMap<WorkflowContext, boolean>();
+      const isContextLocked = (context: WorkflowContext): boolean => {
+        return isContextLockedWeakMap.get(context) === true;
+      };
+      const isContextSnapshotReadyWeakSet = new WeakSet<WorkflowContext>();
+      const isContextSnapshotReady = (context: WorkflowContext) => {
+        return isContextSnapshotReadyWeakSet.has(context);
+      };
+
+      const contextEventQueueWeakMap = new WeakMap<
+        WorkflowContext,
+        WorkflowEventData<any>[]
+      >();
+      const handlerContextSetWeakMap = new WeakMap<
+        WorkflowContext,
+        Set<HandlerContext>
+      >();
+      const collectedEventHandlerContextWeakMap = new WeakMap<
+        WorkflowEventData<any>,
+        Set<HandlerContext>
+      >();
+
+      const createSnapshotFn = (context: WorkflowContext): SnapshotFn => {
+        return async function snapshotHandler() {
+          if (isContextLocked(context)) {
+            throw new Error(
+              "Context is already locked, you cannot snapshot a same context twice",
+            );
+          }
+          isContextLockedWeakMap.set(context, true);
+
+          // 1. wait for all context is ready
+          const handlerContexts = handlerContextSetWeakMap.get(context)!;
+
+          await Promise.all(
+            [...handlerContexts]
+              .filter((context) => context.async)
+              .map((context) => context.pending),
+          );
+          // 2. collect all necessary data for a snapshot after lock
+          const collectedEvents = contextEventQueueWeakMap.get(context)!;
+          const requestEvents = collectedEvents
+            .filter((event) => snapshotEvent.include(event))
+            .map((event) => event.data);
+          // there might have pending events in the queue, we need to collect them
+          const queue = collectedEvents.filter(
+            (event) => !snapshotEvent.include(event),
+          );
+
+          // 3. serialize the data
+          isContextSnapshotReadyWeakSet.add(context);
+
+          if (requestEvents.some((event) => !registeredEvents.has(event))) {
+            console.warn("request event is not registered in the workflow");
+          }
+
+          const serializable: SnapshotData = {
+            queue: queue
+              .filter((event) => eventCounterWeakMap.has(eventSource(event)!))
+              .map((event) => [
+                event.data,
+                getEventCounter(eventSource(event)!),
+              ]),
+            unrecoverableQueue: queue
+              .filter((event) => !eventCounterWeakMap.has(eventSource(event)!))
+              .map((event) => [
+                event.data,
+                getEventCounter(eventSource(event)!),
+              ]),
+            version: getVersion(),
+            missing: requestEvents
+              // if you are request an event that is not in the handler, it's meaningless (from a logic perspective)
+              .filter((event) => eventCounterWeakMap.has(event))
+              .map((event) => getEventCounter(event)),
+            state: (context as any).state
+              ? JSON.stringify((context as any).state)
+              : undefined,
+          };
+          return [requestEvents, serializable];
+        };
+      };
+
+      let counter = 0;
+      const eventCounterWeakMap = new WeakMap<WorkflowEvent<any>, number>();
+      const counterEventMap = new Map<number, WorkflowEvent<any>>();
+      const getEventCounter = (event: WorkflowEvent<any>) => {
+        if (!eventCounterWeakMap.has(event)) {
+          eventCounterWeakMap.set(event, counter++);
+        }
+        return eventCounterWeakMap.get(event)!;
+      };
+      const getCounterEvent = (counter: number) => {
+        if (!counterEventMap.has(counter)) {
+          throw new Error(`event counter ${counter} not found`);
+        }
+        return counterEventMap.get(counter)!;
+      };
+
+      function initContext(context: WorkflowContext) {
+        handlerContextSetWeakMap.set(context, new Set());
+        contextEventQueueWeakMap.set(context, []);
+        context.__internal__call_send_event.subscribe(
+          (eventData, handlerContext) => {
+            contextEventQueueWeakMap.get(context)!.push(eventData);
+            if (isContextLocked(context)) {
+              if (isContextSnapshotReady(context)) {
+                console.warn(
+                  "snapshot is already ready, sendEvent after snapshot is not allowed",
+                );
+              }
+              if (!collectedEventHandlerContextWeakMap.has(eventData)) {
+                collectedEventHandlerContextWeakMap.set(eventData, new Set());
+              }
+              collectedEventHandlerContextWeakMap
+                .get(eventData)!
+                .add(handlerContext);
+            }
+          },
+        );
+        context.__internal__call_context.subscribe((handlerContext, next) => {
+          if (isContextLocked(context)) {
+            // replace it with noop, avoid calling the handler after snapshot
+            handlerContext.handler = noop;
+            next(handlerContext);
+          } else {
+            const queue = contextEventQueueWeakMap.get(context)!;
+            handlerContext.inputs.forEach((input) => {
+              queue.splice(queue.indexOf(input), 1);
+            });
+            const originalHandler = handlerContext.handler;
+            const pendingRequests = getPendingRequestSet(context);
+            const isPendingTask = pendingRequests.size !== 0;
+            if (isPendingTask) {
+              handlerContext.handler = async (...events) => {
+                return Promise.all([...pendingRequests]).finally(() => {
+                  return originalHandler(...events);
+                });
+              };
+            }
+            handlerContextSetWeakMap.get(context)!.add(handlerContext);
+            next(handlerContext);
+          }
+        });
+      }
+
+      // Create a function to generate stream transform wrappers
+      const createStreamWrapper = (context: WorkflowContext) =>
+        new TransformStream({
+          transform: (event, controller) => {
+            if (snapshotEvent.include(event)) {
+              const data = event.data;
+              const results = requests.publish(data, reasonWeakMap.get(event));
+              const pendingRequests = getPendingRequestSet(context);
+              results.filter(isPromiseLike).forEach((promise) => {
+                const task = promise.then(() => {
+                  pendingRequests.delete(task);
+                });
+                pendingRequests.add(task);
+              });
+            } else {
+              // ignore snapshot event from stream
+              controller.enqueue(event);
+            }
+          },
+        });
+
       return {
         ...workflow,
         handle: (events: WorkflowEvent<any>[], handler: any) => {
@@ -329,6 +360,9 @@ export function createStatefulMiddleware<
           );
           const context = (workflow.createContext as any)(...args);
           initContext(context);
+
+          // triggers the lazy initialization of the stream wrapper
+          context.stream;
 
           context.sendEvent(
             ...serializable.queue.map(([data, id]) => {
