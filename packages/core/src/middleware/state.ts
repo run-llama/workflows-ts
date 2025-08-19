@@ -51,20 +51,6 @@ export type SnapshotWorkflowContext<Workflow extends WorkflowCore> = ReturnType<
   snapshot: SnapshotFn;
 };
 
-type WithSnapshotWorkflow<Workflow extends WorkflowCore> = Omit<
-  Workflow,
-  "createContext"
-> & {
-  createContext: (
-    ...args: Parameters<Workflow["createContext"]>
-  ) => SnapshotWorkflowContext<Workflow>;
-  resume: (
-    data: any[],
-    serializable: Omit<SnapshotData, "unrecoverableQueue">,
-    ...args: Parameters<Workflow["createContext"]>
-  ) => SnapshotWorkflowContext<Workflow>;
-};
-
 export interface SnapshotData {
   queue: [data: any, id: number][];
   /**
