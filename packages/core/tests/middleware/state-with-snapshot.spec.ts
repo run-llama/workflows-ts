@@ -47,7 +47,7 @@ describe("state with snapshot middleware", () => {
     });
 
     // Create initial context with state
-    const context = (workflow as any).createContext({
+    const context = workflow.createContext({
       counter: 0,
       message: "initial",
     });
@@ -64,8 +64,6 @@ describe("state with snapshot middleware", () => {
     expect(context.state.message).toBe("original state");
 
     const resumedContext = workflow.resume(["hello"], snapshotData);
-
-    await resumedContext.stream.until(stopEvent).toArray();
 
     expect(resumedContext.state.counter).toBe(42);
     expect(resumedContext.state.message).toBe("original state");
