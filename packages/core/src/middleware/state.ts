@@ -136,11 +136,13 @@ type CreateState<State, Input, Context extends WorkflowContext> = {
   withState: WorkflowWithState<State, Input>;
 };
 
+type InitFunc<Input, State> = (input: Input) => State;
+
 export function createStatefulMiddleware<
   State,
   Input = void,
   Context extends WorkflowContext = WorkflowContext,
->(init: (input: Input) => State): CreateState<State, Input, Context> {
+>(init?: InitFunc<Input, State>): CreateState<State, Input, Context> {
   return {
     getContext: getContext as never,
     withState: ((workflow: Workflow) => {
@@ -415,7 +417,7 @@ export function createStatefulMiddleware<
           return context;
         },
         createContext(input?: Input): any {
-          const state = init(input as Input);
+          const state = init?.(input as Input);
           const context = (workflow.createContext as any)(input);
           initContext(context);
 

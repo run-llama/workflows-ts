@@ -1,14 +1,14 @@
 import { describe, expect, test, vi } from "vitest";
 import {
+  createStatefulMiddleware,
+  request,
+} from "@llamaindex/workflow-core/middleware/state";
+import {
   createWorkflow,
   eventSource,
   getContext,
   workflowEvent,
 } from "@llamaindex/workflow-core";
-import {
-  createStatefulMiddleware,
-  request,
-} from "@llamaindex/workflow-core/middleware/state";
 
 const startEvent = workflowEvent({
   debugLabel: "start",
@@ -27,8 +27,7 @@ const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 describe("with snapshot - snapshot API", () => {
   test("single handler (sync)", async () => {
-    const { withState } = createStatefulMiddleware((input: any) => input);
-
+    const { withState } = createStatefulMiddleware();
     const workflow = withState(createWorkflow());
     workflow.handle([startEvent], () => {
       return request(humanResponseEvent);
@@ -39,7 +38,7 @@ describe("with snapshot - snapshot API", () => {
       return stopEvent.with();
     });
 
-    const { sendEvent, snapshot } = workflow.createContext({});
+    const { sendEvent, snapshot } = workflow.createContext();
     sendEvent(startEvent.with());
     const [req, sd] = await snapshot();
     expect(req.length).toBe(1);
@@ -50,6 +49,7 @@ describe("with snapshot - snapshot API", () => {
           1,
         ],
         "queue": [],
+        "state": undefined,
         "unrecoverableQueue": [],
         "version": "@@@0,,4~,,@@1,,7~,,",
       }
@@ -63,8 +63,7 @@ describe("with snapshot - snapshot API", () => {
   });
 
   test("single handler (async)", async () => {
-    const { withState } = createStatefulMiddleware((input: any) => input);
-
+    const { withState } = createStatefulMiddleware();
     const workflow = withState(createWorkflow());
     workflow.handle([startEvent], async () => {
       return request(humanResponseEvent);
@@ -75,7 +74,7 @@ describe("with snapshot - snapshot API", () => {
       return stopEvent.with();
     });
 
-    const { sendEvent, snapshot } = workflow.createContext({});
+    const { sendEvent, snapshot } = workflow.createContext();
     sendEvent(startEvent.with());
     const [req, sd] = await snapshot();
     expect(req.length).toBe(1);
@@ -86,6 +85,7 @@ describe("with snapshot - snapshot API", () => {
           1,
         ],
         "queue": [],
+        "state": undefined,
         "unrecoverableQueue": [],
         "version": "@@@0,,4~,,@@1,,7~,,",
       }
@@ -99,8 +99,7 @@ describe("with snapshot - snapshot API", () => {
   });
 
   test("single handler (timer)", async () => {
-    const { withState } = createStatefulMiddleware((input: any) => input);
-
+    const { withState } = createStatefulMiddleware();
     const workflow = withState(createWorkflow());
     workflow.handle([startEvent], async () => {
       await sleep(10);
@@ -112,7 +111,7 @@ describe("with snapshot - snapshot API", () => {
       return stopEvent.with();
     });
 
-    const { sendEvent, snapshot } = workflow.createContext({});
+    const { sendEvent, snapshot } = workflow.createContext();
     sendEvent(startEvent.with());
     const [req, sd] = await snapshot();
     expect(req.length).toBe(1);
@@ -123,6 +122,7 @@ describe("with snapshot - snapshot API", () => {
           1,
         ],
         "queue": [],
+        "state": undefined,
         "unrecoverableQueue": [],
         "version": "@@@0,,4~,,@@1,,7~,,",
       }
@@ -136,11 +136,10 @@ describe("with snapshot - snapshot API", () => {
   });
 
   test("multiple message in the queue", async () => {
-    const { withState } = createStatefulMiddleware((input: any) => input);
-
+    const { withState, getContext } = createStatefulMiddleware();
     const workflow = withState(createWorkflow());
     workflow.handle([startEvent], async () => {
-      const { sendEvent } = workflow.createContext({});
+      const { sendEvent } = getContext();
       await sleep(10);
       sendEvent(messageEvent.with("1"));
       sendEvent(messageEvent.with("2"));
@@ -152,7 +151,7 @@ describe("with snapshot - snapshot API", () => {
       return stopEvent.with();
     });
 
-    const { sendEvent, snapshot } = workflow.createContext({});
+    const { sendEvent, snapshot } = workflow.createContext();
     sendEvent(startEvent.with());
     const [req, sd] = await snapshot();
     expect(req.length).toBe(1);
@@ -164,6 +163,7 @@ describe("with snapshot - snapshot API", () => {
           1,
         ],
         "queue": [],
+        "state": undefined,
         "unrecoverableQueue": [
           [
             "1",
@@ -186,8 +186,7 @@ describe("with snapshot - snapshot API", () => {
   });
 
   test("multiple requests in the response", async () => {
-    const { withState } = createStatefulMiddleware((input: any) => input);
-
+    const { withState } = createStatefulMiddleware();
     const workflow = withState(createWorkflow());
     workflow.handle([startEvent], async () => {
       return request(humanResponseEvent);
@@ -202,7 +201,7 @@ describe("with snapshot - snapshot API", () => {
       return stopEvent.with();
     });
 
-    const { sendEvent, snapshot } = workflow.createContext({});
+    const { sendEvent, snapshot } = workflow.createContext();
     sendEvent(startEvent.with());
     const [req, sd] = await snapshot();
     expect(req.length).toBe(2);
@@ -214,6 +213,7 @@ describe("with snapshot - snapshot API", () => {
           1,
         ],
         "queue": [],
+        "state": undefined,
         "unrecoverableQueue": [],
         "version": "@@@0,,4~,,@@0,,7~,,@@1,,10~,,",
       }
@@ -230,8 +230,7 @@ describe("with snapshot - snapshot API", () => {
     vi.stubGlobal("console", {
       warn,
     });
-    const { withState } = createStatefulMiddleware((input: any) => input);
-
+    const { withState } = createStatefulMiddleware();
     const workflow = withState(createWorkflow());
     workflow.handle([startEvent], async () => {
       const { sendEvent } = getContext();
@@ -240,7 +239,7 @@ describe("with snapshot - snapshot API", () => {
       }, 100);
     });
 
-    const { sendEvent, snapshot } = workflow.createContext({});
+    const { sendEvent, snapshot } = workflow.createContext();
     sendEvent(startEvent.with());
     const [req, se] = await snapshot();
     expect(req.length).toBe(0);
@@ -248,6 +247,7 @@ describe("with snapshot - snapshot API", () => {
       {
         "missing": [],
         "queue": [],
+        "state": undefined,
         "unrecoverableQueue": [],
         "version": "@@@0,,4~,,",
       }
@@ -262,8 +262,7 @@ describe("with snapshot - snapshot API", () => {
   });
 
   test("onRequestEvent callback", async () => {
-    const { withState } = createStatefulMiddleware((input: any) => input);
-
+    const { withState } = createStatefulMiddleware();
     const workflow = withState(createWorkflow());
     workflow.handle([startEvent], async () => {
       return request(humanResponseEvent, 1);
@@ -274,7 +273,7 @@ describe("with snapshot - snapshot API", () => {
       return stopEvent.with();
     });
 
-    const { sendEvent, stream, onRequest } = workflow.createContext({});
+    const { sendEvent, stream, onRequest } = workflow.createContext();
     sendEvent(startEvent.with());
 
     const onRequestCallback = vi.fn((reason) => {
