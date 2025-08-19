@@ -1,18 +1,8 @@
 import { describe, expect, test } from "vitest";
-import {
-  createWorkflow,
-  workflowEvent,
-  getContext,
-  type Workflow,
-} from "@llamaindex/workflow-core";
-import {
-  withSnapshot,
-  request,
-  type SnapshotWorkflowContext,
-} from "@llamaindex/workflow-core/middleware/snapshot";
+import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";
 import {
   createStatefulMiddleware,
-  type StateWorkflowContext,
+  request,
 } from "@llamaindex/workflow-core/middleware/state";
 
 const startEvent = workflowEvent({});
@@ -28,18 +18,16 @@ type TestState = {
 
 describe("state with snapshot middleware", () => {
   test("should preserve state when resuming from snapshot", async () => {
-    // Create the combined middleware like in the demo
-    const stateful = createStatefulMiddleware((state: TestState) => state);
-    const statefulWorkflow = stateful.withState(createWorkflow());
-    const workflow = withSnapshot(statefulWorkflow as unknown as Workflow);
+    const { withState, getContext } = createStatefulMiddleware(
+      (input: TestState) => input,
+    );
+    const workflow = withState(createWorkflow());
 
     let snapshotData: any = null;
 
     // Handler that modifies state and creates a snapshot
     workflow.handle([startEvent], async () => {
-      const context =
-        getContext() as unknown as StateWorkflowContext<TestState> &
-          SnapshotWorkflowContext<typeof workflow>;
+      const context = getContext();
 
       // Modify the state
       context.state.counter = 42;
@@ -59,7 +47,7 @@ describe("state with snapshot middleware", () => {
     });
 
     // Create initial context with state
-    const context = (workflow as any).createContext({
+    const context = workflow.createContext({
       counter: 0,
       message: "initial",
     });
@@ -75,13 +63,11 @@ describe("state with snapshot middleware", () => {
     expect(context.state.counter).toBe(42);
     expect(context.state.message).toBe("original state");
 
-    const resumedContext = workflow.resume(
-      ["hello"],
-      snapshotData,
-    ) as unknown as StateWorkflowContext<TestState>;
+    const resumedContext = workflow.resume(["hello"], snapshotData);
 
-    await resumedContext.stream.until(stopEvent).toArray();
-
+    const events = await resumedContext.stream.until(stopEvent).toArray();
+    
+    expect(events.length).toBe(2);
     expect(resumedContext.state.counter).toBe(42);
     expect(resumedContext.state.message).toBe("original state");
   });

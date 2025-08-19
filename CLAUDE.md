@@ -56,10 +56,9 @@ sendEvent(startEvent.with("42"));
 
 ### Middleware System
 
-- **State**: `withState()` adds stateful context
+- **State**: `withState()` adds stateful context (with built-in snapshot support)
 - **Validation**: `withValidation()` provides type-safe event handling
 - **Trace Events**: `withTraceEvents()` enables debugging and handler decorators
-- **Snapshot**: `withSnapshot()` allows workflow state save/restore
 
 ### Key Directories
 
