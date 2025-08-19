@@ -66,7 +66,7 @@ describe("state with snapshot middleware", () => {
     const resumedContext = workflow.resume(["hello"], snapshotData);
 
     const events = await resumedContext.stream.until(stopEvent).toArray();
-    
+
     expect(events.length).toBe(2);
     expect(resumedContext.state.counter).toBe(42);
     expect(resumedContext.state.message).toBe("original state");
