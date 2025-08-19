@@ -247,6 +247,18 @@ const workflow = withState(createWorkflow());
 const { state } = workflow.createContext({ id: "1" });
 ```
 
+`withState` also supports snapshot, you can use `snapshot` to save the state of the workflow, and `resume` to restore the state of the workflow.
+
+```ts
+const { snapshot, resume } = workflow.createContext();
+
+// create snapshot
+const [req, snapshotData] = await snapshot();
+
+// resume workflow from snapshot
+const { stream } = workflow.resume(["hello"], snapshotData);
+```
+
 ### `withValidation`
 
 Make first parameter of `handler` to be `sendEvent` and its type safe and runtime safe
