@@ -74,7 +74,7 @@ export interface SnapshotableContext {
   ) => () => void;
 }
 
-export type CreateContextOutput<State> = ReturnType<
+export type StatefulContextWithSnapshot<State> = ReturnType<
   Workflow["createContext"]
 > & {
   get state(): State;
@@ -83,14 +83,14 @@ export type CreateContextOutput<State> = ReturnType<
 export type ResumeFunction<State> = (
   data: any[],
   serializable: Omit<SnapshotData, "unrecoverableQueue">,
-) => CreateContextOutput<State>;
+) => StatefulContextWithSnapshot<State>;
 
 export type WorkflowWithState<State, Input> = Input extends void | undefined
   ? {
       <Workflow extends WorkflowCore>(
         workflow: Workflow,
       ): Omit<Workflow, "createContext"> & {
-        createContext(): CreateContextOutput<State>;
+        createContext(): StatefulContextWithSnapshot<State>;
         resume: ResumeFunction<State>;
       };
     }
@@ -98,7 +98,7 @@ export type WorkflowWithState<State, Input> = Input extends void | undefined
       <Workflow extends WorkflowCore>(
         workflow: Workflow,
       ): Omit<Workflow, "createContext"> & {
-        createContext(input: Input): CreateContextOutput<State>;
+        createContext(input: Input): StatefulContextWithSnapshot<State>;
         resume: ResumeFunction<State>;
       };
     };
@@ -106,7 +106,7 @@ export type WorkflowWithState<State, Input> = Input extends void | undefined
 type CreateState<State, Input, Context extends WorkflowContext> = {
   getContext(): Context & {
     get state(): State;
-  };
+  } & SnapshotableContext;
   withState: WorkflowWithState<State, Input>;
 };
 
