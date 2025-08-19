@@ -1,17 +1,18 @@
 import {
   eventSource,
-  type Workflow as WorkflowCore,
+  getContext,
+  type Workflow,
   type WorkflowContext,
+  type Workflow as WorkflowCore,
   type WorkflowEvent,
   workflowEvent,
   type WorkflowEventData,
   WorkflowStream,
-  type Workflow,
 } from "@llamaindex/workflow-core";
 import type { HandlerContext } from "../core/context";
-import { extendContext, getContext } from "../core/context";
-import { createStableHash } from "./snapshot/stable-hash";
+import { extendContext } from "../core/context";
 import { createSubscribable, isPromiseLike } from "../core/utils";
+import { createStableHash } from "./snapshot/stable-hash";
 
 /**
  * @internal We don't want to expose this special event to the user
