@@ -52,7 +52,10 @@ export function createHandlerDecorator<Metadata>(config: {
     decoratorRegistry
       .get(uid)!
       .handlers.add(
-        handler as Handler<WorkflowEvent<any>[], WorkflowEventData<any> | void>,
+        handler as unknown as Handler<
+          WorkflowEvent<any>[],
+          WorkflowEventData<any> | void
+        >,
       );
     return handler;
   };

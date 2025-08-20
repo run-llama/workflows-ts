@@ -154,7 +154,8 @@ describe("with trace events", () => {
           await context.pending;
           resolvedSet.add(context);
         }
-        return h();
+
+        return h(asyncContexts[0] as any);
       },
     });
     let count = 0;

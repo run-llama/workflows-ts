@@ -87,6 +87,13 @@ export interface SnapshotableContext {
   ) => () => void;
 }
 
+export type StatefulContext<
+  State = any,
+  Context extends WorkflowContext = WorkflowContext,
+> = Context & {
+  get state(): State;
+} & SnapshotableContext;
+
 export type StatefulContextWithSnapshot<State> = ReturnType<
   Workflow["createContext"]
 > & {
@@ -117,9 +124,7 @@ export type WorkflowWithState<State, Input> = Input extends void | undefined
     };
 
 type CreateState<State, Input, Context extends WorkflowContext> = {
-  getContext(): Context & {
-    get state(): State;
-  } & SnapshotableContext;
+  getContext(): StatefulContext<State, Context>;
   withState: WorkflowWithState<State, Input>;
 };
 

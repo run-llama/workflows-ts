@@ -3,6 +3,7 @@ import {
   createStatefulMiddleware,
   request,
   SnapshotData,
+  StatefulContext,
 } from "@llamaindex/workflow-core/middleware/state";
 import { OpenAI } from "openai";
 import {
@@ -25,7 +26,7 @@ type AgentWorkflowState = {
   humanToolId: string | null;
 };
 
-const { withState, getContext } = createStatefulMiddleware(
+const { withState } = createStatefulMiddleware(
   (state: AgentWorkflowState) => state,
 );
 const workflow = withState(createWorkflow());
@@ -115,8 +116,8 @@ async function callTool(
 }
 
 // Handler for processing user input and LLM responses
-workflow.handle([userInputEvent], async (event) => {
-  const { sendEvent, state } = getContext();
+workflow.handle([userInputEvent], async (event, context) => {
+  const { sendEvent, state } = context as StatefulContext<AgentWorkflowState>;
   const { messages } = event.data;
 
   try {
@@ -148,8 +149,8 @@ workflow.handle([userInputEvent], async (event) => {
 });
 
 // Handler for aggregating tool call responses
-workflow.handle([toolResponseEvent], async (event) => {
-  const { sendEvent, state } = getContext();
+workflow.handle([toolResponseEvent], async (event, context) => {
+  const { sendEvent, state } = context as StatefulContext<AgentWorkflowState>;
   // Collect all tool responses until we have all of them
   state.toolResponses.push(event.data);
 
@@ -172,9 +173,10 @@ workflow.handle([toolResponseEvent], async (event) => {
 });
 
 // Handler for executing tool calls
-workflow.handle([toolCallEvent], async (event) => {
+workflow.handle([toolCallEvent], async (event, context) => {
   const { toolCall } = event.data;
-  const { sendEvent, state, snapshot } = getContext();
+  const { sendEvent, state, snapshot } =
+    context as StatefulContext<AgentWorkflowState>;
 
   try {
     if (toolCall.function.name.startsWith("human_")) {
@@ -208,8 +210,8 @@ workflow.handle([toolCallEvent], async (event) => {
   }
 });
 
-workflow.handle([humanResponseEvent], async (event) => {
-  const { sendEvent, state } = getContext();
+workflow.handle([humanResponseEvent], async (event, context) => {
+  const { sendEvent, state } = context as StatefulContext<AgentWorkflowState>;
   sendEvent(
     toolResponseEvent.with({
       toolResponse: "My name is " + event.data,

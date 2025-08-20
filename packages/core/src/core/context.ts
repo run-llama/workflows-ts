@@ -17,9 +17,12 @@ export type Handler<
   AcceptEvents extends WorkflowEvent<any>[],
   Result extends WorkflowEventData<any> | void,
 > = (
-  ...event: {
-    [K in keyof AcceptEvents]: ReturnType<AcceptEvents[K]["with"]>;
-  }
+  ...args: [
+    ...{
+      [K in keyof AcceptEvents]: ReturnType<AcceptEvents[K]["with"]>;
+    },
+    context: WorkflowContext
+  ] // a list of events and end with workflow context object
 ) => Result | Promise<Result>;
 
 type BaseHandlerContext = {
@@ -229,7 +232,7 @@ export const createContext = ({
           if (i === cbs.length) {
             let result: any;
             try {
-              result = context.handler(...context.inputs);
+              result = context.handler(...context.inputs, workflowContext);
             } catch (error) {
               if (handlerAbortController ?? rootAbortController) {
                 (handlerAbortController ?? rootAbortController).abort(error);
