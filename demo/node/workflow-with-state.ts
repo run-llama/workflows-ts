@@ -25,17 +25,10 @@ type AgentWorkflowState = {
   humanToolId: string | null;
 };
 
-const { withState } = createStatefulMiddleware(
+const { withState, getContext } = createStatefulMiddleware(
   (state: AgentWorkflowState) => state,
 );
 const workflow = withState(createWorkflow());
-
-const { stream, sendEvent, state, snapshot } = workflow.createContext({
-  expectedToolCount: 0,
-  messages: [],
-  toolResponses: [],
-  humanToolId: null,
-});
 
 let snapshotData: SnapshotData | null = null;
 
@@ -123,6 +116,7 @@ async function callTool(
 
 // Handler for processing user input and LLM responses
 workflow.handle([userInputEvent], async (event) => {
+  const { sendEvent, state } = getContext();
   const { messages } = event.data;
 
   try {
@@ -155,6 +149,7 @@ workflow.handle([userInputEvent], async (event) => {
 
 // Handler for aggregating tool call responses
 workflow.handle([toolResponseEvent], async (event) => {
+  const { sendEvent, state } = getContext();
   // Collect all tool responses until we have all of them
   state.toolResponses.push(event.data);
 
@@ -179,14 +174,15 @@ workflow.handle([toolResponseEvent], async (event) => {
 // Handler for executing tool calls
 workflow.handle([toolCallEvent], async (event) => {
   const { toolCall } = event.data;
+  const { sendEvent, state, snapshot } = getContext();
 
   try {
     if (toolCall.function.name.startsWith("human_")) {
       // delegate to human if tool call starts with "human_"
+      state.humanToolId = toolCall.id;
       sendEvent(request(humanResponseEvent));
       const [_, snapshotData_] = await snapshot();
       snapshotData = snapshotData_;
-      state.humanToolId = toolCall.id;
       // stop workflow
       // TODO: this shows a 'sendEvent after snapshot is not allowed' warning
       sendEvent(finalResponseEvent.with("Waiting for human response"));
@@ -213,19 +209,24 @@ workflow.handle([toolCallEvent], async (event) => {
 });
 
 workflow.handle([humanResponseEvent], async (event) => {
-  console.log("human response", event.data);
-  console.log("state", state);
+  const { sendEvent, state } = getContext();
   sendEvent(
     toolResponseEvent.with({
-      toolResponse: event.data,
+      toolResponse: "My name is " + event.data,
       toolId: state.humanToolId!,
     }),
   );
 });
 
 // Run the workflow
+const context = workflow.createContext({
+  expectedToolCount: 0,
+  messages: [],
+  toolResponses: [],
+  humanToolId: null,
+});
 
-sendEvent(
+context.sendEvent(
   userInputEvent.with({
     messages: [
       {
@@ -237,12 +238,10 @@ sendEvent(
   }),
 );
 
-await stream.until(finalResponseEvent).toArray();
+await context.stream.until(finalResponseEvent).toArray();
 
 if (!snapshotData) {
   throw new Error("No snapshot data");
-} else {
-  console.log("snapshot data", JSON.stringify(snapshotData, null, 2));
 }
 
 const rl = readline.createInterface({
@@ -251,8 +250,11 @@ const rl = readline.createInterface({
 });
 const userName = await rl.question("Name? ");
 
-const context = workflow.resume([userName], snapshotData);
+const resumedContext = workflow.resume([userName], snapshotData);
 
-const result = await context.stream.until(finalResponseEvent).toArray();
+const result = await resumedContext.stream.until(finalResponseEvent).toArray();
 
 console.log(result[result.length - 1].data);
+
+// TODO: ensure process exit is not needed
+process.exit(0);
