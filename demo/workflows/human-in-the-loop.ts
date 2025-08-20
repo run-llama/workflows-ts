@@ -1,7 +1,7 @@
 import {
-  withSnapshot,
+  createStatefulMiddleware,
   request,
-} from "@llamaindex/workflow-core/middleware/snapshot";
+} from "@llamaindex/workflow-core/middleware/state";
 import {
   createWorkflow,
   workflowEvent,
@@ -11,7 +11,8 @@ import { OpenAI } from "openai";
 
 const openai = new OpenAI();
 
-const workflow = withSnapshot(createWorkflow());
+const { withState } = createStatefulMiddleware();
+const workflow = withState(createWorkflow());
 
 const startEvent = workflowEvent<string>({
   debugLabel: "start",

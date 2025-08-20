@@ -1,7 +1,13 @@
 // workflow
 export { createWorkflow, type Workflow } from "./workflow";
 // context
-export { getContext, type WorkflowContext, type Handler } from "./context";
+export {
+  getContext,
+  extendContext,
+  type WorkflowContext,
+  type Handler,
+  type InheritanceTransformer,
+} from "./context";
 // event system
 export {
   isWorkflowEvent,

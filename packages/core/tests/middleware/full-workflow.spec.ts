@@ -5,7 +5,7 @@ import {
   type WorkflowEvent,
   type WorkflowEventData,
 } from "@llamaindex/workflow-core";
-import { createStateMiddleware } from "@llamaindex/workflow-core/middleware/store";
+import { createStatefulMiddleware } from "@llamaindex/workflow-core/middleware/state";
 import { withTraceEvents } from "@llamaindex/workflow-core/middleware/trace-events";
 import { withValidation } from "@llamaindex/workflow-core/middleware/validation";
 import { zodEvent } from "@llamaindex/workflow-core/util/zod";
@@ -24,7 +24,7 @@ describe("full workflow middleware", () => {
     validation: Validation,
     createStore: (input: Input) => T,
   ) => {
-    const { withState, getContext } = createStateMiddleware(createStore);
+    const { withState, getContext } = createStatefulMiddleware(createStore);
     return [
       withState(withValidation(withTraceEvents(createWorkflow()), validation)),
       getContext,

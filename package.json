@@ -3,12 +3,14 @@
   "private": true,
   "version": "0.0.1",
   "type": "module",
-  "packageManager": "pnpm@10.12.4",
+  "packageManager": "pnpm@10.15.0",
   "scripts": {
+    "build": "turbo build --filter=\"./packages/*\"",
+    "test": "turbo test --filter=\"./packages/*\"",
     "typecheck": "tsc -b --verbose",
     "lint": "prettier . --check",
     "lint:fix": "prettier . --write",
-    "publish": "turbo build --filter=\"./packages/*\" && changeset publish",
+    "publish": "pnpm run build && changeset publish",
     "prepare": "husky"
   },
   "devDependencies": {
@@ -20,6 +22,7 @@
     "prettier": "^3.6.1",
     "tsdown": "^0.12.9",
     "turbo": "^2.5.4",
+    "typescript": "^5.9.2",
     "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^3.2.4"
   }
