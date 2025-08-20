@@ -3,6 +3,7 @@ import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";
 import {
   createStatefulMiddleware,
   request,
+  type StatefulContext,
 } from "@llamaindex/workflow-core/middleware/state";
 
 const startEvent = workflowEvent({});
@@ -18,33 +19,31 @@ type TestState = {
 
 describe("state with snapshot middleware", () => {
   test("should preserve state when resuming from snapshot", async () => {
-    const { withState, getContext } = createStatefulMiddleware(
-      (input: TestState) => input,
-    );
+    const { withState } = createStatefulMiddleware((input: TestState) => input);
     const workflow = withState(createWorkflow());
 
     let handlerState: TestState | null = null;
     let snapshotData: any = null;
 
     // Handler that modifies state and creates a snapshot
-    workflow.handle([startEvent], async () => {
-      const context = getContext();
+    workflow.handle([startEvent], async (_event, context) => {
+      const { state, snapshot } = context as StatefulContext<TestState>;
 
       // Modify the state
-      context.state.counter = 42;
-      context.state.message = "original state";
+      state.counter = 42;
+      state.message = "original state";
 
       // Send a request and snapshot
       context.sendEvent(request(requestEvent));
-      const [_, sd] = await context.snapshot();
+      const [_, sd] = await snapshot();
       snapshotData = sd;
 
       return stopEvent.with();
     });
 
     // Handler for human response
-    workflow.handle([requestEvent], ({ data }) => {
-      const { state } = getContext();
+    workflow.handle([requestEvent], async (_event, context) => {
+      const { state } = context as StatefulContext<TestState>;
       handlerState = state;
 
       return stopEvent.with();
