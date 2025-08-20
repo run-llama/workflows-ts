@@ -21,7 +21,7 @@ export type Handler<
     ...{
       [K in keyof AcceptEvents]: ReturnType<AcceptEvents[K]["with"]>;
     },
-    context: WorkflowContext
+    context: WorkflowContext,
   ] // a list of events and end with workflow context object
 ) => Result | Promise<Result>;
 
