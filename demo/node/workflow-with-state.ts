@@ -249,12 +249,10 @@ const rl = readline.createInterface({
   output: process.stdout,
 });
 const userName = await rl.question("Name? ");
+rl.close();
 
 const resumedContext = workflow.resume([userName], snapshotData);
 
 const result = await resumedContext.stream.until(finalResponseEvent).toArray();
 
 console.log(result[result.length - 1].data);
-
-// TODO: ensure process exit is not needed
-process.exit(0);
