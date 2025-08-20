@@ -1,5 +1,12 @@
 # @llamaindex/workflow-core
 
+## 1.2.1
+
+### Patch Changes
+
+- a3ce131: merge snapshot and state middleware and fix middleware chaining
+- a3ce131: fix: snapshot not passing createContext params
+
 ## 1.2.0
 
 ### Minor Changes
