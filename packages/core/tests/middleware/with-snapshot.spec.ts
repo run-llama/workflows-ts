@@ -6,7 +6,6 @@ import {
 import {
   createWorkflow,
   eventSource,
-  getContext,
   workflowEvent,
 } from "@llamaindex/workflow-core";
 
@@ -230,7 +229,7 @@ describe("with snapshot - snapshot API", () => {
     vi.stubGlobal("console", {
       warn,
     });
-    const { withState } = createStatefulMiddleware();
+    const { withState, getContext } = createStatefulMiddleware();
     const workflow = withState(createWorkflow());
     workflow.handle([startEvent], async () => {
       const { sendEvent } = getContext();

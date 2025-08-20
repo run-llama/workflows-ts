@@ -300,6 +300,56 @@ export function createStatefulMiddleware<
       }
 
       // Create a function to generate stream transform wrappers
+      // Shared function to create stateful context
+      const createStatefulContext = (state: State): any => {
+        const context = (workflow.createContext as any)();
+        initContext(context);
+
+        const snapshotFn = createSnapshotFn(context);
+
+        extendContext(
+          context,
+          {
+            get state() {
+              return state;
+            },
+            snapshot: snapshotFn,
+            onRequest: (
+              event: WorkflowEvent<any>,
+              callback: (reason: any) => void | Promise<void>,
+            ): (() => void) =>
+              requests.subscribe((ev, reason) => {
+                if (ev === event) {
+                  return callback(reason);
+                }
+              }),
+          },
+          {
+            stream: (currentContext, originalDescriptor) => {
+              let lazyWrappedStream: WorkflowStream | null = null;
+
+              return {
+                ...originalDescriptor,
+                get() {
+                  if (!lazyWrappedStream) {
+                    const originalStream =
+                      originalDescriptor.get?.call(currentContext);
+                    if (originalStream) {
+                      lazyWrappedStream = originalStream.pipeThrough(
+                        createStreamWrapper(context),
+                      );
+                    }
+                  }
+                  return lazyWrappedStream;
+                },
+              };
+            },
+          },
+        );
+
+        return context;
+      };
+
       const createStreamWrapper = (context: WorkflowContext) =>
         new TransformStream({
           transform: (event, controller) => {
@@ -339,7 +389,6 @@ export function createStatefulMiddleware<
         resume(
           data: any[],
           serializable: Omit<SnapshotData, "unrecoverableQueue">,
-          ...args: Parameters<Workflow["createContext"]>
         ): any {
           const resumedState = serializable.state
             ? JSON.parse(serializable.state)
@@ -347,8 +396,9 @@ export function createStatefulMiddleware<
           const events = data.map((d, i) =>
             getCounterEvent(serializable.missing[i]!).with(d),
           );
-          const context = (workflow.createContext as any)(...args);
-          initContext(context);
+
+          // Call the stateful createContext with the resumed state
+          const context = createStatefulContext(resumedState);
 
           // triggers the lazy initialization of the stream wrapper
           context.stream;
@@ -361,96 +411,11 @@ export function createStatefulMiddleware<
           );
           context.sendEvent(...events);
 
-          const snapshotFn = createSnapshotFn(context);
-          extendContext(
-            context,
-            {
-              snapshot: snapshotFn,
-              get state() {
-                return resumedState;
-              },
-              onRequest: (
-                event: WorkflowEvent<any>,
-                callback: (reason: any) => void | Promise<void>,
-              ): (() => void) =>
-                requests.subscribe((ev, reason) => {
-                  if (ev === event) {
-                    return callback(reason);
-                  }
-                }),
-            },
-            {
-              stream: (currentContext, originalDescriptor) => {
-                let lazyWrappedStream: WorkflowStream | null = null;
-
-                return {
-                  ...originalDescriptor,
-                  get() {
-                    if (!lazyWrappedStream) {
-                      const originalStream =
-                        originalDescriptor.get?.call(currentContext);
-                      if (originalStream) {
-                        lazyWrappedStream = originalStream.pipeThrough(
-                          createStreamWrapper(context),
-                        );
-                      }
-                    }
-                    return lazyWrappedStream;
-                  },
-                };
-              },
-            },
-          );
           return context;
         },
         createContext(input?: Input): any {
-          const state = init?.(input as Input);
-          const context = (workflow.createContext as any)(input);
-          initContext(context);
-
-          const snapshotFn = createSnapshotFn(context);
-
-          extendContext(
-            context,
-            {
-              get state() {
-                return state;
-              },
-              snapshot: snapshotFn,
-              onRequest: (
-                event: WorkflowEvent<any>,
-                callback: (reason: any) => void | Promise<void>,
-              ): (() => void) =>
-                requests.subscribe((ev, reason) => {
-                  if (ev === event) {
-                    return callback(reason);
-                  }
-                }),
-            },
-            {
-              stream: (currentContext, originalDescriptor) => {
-                let lazyWrappedStream: WorkflowStream | null = null;
-
-                return {
-                  ...originalDescriptor,
-                  get() {
-                    if (!lazyWrappedStream) {
-                      const originalStream =
-                        originalDescriptor.get?.call(currentContext);
-                      if (originalStream) {
-                        lazyWrappedStream = originalStream.pipeThrough(
-                          createStreamWrapper(context),
-                        );
-                      }
-                    }
-                    return lazyWrappedStream;
-                  },
-                };
-              },
-            },
-          );
-
-          return context;
+          const state = init?.(input as Input) as State;
+          return createStatefulContext(state);
         },
       };
     }) as unknown as WorkflowWithState<State, Input>,

@@ -23,6 +23,7 @@ describe("state with snapshot middleware", () => {
     );
     const workflow = withState(createWorkflow());
 
+    let handlerState: TestState | null = null;
     let snapshotData: any = null;
 
     // Handler that modifies state and creates a snapshot
@@ -43,6 +44,9 @@ describe("state with snapshot middleware", () => {
 
     // Handler for human response
     workflow.handle([requestEvent], ({ data }) => {
+      const { state } = getContext();
+      handlerState = state;
+
       return stopEvent.with();
     });
 
@@ -66,9 +70,9 @@ describe("state with snapshot middleware", () => {
     const resumedContext = workflow.resume(["hello"], snapshotData);
 
     const events = await resumedContext.stream.until(stopEvent).toArray();
-
     expect(events.length).toBe(2);
-    expect(resumedContext.state.counter).toBe(42);
-    expect(resumedContext.state.message).toBe("original state");
+    expect(handlerState).toBeDefined();
+    expect(handlerState!.counter).toBe(42);
+    expect(handlerState!.message).toBe("original state");
   });
 });
