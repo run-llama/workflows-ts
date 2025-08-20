@@ -72,8 +72,8 @@ For example, alex is from "Alexander the Great", who was a king of the ancient G
   return stopEvent.with(response.choices[0].message.content!);
 });
 
-workflow.handle([humanInteractionEvent], async ({ data }) => {
-  const { sendEvent } = getContext();
+workflow.handle([humanInteractionEvent], async ({ data }, context) => {
+  const { sendEvent } = context;
   // going back to the start event
   sendEvent(startEvent.with(data));
 });
