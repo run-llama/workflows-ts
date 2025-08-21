@@ -89,6 +89,18 @@ export type InheritanceTransformer = (
 export const _executorAsyncLocalStorage =
   new AsyncContext.Variable<WorkflowContext>();
 
+/**
+ * @deprecated Use the context parameter directly from workflow handlers instead.
+ * The context passed to handlers already includes all state properties.
+ *
+ * @example
+ * ```ts
+ * workflow.handle([startEvent], (event, context) => {
+ *   const { sendEvent } = context;
+ *   sendEvent(processEvent.with());
+ * });
+ * ```
+ */
 export function getContext(): WorkflowContext {
   const context = _executorAsyncLocalStorage.get();
   if (!context) {
