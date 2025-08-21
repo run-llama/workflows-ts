@@ -6,6 +6,7 @@ import {
   workflowEvent,
   or,
   type WorkflowEventData,
+  type WorkflowContext,
 } from "@llamaindex/workflow-core";
 
 describe("workflow context api", () => {
@@ -232,7 +233,7 @@ describe("workflow context api", () => {
 
     const workflow = createWorkflow();
 
-    const handler = vi.fn((eventData: WorkflowEventData<any>, context: any) => {
+    const handler = vi.fn((eventData: WorkflowEventData<any>, context: WorkflowContext) => {
       return resultEvent.with(`Got data: ${eventData.data}`);
     });
 
