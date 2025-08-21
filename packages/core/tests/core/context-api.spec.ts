@@ -233,9 +233,11 @@ describe("workflow context api", () => {
 
     const workflow = createWorkflow();
 
-    const handler = vi.fn((eventData: WorkflowEventData<any>, context: WorkflowContext) => {
-      return resultEvent.with(`Got data: ${eventData.data}`);
-    });
+    const handler = vi.fn(
+      (eventData: WorkflowEventData<any>, context: WorkflowContext) => {
+        return resultEvent.with(`Got data: ${eventData.data}`);
+      },
+    );
 
     workflow.handle([orEvent], handler);
 
