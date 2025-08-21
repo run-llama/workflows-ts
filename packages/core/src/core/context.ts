@@ -16,12 +16,13 @@ import { WorkflowStream } from "./stream";
 export type Handler<
   AcceptEvents extends WorkflowEvent<any>[],
   Result extends WorkflowEventData<any> | void,
+  Context extends WorkflowContext = WorkflowContext,
 > = (
   ...args: [
     ...{
       [K in keyof AcceptEvents]: ReturnType<AcceptEvents[K]["with"]>;
     },
-    context: WorkflowContext,
+    context: Context,
   ] // a list of events and end with workflow context object
 ) => Result | Promise<Result>;
 

@@ -3,7 +3,6 @@ import {
   createStatefulMiddleware,
   request,
   SnapshotData,
-  StatefulContext,
 } from "@llamaindex/workflow-core/middleware/state";
 import { OpenAI } from "openai";
 import {
@@ -117,7 +116,7 @@ async function callTool(
 
 // Handler for processing user input and LLM responses
 workflow.handle([userInputEvent], async (event, context) => {
-  const { sendEvent, state } = context as StatefulContext<AgentWorkflowState>;
+  const { sendEvent, state } = context;
   const { messages } = event.data;
 
   try {
@@ -150,7 +149,7 @@ workflow.handle([userInputEvent], async (event, context) => {
 
 // Handler for aggregating tool call responses
 workflow.handle([toolResponseEvent], async (event, context) => {
-  const { sendEvent, state } = context as StatefulContext<AgentWorkflowState>;
+  const { sendEvent, state } = context;
   // Collect all tool responses until we have all of them
   state.toolResponses.push(event.data);
 
@@ -175,8 +174,7 @@ workflow.handle([toolResponseEvent], async (event, context) => {
 // Handler for executing tool calls
 workflow.handle([toolCallEvent], async (event, context) => {
   const { toolCall } = event.data;
-  const { sendEvent, state, snapshot } =
-    context as StatefulContext<AgentWorkflowState>;
+  const { sendEvent, state, snapshot } = context;
 
   try {
     if (toolCall.function.name.startsWith("human_")) {
@@ -211,7 +209,7 @@ workflow.handle([toolCallEvent], async (event, context) => {
 });
 
 workflow.handle([humanResponseEvent], async (event, context) => {
-  const { sendEvent, state } = context as StatefulContext<AgentWorkflowState>;
+  const { sendEvent, state } = context;
   sendEvent(
     toolResponseEvent.with({
       toolResponse: "My name is " + event.data,
