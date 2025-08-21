@@ -9,7 +9,7 @@ const startEvent = workflowEvent<string>();
 const stopEvent = workflowEvent<string>();
 const workflow = createWorkflow();
 
-workflow.handle([startEvent], ({ data }) => {
+workflow.handle([startEvent], (_context, { data }) => {
   return stopEvent.with(`hello, ${data}!`);
 });
 

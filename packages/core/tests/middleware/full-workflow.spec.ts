@@ -5,7 +5,10 @@ import {
   type WorkflowEvent,
   type WorkflowEventData,
 } from "@llamaindex/workflow-core";
-import { createStatefulMiddleware, type StatefulContext } from "@llamaindex/workflow-core/middleware/state";
+import {
+  createStatefulMiddleware,
+  type StatefulContext,
+} from "@llamaindex/workflow-core/middleware/state";
 import { withTraceEvents } from "@llamaindex/workflow-core/middleware/trace-events";
 import { withValidation } from "@llamaindex/workflow-core/middleware/validation";
 import { zodEvent } from "@llamaindex/workflow-core/util/zod";
