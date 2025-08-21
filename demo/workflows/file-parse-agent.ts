@@ -35,8 +35,8 @@ const locks: {
   finish: boolean;
 }[] = [];
 
-fileParseWorkflow.handle([startEvent], async ({ data: dir }) => {
-  const { stream, sendEvent } = getContext();
+fileParseWorkflow.handle([startEvent], async (context, { data: dir }) => {
+  const { stream, sendEvent } = context;
   sendEvent(readDirEvent.with([dir, 0]));
   await stream
     .until(() => locks.length > 0 && locks.every((l) => l.finish))
@@ -47,43 +47,53 @@ fileParseWorkflow.handle([startEvent], async ({ data: dir }) => {
 const als = new AsyncLocalStorage<{
   finish: boolean;
 }>();
-fileParseWorkflow.handle([readDirEvent], async ({ data: [dir, tab] }) => {
-  getContext().sendEvent(messageEvent.with(dir));
-  const { sendEvent } = getContext();
-  const items = await readdir(dir);
-  getContext().state.output += " ".repeat(tab) + dir + "\n";
-  await Promise.all(
-    items.map(async (item) => {
-      const filePath = resolve(dir, item);
-      if (filePath.includes("node_modules")) {
-        return;
-      }
-      const s = await stat(filePath);
-      let lock = {
-        finish: false,
-      };
-      if (s.isFile()) {
-        als.run(lock, () => sendEvent(readFileEvent.with([filePath, tab + 2])));
-        locks.push(lock);
-      } else if (s.isDirectory()) {
-        als.run(lock, () => sendEvent(readDirEvent.with([filePath, tab + 2])));
-        locks.push(lock);
-      }
-    }),
-  );
-  const lock = als.getStore();
-  if (lock) {
-    lock.finish = true;
-  }
-  return readResultEvent.with();
-});
+fileParseWorkflow.handle(
+  [readDirEvent],
+  async (context, { data: [dir, tab] }) => {
+    context.sendEvent(messageEvent.with(dir));
+    const { sendEvent } = context;
+    const items = await readdir(dir);
+    context.state.output += " ".repeat(tab) + dir + "\n";
+    await Promise.all(
+      items.map(async (item) => {
+        const filePath = resolve(dir, item);
+        if (filePath.includes("node_modules")) {
+          return;
+        }
+        const s = await stat(filePath);
+        let lock = {
+          finish: false,
+        };
+        if (s.isFile()) {
+          als.run(lock, () =>
+            sendEvent(readFileEvent.with([filePath, tab + 2])),
+          );
+          locks.push(lock);
+        } else if (s.isDirectory()) {
+          als.run(lock, () =>
+            sendEvent(readDirEvent.with([filePath, tab + 2])),
+          );
+          locks.push(lock);
+        }
+      }),
+    );
+    const lock = als.getStore();
+    if (lock) {
+      lock.finish = true;
+    }
+    return readResultEvent.with();
+  },
+);
 
-fileParseWorkflow.handle([readFileEvent], async ({ data: [filePath, tab] }) => {
-  const lock = als.getStore();
-  if (lock) {
-    lock.finish = true;
-  }
-  getContext().sendEvent(messageEvent.with(filePath));
-  getContext().state.output += " ".repeat(tab) + filePath + "\n";
-  return readResultEvent.with();
-});
+fileParseWorkflow.handle(
+  [readFileEvent],
+  async (context, { data: [filePath, tab] }) => {
+    const lock = als.getStore();
+    if (lock) {
+      lock.finish = true;
+    }
+    context.sendEvent(messageEvent.with(filePath));
+    context.state.output += " ".repeat(tab) + filePath + "\n";
+    return readResultEvent.with();
+  },
+);

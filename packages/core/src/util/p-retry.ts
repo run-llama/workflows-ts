@@ -14,10 +14,8 @@ export function pRetryHandler<
   handler: Handler<AcceptEvents, Result, Context>,
   options: Options,
 ): Handler<AcceptEvents, Result, Context> {
-  return async (
-    ...args: Parameters<Handler<AcceptEvents, Result, Context>>
-  ): Promise<Result> => {
-    const fn = () => handler(...args);
+  return async (context, ...events) => {
+    const fn = () => handler(context, ...events);
     return pRetry(fn, options);
   };
 }

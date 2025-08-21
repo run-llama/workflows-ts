@@ -29,7 +29,7 @@ export const createWorkflow = (): Workflow => {
       handler: Handler<AcceptEvents, Result>,
     ): void => {
       if (config.steps.has(accept)) {
-        const set = config.steps.get(accept) as unknown as Set<
+        const set = config.steps.get(accept) as Set<
           Handler<AcceptEvents, Result>
         >;
         set.add(handler);
@@ -38,7 +38,7 @@ export const createWorkflow = (): Workflow => {
         set.add(handler);
         config.steps.set(
           accept,
-          set as unknown as Set<
+          set as Set<
             Handler<WorkflowEvent<any>[], WorkflowEventData<any> | void>
           >,
         );

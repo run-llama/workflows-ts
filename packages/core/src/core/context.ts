@@ -18,12 +18,10 @@ export type Handler<
   Result extends WorkflowEventData<any> | void,
   Context extends WorkflowContext = WorkflowContext,
 > = (
-  ...args: [
-    ...{
-      [K in keyof AcceptEvents]: ReturnType<AcceptEvents[K]["with"]>;
-    },
-    context: Context,
-  ] // a list of events and end with workflow context object
+  context: Context,
+  ...events: {
+    [K in keyof AcceptEvents]: ReturnType<AcceptEvents[K]["with"]>;
+  }
 ) => Result | Promise<Result>;
 
 type BaseHandlerContext = {
@@ -96,7 +94,7 @@ export const _executorAsyncLocalStorage =
  *
  * @example
  * ```ts
- * workflow.handle([startEvent], (event, context) => {
+ * workflow.handle([startEvent], (context, event) => {
  *   const { sendEvent } = context;
  *   sendEvent(processEvent.with());
  * });
@@ -245,7 +243,7 @@ export const createContext = ({
           if (i === cbs.length) {
             let result: any;
             try {
-              result = context.handler(...context.inputs, workflowContext);
+              result = context.handler(workflowContext, ...context.inputs);
             } catch (error) {
               if (handlerAbortController ?? rootAbortController) {
                 (handlerAbortController ?? rootAbortController).abort(error);

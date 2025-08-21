@@ -24,7 +24,7 @@ const stopEvent = workflowEvent<string>({
   debugLabel: "stop",
 });
 
-workflow.handle([startEvent], async ({ data }) => {
+workflow.handle([startEvent], async (context, { data }) => {
   const response = await openai.chat.completions.create({
     stream: false,
     model: "gpt-4.1",
@@ -72,7 +72,7 @@ For example, alex is from "Alexander the Great", who was a king of the ancient G
   return stopEvent.with(response.choices[0].message.content!);
 });
 
-workflow.handle([humanInteractionEvent], async ({ data }, context) => {
+workflow.handle([humanInteractionEvent], async (context, { data }) => {
   const { sendEvent } = context;
   // going back to the start event
   sendEvent(startEvent.with(data));

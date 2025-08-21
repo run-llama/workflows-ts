@@ -40,7 +40,7 @@ describe("workflow context api", () => {
         .toArray();
       return stopEvent.with(1);
     });
-    workflow.handle([parseEvent], async ({ data }) => {
+    workflow.handle([parseEvent], async (context, { data }) => {
       if (data > 0) {
         const ev = parseEvent.with(data - 1);
         getContext().sendEvent(ev);
@@ -92,8 +92,8 @@ describe("workflow context api", () => {
         .toArray();
       return stopEvent.with(1);
     });
-    workflow.handle([parseEvent], async ({ data }) => {
-      const { sendEvent } = getContext();
+    workflow.handle([parseEvent], async (context, { data }) => {
+      const { sendEvent } = context;
       if (data > 0) {
         const ev = parseEvent.with(data - 1);
         sendEvent(ev);
@@ -188,7 +188,10 @@ describe("workflow context api", () => {
     const workflow = createWorkflow();
 
     const handlerFn = vi.fn(
-      (eventData: WorkflowEventData<string | number>, context: any) => {
+      (
+        context: WorkflowContext,
+        eventData: WorkflowEventData<string | number>,
+      ) => {
         // Should be called when either event arrives
         if (firstEvent.include(eventData)) {
           return resultEvent.with(`Got first: ${eventData.data}`);
@@ -237,7 +240,7 @@ describe("workflow context api", () => {
     const workflow = createWorkflow();
 
     const handler = vi.fn(
-      (eventData: WorkflowEventData<any>, context: WorkflowContext) => {
+      (context: WorkflowContext, eventData: WorkflowEventData<any>) => {
         return resultEvent.with(`Got data: ${eventData.data}`);
       },
     );

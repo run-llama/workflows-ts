@@ -141,7 +141,7 @@ type CreateState<State, Input, Context extends WorkflowContext> = {
    *
    * @example
    * ```ts
-   * workflow.handle([startEvent], (event, context) => {
+   * workflow.handle([startEvent], (context, event) => {
    *   const { sendEvent } = context;
    *   sendEvent(processEvent.with());
    * });

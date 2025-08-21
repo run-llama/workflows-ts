@@ -1,10 +1,7 @@
 import { workflowEvent, createWorkflow } from "@llamaindex/workflow-core";
 import { z } from "zod";
 import { zodEvent } from "@llamaindex/workflow-core/util/zod";
-import {
-  createStatefulMiddleware,
-  StatefulContext,
-} from "@llamaindex/workflow-core/middleware/state";
+import { createStatefulMiddleware } from "@llamaindex/workflow-core/middleware/state";
 import { pRetryHandler } from "@llamaindex/workflow-core/util/p-retry";
 
 if (!process.env.LLAMA_CLOUD_API_KEY) {
@@ -37,7 +34,7 @@ export const llamaParseWorkflow = withState(createWorkflow());
 
 llamaParseWorkflow.handle(
   [startEvent],
-  async ({ data: { inputFile, apiKey } }, context) => {
+  async (context, { data: { inputFile, apiKey } }) => {
     const { stream, sendEvent, state } = context;
     state.apiKey = apiKey;
 
@@ -72,9 +69,7 @@ llamaParseWorkflow.handle(
 llamaParseWorkflow.handle(
   [checkStatusEvent],
   pRetryHandler(
-    async (...args) => {
-      const { data: uuid } = args[0] as { data: string };
-      const context = args[1] as StatefulContext<State>;
+    async (context, { data: uuid }) => {
       const { status } = await fetch(
         `https://api.cloud.llamaindex.ai/api/v1/parsing/job/${uuid}`,
         {

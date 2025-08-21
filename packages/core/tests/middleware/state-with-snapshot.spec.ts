@@ -25,7 +25,7 @@ describe("state with snapshot middleware", () => {
     let snapshotData: any = null;
 
     // Handler that modifies state and creates a snapshot
-    workflow.handle([startEvent], async (_event, context) => {
+    workflow.handle([startEvent], async (context) => {
       const { state, snapshot } = context;
 
       // Modify the state
@@ -41,7 +41,7 @@ describe("state with snapshot middleware", () => {
     });
 
     // Handler for human response
-    workflow.handle([requestEvent], async (_event, context) => {
+    workflow.handle([requestEvent], async (context) => {
       const { state } = context;
       handlerState = state;
 
