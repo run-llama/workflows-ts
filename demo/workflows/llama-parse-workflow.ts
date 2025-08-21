@@ -1,8 +1,15 @@
 import { workflowEvent, createWorkflow } from "@llamaindex/workflow-core";
 import { z } from "zod";
 import { zodEvent } from "@llamaindex/workflow-core/util/zod";
-import { createStatefulMiddleware } from "@llamaindex/workflow-core/middleware/state";
+import {
+  createStatefulMiddleware,
+  StatefulContext,
+} from "@llamaindex/workflow-core/middleware/state";
 import { pRetryHandler } from "@llamaindex/workflow-core/util/p-retry";
+
+if (!process.env.LLAMA_CLOUD_API_KEY) {
+  throw new Error("LLAMA_CLOUD_API_KEY is not set");
+}
 
 export const startEvent = zodEvent(
   z.object({
@@ -18,20 +25,22 @@ export const stopEvent = zodEvent(
   }),
 );
 
-const { withState, getContext } = createStatefulMiddleware(
-  () =>
-    ({}) as {
-      apiKey: string;
-    },
-);
+type State = {
+  apiKey: string;
+};
+
+const { withState } = createStatefulMiddleware<State>(() => ({
+  apiKey: "",
+}));
 
 export const llamaParseWorkflow = withState(createWorkflow());
 
 llamaParseWorkflow.handle(
   [startEvent],
-  async ({ data: { inputFile, apiKey } }) => {
-    getContext().state.apiKey = apiKey;
-    const { stream, sendEvent } = getContext();
+  async ({ data: { inputFile, apiKey } }, context) => {
+    const { stream, sendEvent, state } = context;
+    state.apiKey = apiKey;
+
     const { openAsBlob } = await import("node:fs");
     const blob = await openAsBlob(inputFile);
     const formData = new FormData();
@@ -63,13 +72,15 @@ llamaParseWorkflow.handle(
 llamaParseWorkflow.handle(
   [checkStatusEvent],
   pRetryHandler(
-    async ({ data: uuid }) => {
+    async (...args) => {
+      const { data: uuid } = args[0] as { data: string };
+      const context = args[1] as StatefulContext<State>;
       const { status } = await fetch(
         `https://api.cloud.llamaindex.ai/api/v1/parsing/job/${uuid}`,
         {
           method: "GET",
           headers: {
-            Authorization: `Bearer ${getContext().state.apiKey}`,
+            Authorization: `Bearer ${context.state.apiKey}`,
           },
         },
       ).then((res) => res.json());
@@ -83,3 +94,15 @@ llamaParseWorkflow.handle(
     },
   ),
 );
+
+const context = llamaParseWorkflow.createContext();
+
+context.sendEvent(
+  startEvent.with({
+    inputFile: "sample.pdf",
+    apiKey: process.env.LLAMA_CLOUD_API_KEY!,
+  }),
+);
+
+const events = await context.stream.until(stopEvent).toArray();
+console.log(events.map((e) => e.data));
