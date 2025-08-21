@@ -213,7 +213,10 @@ describe("workflow context api", () => {
     expect(handlerFn).toHaveBeenCalledTimes(1);
     expect(handlerFn).toHaveBeenCalledWith(
       expect.objectContaining({ data: "hello" }),
-      expect.any(Object), // context object
+      expect.objectContaining({
+        stream: expect.any(Object),
+        sendEvent: expect.any(Function),
+      }), // WorkflowContext object with required properties
     );
     expect(events).toHaveLength(2);
     expect(events[1]!.data).toBe("Got first: hello");
@@ -253,7 +256,10 @@ describe("workflow context api", () => {
     expect(handler).toHaveBeenCalledTimes(1);
     expect(handler).toHaveBeenCalledWith(
       expect.objectContaining({ data: "direct" }),
-      expect.any(Object), // context object
+      expect.objectContaining({
+        stream: expect.any(Object),
+        sendEvent: expect.any(Function),
+      }), // WorkflowContext object with required properties
     );
     expect(events).toHaveLength(2);
     expect(events[1]!.data).toBe("Got data: direct");
