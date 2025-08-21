@@ -24,10 +24,9 @@ describe("full workflow middleware", () => {
     validation: Validation,
     createStore: (input: Input) => T,
   ) => {
-    const { withState, getContext } = createStatefulMiddleware(createStore);
+    const { withState } = createStatefulMiddleware(createStore);
     return [
       withState(withValidation(withTraceEvents(createWorkflow()), validation)),
-      getContext,
     ] as const;
   };
   test("type check", () => {
@@ -40,7 +39,7 @@ describe("full workflow middleware", () => {
     const stopEvent = zodEvent(z.string(), {
       debugLabel: "stop",
     });
-    const [workflow, getContext] = createFullWorkflow(
+    const [workflow] = createFullWorkflow(
       [[[startEvent], [stopEvent]]],
       () => ({}),
     );
@@ -58,15 +57,17 @@ describe("full workflow middleware", () => {
     const stopEvent = zodEvent(z.string(), {
       debugLabel: "stop",
     });
-    const [workflow, getContext] = createFullWorkflow(
+    const [workflow] = createFullWorkflow(
       [[[startEvent], [stopEvent]]],
       (id: string) => ({
         id,
       }),
     );
-    workflow.strictHandle([startEvent], (sendEvent, start) => {
+
+    workflow.strictHandle([startEvent], (sendEvent, context, start) => {
+      const { state } = context;
       expect(start.data).toBe("start");
-      sendEvent(stopEvent.with(getContext().state.id));
+      sendEvent(stopEvent.with(state.id));
     });
 
     expectTypeOf(workflow.substream).not.toBeNever();
