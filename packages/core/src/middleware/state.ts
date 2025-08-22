@@ -112,7 +112,6 @@ export type StatefulContextWithSnapshot<State> = ReturnType<
 } & SnapshotableContext;
 
 export type ResumeFunction<State> = (
-  data: any[],
   serializable: Omit<SnapshotData, "unrecoverableQueue">,
 ) => StatefulContextWithSnapshot<State>;
 
@@ -414,30 +413,16 @@ export function createStatefulMiddleware<
           });
           return workflow.handle(events, handler);
         },
-        resume(
-          data: any[],
-          serializable: Omit<SnapshotData, "unrecoverableQueue">,
-        ): any {
+        resume(serializable: Omit<SnapshotData, "unrecoverableQueue">): any {
           const resumedState = serializable.state
             ? JSON.parse(serializable.state)
             : undefined;
-          const events = data.map((d, i) =>
-            getCounterEvent(serializable.missing[i]!).with(d),
-          );
 
           // Call the stateful createContext with the resumed state
           const context = createStatefulContext(resumedState);
 
           // triggers the lazy initialization of the stream wrapper
           context.stream;
-
-          context.sendEvent(
-            ...serializable.queue.map(([data, id]) => {
-              const event = getCounterEvent(id);
-              return event.with(data);
-            }),
-          );
-          context.sendEvent(...events);
 
           return context;
         },

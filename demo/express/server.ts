@@ -2,6 +2,7 @@ import express from "express";
 import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";
 import {
   createStatefulMiddleware,
+  request,
   SnapshotData,
 } from "@llamaindex/workflow-core/middleware/state";
 import { OpenAI } from "openai";
@@ -34,12 +35,24 @@ const workflow = withState(createWorkflow());
 const snapshots = new Map<string, SnapshotData>();
 
 // Define our events
-const userInputEvent = workflowEvent<{ messages: InputMessage[] }>();
-const toolCallEvent = workflowEvent<{ toolCall: ToolCall }>();
-const toolResponseEvent = workflowEvent<ToolResponseEventData>();
-const finalResponseEvent = workflowEvent<string>();
-const humanRequestEvent = workflowEvent();
-const humanResponseEvent = workflowEvent<string>();
+const userInputEvent = workflowEvent<{ messages: InputMessage[] }>({
+  debugLabel: "userInputEvent",
+});
+const toolCallEvent = workflowEvent<{ toolCall: ToolCall }>({
+  debugLabel: "toolCallEvent",
+});
+const toolResponseEvent = workflowEvent<ToolResponseEventData>({
+  debugLabel: "toolResponseEvent",
+});
+const finalResponseEvent = workflowEvent<string>({
+  debugLabel: "finalResponseEvent",
+});
+const humanRequestEvent = workflowEvent({
+  debugLabel: "humanRequestEvent",
+});
+const humanResponseEvent = workflowEvent<string>({
+  debugLabel: "humanResponseEvent",
+});
 
 // Initialize OpenAI client
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -161,6 +174,7 @@ workflow.handle([toolCallEvent], async (context, event) => {
     if (toolCall.function.name.startsWith("human_")) {
       state.humanToolId = toolCall.id;
       console.log("sending human request event");
+      // sendEvent(request(humanResponseEvent));
       sendEvent(humanRequestEvent.with());
     } else {
       const toolResponse = await callTool(toolCall);
@@ -212,6 +226,19 @@ app.post("/workflow/start", async (req, res) => {
 
     context.sendEvent(userInputEvent.with({ messages }));
 
+    // context.onRequest(humanResponseEvent, async (reason) => {
+    //   const [_, snapshotData] = await context.snapshot();
+    //   const requestId = uuid();
+    //   snapshots.set(requestId, snapshotData);
+
+    //   res.json({
+    //     type: "waiting_for_human",
+    //     requestId,
+    //     messages: context.state.messages,
+    //   });
+    // });
+    // await context.stream.until(finalResponseEvent).toArray();
+
     for await (const event of context.stream.until(finalResponseEvent)) {
       if (humanRequestEvent.include(event)) {
         console.log("human request event");
@@ -248,7 +275,7 @@ app.post("/workflow/resume", async (req, res) => {
     }
 
     console.log("resuming workflow");
-    const context = workflow.resume([], snapshotData);
+    const context = workflow.resume(snapshotData);
     context.sendEvent(humanResponseEvent.with(userInput));
     await context.stream.until(finalResponseEvent).toArray();
 
