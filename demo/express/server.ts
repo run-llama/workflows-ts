@@ -6,9 +6,9 @@ import {
 } from "@llamaindex/workflow-core/middleware/state";
 import { OpenAI } from "openai";
 import {
-  ChatCompletionMessage,
-  ChatCompletionMessageParam,
-  ChatCompletionMessageToolCall,
+  ChatCompletionMessage as Message,
+  ChatCompletionMessageParam as InputMessage,
+  ChatCompletionMessageFunctionToolCall as ToolCall,
   ChatCompletionTool,
 } from "openai/resources/chat/completions";
 import { v4 as uuid } from "uuid";
@@ -20,19 +20,12 @@ type ToolResponseEventData = {
 
 type AgentWorkflowState = {
   expectedToolCount: number;
-  messages: ChatCompletionMessageParam[];
+  messages: InputMessage[];
   toolResponses: Array<ToolResponseEventData>;
   humanToolId: string | null;
 };
 
-type ToolCall = ChatCompletionMessageToolCall & {
-  function: {
-    name: string;
-    arguments: string;
-  };
-};
-
-const { withState, getContext } = createStatefulMiddleware(
+const { withState } = createStatefulMiddleware(
   (state: AgentWorkflowState) => state,
 );
 const workflow = withState(createWorkflow());
@@ -41,21 +34,15 @@ const workflow = withState(createWorkflow());
 const snapshots = new Map<string, SnapshotData>();
 
 // Define our events
-const userInputEvent = workflowEvent<{
-  messages: ChatCompletionMessageParam[];
-}>();
-const toolCallEvent = workflowEvent<{
-  toolCall: ToolCall;
-}>();
+const userInputEvent = workflowEvent<{ messages: InputMessage[] }>();
+const toolCallEvent = workflowEvent<{ toolCall: ToolCall }>();
 const toolResponseEvent = workflowEvent<ToolResponseEventData>();
 const finalResponseEvent = workflowEvent<string>();
 const humanRequestEvent = workflowEvent();
 const humanResponseEvent = workflowEvent<string>();
 
 // Initialize OpenAI client
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 // Define available tools
 const tools: ChatCompletionTool[] = [
@@ -87,9 +74,9 @@ const tools: ChatCompletionTool[] = [
 
 // LLM function
 async function llm(
-  messages: ChatCompletionMessageParam[],
+  messages: InputMessage[],
   tools: ChatCompletionTool[],
-): Promise<ChatCompletionMessage> {
+): Promise<Message> {
   const completion = await openai.chat.completions.create({
     model: "gpt-4.1-mini",
     messages,
@@ -213,6 +200,7 @@ app.use(express.json());
 // Endpoint to start a new workflow
 app.post("/workflow/start", async (req, res) => {
   try {
+    const requestId = uuid();
     const { messages } = req.body;
 
     const context = workflow.createContext({
@@ -229,7 +217,6 @@ app.post("/workflow/start", async (req, res) => {
         console.log("human request event");
         // workflow is interrupted by a human request, we need to save the current state
         const [_, snapshotData] = await context.snapshot();
-        const requestId = uuid();
         snapshots.set(requestId, snapshotData);
 
         res.json({
