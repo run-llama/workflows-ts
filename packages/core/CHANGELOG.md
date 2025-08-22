@@ -1,5 +1,11 @@
 # @llamaindex/workflow-core
 
+## 1.3.0
+
+### Minor Changes
+
+- b725183: feat: update handler signature to use context parameter instead of getContext()
+
 ## 1.2.1
 
 ### Patch Changes

@@ -1,5 +1,12 @@
 # @llamaindex/workflow-http
 
+## 4.0.0
+
+### Patch Changes
+
+- Updated dependencies [b725183]
+  - @llamaindex/workflow-core@1.3.0
+
 ## 3.0.1
 
 ### Patch Changes
