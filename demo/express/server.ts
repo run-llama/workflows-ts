@@ -2,7 +2,6 @@ import express from "express";
 import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";
 import {
   createStatefulMiddleware,
-  request,
   SnapshotData,
 } from "@llamaindex/workflow-core/middleware/state";
 import { OpenAI } from "openai";
@@ -243,7 +242,7 @@ app.post("/workflow/start", async (req, res) => {
       if (humanRequestEvent.include(event)) {
         console.log("human request event");
         // workflow is interrupted by a human request, we need to save the current state
-        const [_, snapshotData] = await context.snapshot();
+        const snapshotData = await context.snapshot();
         snapshots.set(requestId, snapshotData);
 
         res.json({
