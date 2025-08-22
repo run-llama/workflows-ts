@@ -9,7 +9,7 @@ import {
   type WorkflowEventData,
   WorkflowStream,
 } from "@llamaindex/workflow-core";
-import type { HandlerContext } from "../core/context";
+import type { Handler, HandlerContext } from "../core/context";
 import { extendContext } from "../core/context";
 import { createSubscribable, isPromiseLike } from "../core/utils";
 import { createStableHash } from "./snapshot/stable-hash";
@@ -87,6 +87,24 @@ export interface SnapshotableContext {
   ) => () => void;
 }
 
+export interface SnapshotableWorkflow<State> {
+  handle<
+    const AcceptEvents extends WorkflowEvent<any>[],
+    Result extends ReturnType<WorkflowEvent<any>["with"]> | void,
+  >(
+    accept: AcceptEvents,
+    handler: Handler<AcceptEvents, Result, StatefulContextWithSnapshot<State>>,
+  ): void;
+  resume: ResumeFunction<State>;
+}
+
+export type StatefulContext<
+  State = any,
+  Context extends WorkflowContext = WorkflowContext,
+> = Context & {
+  get state(): State;
+} & SnapshotableContext;
+
 export type StatefulContextWithSnapshot<State> = ReturnType<
   Workflow["createContext"]
 > & {
@@ -102,24 +120,34 @@ export type WorkflowWithState<State, Input> = Input extends void | undefined
   ? {
       <Workflow extends WorkflowCore>(
         workflow: Workflow,
-      ): Omit<Workflow, "createContext"> & {
-        createContext(): StatefulContextWithSnapshot<State>;
-        resume: ResumeFunction<State>;
-      };
+      ): Omit<Workflow, "createContext" | "handle"> &
+        SnapshotableWorkflow<State> & {
+          createContext(): StatefulContextWithSnapshot<State>;
+        };
     }
   : {
       <Workflow extends WorkflowCore>(
         workflow: Workflow,
-      ): Omit<Workflow, "createContext"> & {
-        createContext(input: Input): StatefulContextWithSnapshot<State>;
-        resume: ResumeFunction<State>;
-      };
+      ): Omit<Workflow, "createContext" | "handle"> &
+        SnapshotableWorkflow<State> & {
+          createContext(input: Input): StatefulContextWithSnapshot<State>;
+        };
     };
 
 type CreateState<State, Input, Context extends WorkflowContext> = {
-  getContext(): Context & {
-    get state(): State;
-  } & SnapshotableContext;
+  /**
+   * @deprecated Use the context parameter directly from workflow handlers instead.
+   * The context passed to handlers already includes all state properties.
+   *
+   * @example
+   * ```ts
+   * workflow.handle([startEvent], (context, event) => {
+   *   const { sendEvent } = context;
+   *   sendEvent(processEvent.with());
+   * });
+   * ```
+   */
+  getContext(): StatefulContext<State, Context>;
   withState: WorkflowWithState<State, Input>;
 };
 

@@ -19,19 +19,22 @@ export const stopEvent = workflowEvent<{
 
 const wrappedWorkflow = createWorkflow();
 
-wrappedWorkflow.handle([startEvent], async ({ data: { filePath } }) => {
-  const { stream, sendEvent, state } = fileParseWorkflow.createContext();
-  sendEvent(startEvent.with({ filePath }));
-  await stream.until(stopEvent).toArray();
-  return stopEvent.with({
-    content: [
-      {
-        type: "text",
-        text: state.output,
-      },
-    ],
-  });
-});
+wrappedWorkflow.handle(
+  [startEvent],
+  async (context, { data: { filePath } }) => {
+    const { stream, sendEvent, state } = fileParseWorkflow.createContext();
+    sendEvent(startEvent.with({ filePath }));
+    await stream.until(stopEvent).toArray();
+    return stopEvent.with({
+      content: [
+        {
+          type: "text",
+          text: state.output,
+        },
+      ],
+    });
+  },
+);
 
 server.tool(
   "list directory",

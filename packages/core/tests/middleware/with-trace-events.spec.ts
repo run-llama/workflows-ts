@@ -154,7 +154,8 @@ describe("with trace events", () => {
           await context.pending;
           resolvedSet.add(context);
         }
-        return h();
+
+        return h(asyncContexts[0] as any);
       },
     });
     let count = 0;
@@ -270,19 +271,19 @@ describe("get event origins", () => {
       return allCompleteEvent.with(results.map((e) => e.data).join(", "));
     });
 
-    workflow.handle([branchAEvent], (branchA) => {
+    workflow.handle([branchAEvent], (_context, branchA) => {
       return branchCompleteEvent.with(branchA.data);
     });
 
-    workflow.handle([branchBEvent], (branchB) => {
+    workflow.handle([branchBEvent], (_context, branchB) => {
       return branchCompleteEvent.with(branchB.data);
     });
 
-    workflow.handle([branchCEvent], (branchC) => {
+    workflow.handle([branchCEvent], (_context, branchC) => {
       return branchCompleteEvent.with(branchC.data);
     });
 
-    workflow.handle([allCompleteEvent], (allComplete) => {
+    workflow.handle([allCompleteEvent], (context, allComplete) => {
       return stopEvent.with(allComplete.data);
     });
 

@@ -2,10 +2,10 @@ import { describe, expect, test, vi } from "vitest";
 import {
   createWorkflow,
   eventSource,
-  getContext,
   workflowEvent,
   or,
   type WorkflowEventData,
+  type WorkflowContext,
 } from "@llamaindex/workflow-core";
 
 describe("workflow context api", () => {
@@ -30,8 +30,8 @@ describe("workflow context api", () => {
     const parseResultEvent = workflowEvent<number>({
       debugLabel: "parseResult",
     });
-    workflow.handle([startEvent], async () => {
-      const { sendEvent, stream } = getContext();
+    workflow.handle([startEvent], async (context) => {
+      const { sendEvent, stream } = context;
       const ev = parseEvent.with(2);
       sendEvent(ev);
       await stream
@@ -39,10 +39,10 @@ describe("workflow context api", () => {
         .toArray();
       return stopEvent.with(1);
     });
-    workflow.handle([parseEvent], async ({ data }) => {
+    workflow.handle([parseEvent], async (context, { data }) => {
       if (data > 0) {
         const ev = parseEvent.with(data - 1);
-        getContext().sendEvent(ev);
+        context.sendEvent(ev);
       } else {
         return parseResultEvent.with(0);
       }
@@ -78,8 +78,8 @@ describe("workflow context api", () => {
     const parseResultEvent = workflowEvent<number>({
       debugLabel: "parseResult",
     });
-    workflow.handle([startEvent], async () => {
-      const { sendEvent, stream } = getContext();
+    workflow.handle([startEvent], async (context) => {
+      const { sendEvent, stream } = context;
       const ev = parseEvent.with(2);
       sendEvent(ev);
       await stream
@@ -91,8 +91,8 @@ describe("workflow context api", () => {
         .toArray();
       return stopEvent.with(1);
     });
-    workflow.handle([parseEvent], async ({ data }) => {
-      const { sendEvent } = getContext();
+    workflow.handle([parseEvent], async (context, { data }) => {
+      const { sendEvent } = context;
       if (data > 0) {
         const ev = parseEvent.with(data - 1);
         sendEvent(ev);
@@ -124,8 +124,7 @@ describe("workflow context api", () => {
 
   test("should exist in workflow", async () => {
     const workflow = createWorkflow();
-    const fn = vi.fn(() => {
-      const context = getContext();
+    const fn = vi.fn((context) => {
       expect(context).toBeDefined();
       expect(context.sendEvent).toBeTypeOf("function");
       return stopEvent.with();
@@ -148,12 +147,11 @@ describe("workflow context api", () => {
       debugLabel: "aResultEvent",
     });
     const workflow = createWorkflow();
-    const fn = vi.fn(async () => {
-      const context = getContext();
+    const fn = vi.fn(async (context) => {
       context.sendEvent(aEvent.with());
       return stopEvent.with();
     });
-    const fn2 = vi.fn(async () => {
+    const fn2 = vi.fn(async (context) => {
       return aResultEvent.with();
     });
     workflow.handle([startEvent], fn);
@@ -186,15 +184,20 @@ describe("workflow context api", () => {
 
     const workflow = createWorkflow();
 
-    const handlerFn = vi.fn((eventData: WorkflowEventData<string | number>) => {
-      // Should be called when either event arrives
-      if (firstEvent.include(eventData)) {
-        return resultEvent.with(`Got first: ${eventData.data}`);
-      }
-      if (secondEvent.include(eventData)) {
-        return resultEvent.with(`Got second: ${eventData.data}`);
-      }
-    });
+    const handlerFn = vi.fn(
+      (
+        context: WorkflowContext,
+        eventData: WorkflowEventData<string | number>,
+      ) => {
+        // Should be called when either event arrives
+        if (firstEvent.include(eventData)) {
+          return resultEvent.with(`Got first: ${eventData.data}`);
+        }
+        if (secondEvent.include(eventData)) {
+          return resultEvent.with(`Got second: ${eventData.data}`);
+        }
+      },
+    );
 
     workflow.handle([or(firstEvent, secondEvent)], handlerFn);
 
@@ -209,6 +212,10 @@ describe("workflow context api", () => {
 
     expect(handlerFn).toHaveBeenCalledTimes(1);
     expect(handlerFn).toHaveBeenCalledWith(
+      expect.objectContaining({
+        stream: expect.any(Object),
+        sendEvent: expect.any(Function),
+      }), // WorkflowContext object with required properties
       expect.objectContaining({ data: "hello" }),
     );
     expect(events).toHaveLength(2);
@@ -229,9 +236,11 @@ describe("workflow context api", () => {
 
     const workflow = createWorkflow();
 
-    const handler = vi.fn((eventData: WorkflowEventData<any>) => {
-      return resultEvent.with(`Got data: ${eventData.data}`);
-    });
+    const handler = vi.fn(
+      (context: WorkflowContext, eventData: WorkflowEventData<any>) => {
+        return resultEvent.with(`Got data: ${eventData.data}`);
+      },
+    );
 
     workflow.handle([orEvent], handler);
 
@@ -246,6 +255,10 @@ describe("workflow context api", () => {
 
     expect(handler).toHaveBeenCalledTimes(1);
     expect(handler).toHaveBeenCalledWith(
+      expect.objectContaining({
+        stream: expect.any(Object),
+        sendEvent: expect.any(Function),
+      }), // WorkflowContext object with required properties
       expect.objectContaining({ data: "direct" }),
     );
     expect(events).toHaveLength(2);

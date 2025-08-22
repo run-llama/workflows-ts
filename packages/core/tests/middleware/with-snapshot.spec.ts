@@ -32,7 +32,7 @@ describe("with snapshot - snapshot API", () => {
       return request(humanResponseEvent);
     });
 
-    workflow.handle([humanResponseEvent], ({ data }) => {
+    workflow.handle([humanResponseEvent], (context, { data }) => {
       expect(data).toBe("hello world");
       return stopEvent.with();
     });
@@ -68,7 +68,7 @@ describe("with snapshot - snapshot API", () => {
       return request(humanResponseEvent);
     });
 
-    workflow.handle([humanResponseEvent], ({ data }) => {
+    workflow.handle([humanResponseEvent], (context, { data }) => {
       expect(data).toBe("hello world");
       return stopEvent.with();
     });
@@ -105,7 +105,7 @@ describe("with snapshot - snapshot API", () => {
       return request(humanResponseEvent);
     });
 
-    workflow.handle([humanResponseEvent], ({ data }) => {
+    workflow.handle([humanResponseEvent], (context, { data }) => {
       expect(data).toBe("hello world");
       return stopEvent.with();
     });
@@ -145,7 +145,7 @@ describe("with snapshot - snapshot API", () => {
       return request(humanResponseEvent);
     });
 
-    workflow.handle([humanResponseEvent], ({ data }) => {
+    workflow.handle([humanResponseEvent], (context, { data }) => {
       expect(data).toBe("hello world");
       return stopEvent.with();
     });
@@ -195,7 +195,7 @@ describe("with snapshot - snapshot API", () => {
       return request(humanResponseEvent);
     });
 
-    workflow.handle([humanResponseEvent], ({ data }) => {
+    workflow.handle([humanResponseEvent], (context, { data }) => {
       expect(data).toBe("hello world");
       return stopEvent.with();
     });
@@ -267,7 +267,7 @@ describe("with snapshot - snapshot API", () => {
       return request(humanResponseEvent, 1);
     });
 
-    workflow.handle([humanResponseEvent], ({ data }) => {
+    workflow.handle([humanResponseEvent], (context, { data }) => {
       expect(data).toBe("hello world");
       return stopEvent.with();
     });

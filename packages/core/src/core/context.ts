@@ -16,8 +16,10 @@ import { WorkflowStream } from "./stream";
 export type Handler<
   AcceptEvents extends WorkflowEvent<any>[],
   Result extends WorkflowEventData<any> | void,
+  Context extends WorkflowContext = WorkflowContext,
 > = (
-  ...event: {
+  context: Context,
+  ...events: {
     [K in keyof AcceptEvents]: ReturnType<AcceptEvents[K]["with"]>;
   }
 ) => Result | Promise<Result>;
@@ -86,6 +88,18 @@ export type InheritanceTransformer = (
 export const _executorAsyncLocalStorage =
   new AsyncContext.Variable<WorkflowContext>();
 
+/**
+ * @deprecated Use the context parameter directly from workflow handlers instead.
+ * The context passed to handlers already includes all state properties.
+ *
+ * @example
+ * ```ts
+ * workflow.handle([startEvent], (context, event) => {
+ *   const { sendEvent } = context;
+ *   sendEvent(processEvent.with());
+ * });
+ * ```
+ */
 export function getContext(): WorkflowContext {
   const context = _executorAsyncLocalStorage.get();
   if (!context) {
@@ -229,7 +243,7 @@ export const createContext = ({
           if (i === cbs.length) {
             let result: any;
             try {
-              result = context.handler(...context.inputs);
+              result = context.handler(workflowContext, ...context.inputs);
             } catch (error) {
               if (handlerAbortController ?? rootAbortController) {
                 (handlerAbortController ?? rootAbortController).abort(error);

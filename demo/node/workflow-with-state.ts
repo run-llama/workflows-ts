@@ -25,7 +25,7 @@ type AgentWorkflowState = {
   humanToolId: string | null;
 };
 
-const { withState, getContext } = createStatefulMiddleware(
+const { withState } = createStatefulMiddleware(
   (state: AgentWorkflowState) => state,
 );
 const workflow = withState(createWorkflow());
@@ -115,8 +115,8 @@ async function callTool(
 }
 
 // Handler for processing user input and LLM responses
-workflow.handle([userInputEvent], async (event) => {
-  const { sendEvent, state } = getContext();
+workflow.handle([userInputEvent], async (context, event) => {
+  const { sendEvent, state } = context;
   const { messages } = event.data;
 
   try {
@@ -148,8 +148,8 @@ workflow.handle([userInputEvent], async (event) => {
 });
 
 // Handler for aggregating tool call responses
-workflow.handle([toolResponseEvent], async (event) => {
-  const { sendEvent, state } = getContext();
+workflow.handle([toolResponseEvent], async (context, event) => {
+  const { sendEvent, state } = context;
   // Collect all tool responses until we have all of them
   state.toolResponses.push(event.data);
 
@@ -172,9 +172,9 @@ workflow.handle([toolResponseEvent], async (event) => {
 });
 
 // Handler for executing tool calls
-workflow.handle([toolCallEvent], async (event) => {
+workflow.handle([toolCallEvent], async (context, event) => {
   const { toolCall } = event.data;
-  const { sendEvent, state, snapshot } = getContext();
+  const { sendEvent, state, snapshot } = context;
 
   try {
     if (toolCall.function.name.startsWith("human_")) {
@@ -208,8 +208,8 @@ workflow.handle([toolCallEvent], async (event) => {
   }
 });
 
-workflow.handle([humanResponseEvent], async (event) => {
-  const { sendEvent, state } = getContext();
+workflow.handle([humanResponseEvent], async (context, event) => {
+  const { sendEvent, state } = context;
   sendEvent(
     toolResponseEvent.with({
       toolResponse: "My name is " + event.data,
