@@ -1,6 +1,4 @@
 ---
-"demo": patch
-"cloudflare-workers-openapi": patch
 "@llamaindex/workflow-core": minor
 ---
 
