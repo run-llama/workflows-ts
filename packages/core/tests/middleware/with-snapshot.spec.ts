@@ -164,14 +164,8 @@ describe("with snapshot - snapshot API", () => {
         "queue": [],
         "state": undefined,
         "unrecoverableQueue": [
-          [
-            "1",
-            2,
-          ],
-          [
-            "2",
-            2,
-          ],
+          "1",
+          "2",
         ],
         "version": "@@@0,,4~,,@@1,,7~,,",
       }
