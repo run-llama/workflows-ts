@@ -128,7 +128,6 @@ workflow.handle([userInputEvent], async (context, event) => {
     state.messages = [...messages, response];
 
     if (response.tool_calls && response.tool_calls.length > 0) {
-      console.log("expected tool count", response.tool_calls.length);
       state.expectedToolCount = response.tool_calls.length;
       for (const toolCall of response.tool_calls) {
         sendEvent(
@@ -151,7 +150,6 @@ workflow.handle([toolResponseEvent], async (context, event) => {
   state.toolResponses.push(event.data);
 
   if (state.toolResponses.length === state.expectedToolCount) {
-    console.log("Expected tool count reached! Send user input event");
     const finalMessages = [
       ...state.messages,
       ...state.toolResponses.map((response) => ({
@@ -172,12 +170,10 @@ workflow.handle([toolCallEvent], async (context, event) => {
   try {
     if (toolCall.function.name.startsWith("human_")) {
       state.humanToolId = toolCall.id;
-      console.log("sending human request event");
       // sendEvent(request(humanResponseEvent));
       sendEvent(humanRequestEvent.with());
     } else {
       const toolResponse = await callTool(toolCall);
-      console.log("tool response event");
       sendEvent(
         toolResponseEvent.with({
           toolResponse,
@@ -197,7 +193,6 @@ workflow.handle([toolCallEvent], async (context, event) => {
 });
 
 workflow.handle([humanResponseEvent], async (context, event) => {
-  console.log("handle human response event");
   const { sendEvent, state } = context;
   sendEvent(
     toolResponseEvent.with({
@@ -227,9 +222,8 @@ app.post("/workflow/start", async (req, res) => {
       new TransformStream({
         async transform(event, controller) {
           if (humanRequestEvent.include(event)) {
-            console.log("human request event");
             // workflow is interrupted by a human request, we need to save the current state
-            const snapshotData = await context.snapshot();
+            const [_, snapshotData] = await context.snapshot();
             snapshots.set(requestId, snapshotData);
             res.json({
               type: "waiting_for_human",
@@ -266,8 +260,7 @@ app.post("/workflow/resume", async (req, res) => {
       return;
     }
 
-    console.log("resuming workflow");
-    const context = workflow.resume(snapshotData);
+    const context = workflow.resume([], snapshotData);
     context.sendEvent(humanResponseEvent.with(userInput));
     await context.stream.until(finalResponseEvent).toArray();
 
