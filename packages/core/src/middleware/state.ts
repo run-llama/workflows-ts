@@ -58,7 +58,7 @@ export interface SnapshotData {
    *
    * This is useful when you have `messageEvent` but you don't have any handler for it
    */
-  unrecoverableQueue: [data: any, id: number][];
+  unrecoverableQueue: any[];
   /**
    * This is the version of the snapshot
    *
@@ -243,14 +243,11 @@ export function createStatefulMiddleware<
               .filter((event) => eventCounterWeakMap.has(eventSource(event)!))
               .map((event) => [
                 event.data,
-                eventCounterWeakMap.get(eventSource(event)!)!,
+                getEventCounter(eventSource(event)!),
               ]),
             unrecoverableQueue: queue
               .filter((event) => !eventCounterWeakMap.has(eventSource(event)!))
-              .map((event) => [
-                event.data,
-                eventCounterWeakMap.get(eventSource(event)!)!,
-              ]),
+              .map((event) => event.data),
             version: getVersion(),
             missing: requestEvents
               // if you are request an event that is not in the handler, it's meaningless (from a logic perspective)
