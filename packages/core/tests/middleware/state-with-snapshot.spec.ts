@@ -135,9 +135,8 @@ describe("state with snapshot middleware", () => {
       sendEvent(request(humanResponseEvent));
     });
 
-    workflow.handle([humanResponseEvent], async ({ data }) => {
-      const { sendEvent } = getContext();
-      sendEvent(startEvent.with());
+    workflow.handle([humanResponseEvent], async (context) => {
+      context.sendEvent(startEvent.with());
     });
 
     const firstContext = workflow.createContext({ count: 22 });
