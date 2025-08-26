@@ -1,7 +1,6 @@
 import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";
 import {
   createStatefulMiddleware,
-  request,
   SnapshotData,
 } from "@llamaindex/workflow-core/middleware/state";
 import { OpenAI } from "openai";
@@ -41,6 +40,7 @@ const toolCallEvent = workflowEvent<{
 }>();
 const toolResponseEvent = workflowEvent<ToolResponseEventData>();
 const finalResponseEvent = workflowEvent<string>();
+const humanRequestEvent = workflowEvent();
 const humanResponseEvent = workflowEvent<string>();
 
 // Initialize OpenAI client (same as before)
@@ -174,17 +174,14 @@ workflow.handle([toolResponseEvent], async (context, event) => {
 // Handler for executing tool calls
 workflow.handle([toolCallEvent], async (context, event) => {
   const { toolCall } = event.data;
-  const { sendEvent, state, snapshot } = context;
+  const { sendEvent, state } = context;
 
   try {
     if (toolCall.function.name.startsWith("human_")) {
       // delegate to human if tool call starts with "human_"
       state.humanToolId = toolCall.id;
-      sendEvent(request(humanResponseEvent));
-      const [_, snapshotData_] = await snapshot();
-      snapshotData = snapshotData_;
+      sendEvent(humanRequestEvent.with());
       // stop workflow
-      // TODO: this shows a 'sendEvent after snapshot is not allowed' warning
       sendEvent(finalResponseEvent.with("Waiting for human response"));
     } else {
       // normal machine tool call
@@ -226,6 +223,12 @@ const context = workflow.createContext({
   humanToolId: null,
 });
 
+context.stream.on(humanRequestEvent, async () => {
+  // workflow is interrupted by a human request, we need to save the current state
+  const [_, snapshotData_] = await context.snapshot();
+  snapshotData = snapshotData_;
+});
+
 context.sendEvent(
   userInputEvent.with({
     messages: [
@@ -251,7 +254,8 @@ const rl = readline.createInterface({
 const userName = await rl.question("Name? ");
 rl.close();
 
-const resumedContext = workflow.resume([userName], snapshotData);
+const resumedContext = workflow.resume([], snapshotData);
+resumedContext.sendEvent(humanResponseEvent.with(userName));
 
 const result = await resumedContext.stream.until(finalResponseEvent).toArray();
 
