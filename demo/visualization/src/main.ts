@@ -21,4 +21,8 @@ graph.nodes().forEach((node, i) => {
 const layout = new ForceSupervisor(graph);
 layout.start();
 
-new Sigma(graph, container);
+const settings = {
+  defaultEdgeColor: "#999",
+};
+
+new Sigma(graph, container, settings);
