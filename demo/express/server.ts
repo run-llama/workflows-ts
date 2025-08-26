@@ -170,7 +170,6 @@ workflow.handle([toolCallEvent], async (context, event) => {
   try {
     if (toolCall.function.name.startsWith("human_")) {
       state.humanToolId = toolCall.id;
-      // sendEvent(request(humanResponseEvent));
       sendEvent(humanRequestEvent.with());
     } else {
       const toolResponse = await callTool(toolCall);
