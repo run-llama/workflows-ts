@@ -156,12 +156,12 @@ importers:
 
   demo/visualization:
     dependencies:
-      '@llama-flow/viz':
-        specifier: workspace:*
-        version: link:../../packages/viz
       '@llamaindex/workflow-core':
         specifier: latest
         version: link:../../packages/core
+      '@llamaindex/workflow-viz':
+        specifier: latest
+        version: link:../../packages/viz
       graphology:
         specifier: ^0.26.0
         version: 0.26.0(graphology-types@0.24.8)

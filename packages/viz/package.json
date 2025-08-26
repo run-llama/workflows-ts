@@ -1,5 +1,5 @@
 {
-  "name": "@llama-flow/viz",
+  "name": "@llamaindex/workflow-viz",
   "version": "0.1.0",
   "description": "Visualization components for LlamaFlow",
   "type": "module",

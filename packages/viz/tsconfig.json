@@ -4,7 +4,7 @@
     "outDir": "./lib",
     "tsBuildInfoFile": "./lib/.tsbuildinfo",
     "paths": {
-      "@llama-flow/viz": ["./src/index.ts"]
+      "@llamaindex/workflow-viz": ["./src/index.ts"]
     }
   },
   "include": ["./src", "./examples"]

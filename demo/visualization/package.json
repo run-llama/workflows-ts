@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@llamaindex/workflow-core": "latest",
-    "@llama-flow/viz": "workspace:*",
+    "@llamaindex/workflow-viz": "latest",
     "graphology": "^0.26.0",
     "graphology-layout-force": "^0.2.4",
     "react": "^19.1.0",

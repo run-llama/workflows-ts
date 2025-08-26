@@ -1,7 +1,7 @@
 import "./style.css";
 import Sigma from "sigma";
 import { workflow } from "./workflow";
-import { toSigma } from "@llama-flow/viz";
+import { toSigma } from "@llamaindex/workflow-viz";
 import ForceSupervisor from "graphology-layout-force/worker";
 
 const container = document.getElementById("app") as HTMLElement;

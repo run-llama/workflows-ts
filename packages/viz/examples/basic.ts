@@ -1,5 +1,5 @@
 import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";
-import { withGraph } from "@llama-flow/viz";
+import { withGraph } from "@llamaindex/workflow-viz";
 
 //#region define workflow events
 const startEvent = workflowEvent<string>({
