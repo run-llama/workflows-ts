@@ -9,24 +9,7 @@ import {
 } from "@llamaindex/workflow-core";
 import type { Handler, HandlerContext } from "../core/context";
 import { extendContext } from "../core/context";
-import { createSubscribable, isPromiseLike } from "../core/utils";
 import { createStableHash } from "./snapshot/stable-hash";
-
-const noop = () => {};
-
-export type SnapshotFn = () => Promise<SnapshotData>;
-
-export type SnapshotWorkflowContext<Workflow extends WorkflowCore> = ReturnType<
-  Workflow["createContext"]
-> & {
-  /**
-   * Snapshot will lock the context and wait for there is no pending event.
-   *
-   * This is useful when you want to take a current snapshot of the workflow
-   *
-   */
-  snapshot: SnapshotFn;
-};
 
 export interface SnapshotData {
   queue: [data: any, id: number][];
@@ -50,63 +33,46 @@ export interface SnapshotData {
   state?: string | undefined;
 }
 
-type OnRequestFn<Event extends WorkflowEvent<any> = WorkflowEvent<any>> = (
-  eventData: Event,
-  reason: any,
-) => void | Promise<void>;
-
-export interface SnapshotableContext {
-  snapshot: SnapshotFn;
-  onRequest: <Event extends WorkflowEvent<any>>(
-    event: Event,
-    callback: (reason: any) => void | Promise<void>,
-  ) => () => void;
-}
-
-export interface SnapshotableWorkflow<State> {
-  handle<
-    const AcceptEvents extends WorkflowEvent<any>[],
-    Result extends ReturnType<WorkflowEvent<any>["with"]> | void,
-  >(
-    accept: AcceptEvents,
-    handler: Handler<AcceptEvents, Result, StatefulContextWithSnapshot<State>>,
-  ): void;
-  resume: ResumeFunction<State>;
-}
+export type SnapshotFn = () => Promise<SnapshotData>;
 
 export type StatefulContext<
   State = any,
   Context extends WorkflowContext = WorkflowContext,
 > = Context & {
   get state(): State;
-} & SnapshotableContext;
+  snapshot: SnapshotFn;
+};
 
-export type StatefulContextWithSnapshot<State> = ReturnType<
-  Workflow["createContext"]
-> & {
-  get state(): State;
-} & SnapshotableContext;
+export type StatefulHandleFn<State> = <
+  AcceptEvents extends WorkflowEvent<any>[],
+  Result extends ReturnType<WorkflowEvent<any>["with"]> | void,
+>(
+  accept: AcceptEvents,
+  handler: Handler<AcceptEvents, Result, StatefulContext<State>>,
+) => void;
 
 export type ResumeFunction<State> = (
   serializable: Omit<SnapshotData, "unrecoverableQueue">,
-) => StatefulContextWithSnapshot<State>;
+) => StatefulContext<State>;
 
 export type WorkflowWithState<State, Input> = Input extends void | undefined
   ? {
       <Workflow extends WorkflowCore>(
         workflow: Workflow,
-      ): Omit<Workflow, "createContext" | "handle"> &
-        SnapshotableWorkflow<State> & {
-          createContext(): StatefulContextWithSnapshot<State>;
-        };
+      ): Omit<Workflow, "createContext" | "handle"> & {
+        createContext(): StatefulContext<State>;
+        handle: StatefulHandleFn<State>;
+        resume: ResumeFunction<State>;
+      };
     }
   : {
       <Workflow extends WorkflowCore>(
         workflow: Workflow,
-      ): Omit<Workflow, "createContext" | "handle"> &
-        SnapshotableWorkflow<State> & {
-          createContext(input: Input): StatefulContextWithSnapshot<State>;
-        };
+      ): Omit<Workflow, "createContext" | "handle"> & {
+        createContext(input: Input): StatefulContext<State>;
+        handle: StatefulHandleFn<State>;
+        resume: ResumeFunction<State>;
+      };
     };
 
 type CreateState<State, Input, Context extends WorkflowContext> = {
@@ -136,7 +102,6 @@ export function createStatefulMiddleware<
   return {
     getContext: getContext as never,
     withState: ((workflow: Workflow) => {
-      const requests = createSubscribable<OnRequestFn>();
       const pendingRequestSetMap = new WeakMap<
         WorkflowContext,
         Set<PromiseLike<unknown>>
@@ -261,7 +226,7 @@ export function createStatefulMiddleware<
         context.__internal__call_context.subscribe((handlerContext, next) => {
           if (isContextLocked(context)) {
             // replace it with noop, avoid calling the handler after snapshot
-            handlerContext.handler = noop;
+            handlerContext.handler = () => {};
             next(handlerContext);
           } else {
             const queue = contextEventQueueWeakMap.get(context)!;
@@ -286,9 +251,7 @@ export function createStatefulMiddleware<
 
       // Create a function to generate stream transform wrappers
       // Shared function to create stateful context
-      const createStatefulContext = (
-        state: State,
-      ): StatefulContextWithSnapshot<State> => {
+      const createStatefulContext = (state: State): StatefulContext<State> => {
         const context = workflow.createContext();
         initContext(context);
 
@@ -301,7 +264,7 @@ export function createStatefulMiddleware<
           snapshot: snapshotFn,
         });
 
-        return context as StatefulContextWithSnapshot<State>;
+        return context as StatefulContext<State>;
       };
 
       return {
@@ -322,7 +285,7 @@ export function createStatefulMiddleware<
         },
         resume(
           serializable: Omit<SnapshotData, "unrecoverableQueue">,
-        ): StatefulContextWithSnapshot<State> {
+        ): StatefulContext<State> {
           const resumedState = serializable.state
             ? JSON.parse(serializable.state)
             : undefined;
@@ -339,7 +302,7 @@ export function createStatefulMiddleware<
 
           return context;
         },
-        createContext(input?: Input): StatefulContextWithSnapshot<State> {
+        createContext(input?: Input): StatefulContext<State> {
           const state = init?.(input as Input) as State;
           return createStatefulContext(state);
         },
