@@ -61,7 +61,7 @@ importers:
         version: 4.8.3
       openai:
         specifier: ^5.7.0
-        version: 5.7.0(ws@8.18.0)(zod@3.25.67)
+        version: 5.7.0(ws@8.18.0)(zod@4.1.3)
       p-retry:
         specifier: ^6.2.1
         version: 6.2.1
@@ -69,8 +69,8 @@ importers:
         specifier: ^7.8.2
         version: 7.8.2
       zod:
-        specifier: ^3.25.67
-        version: 3.25.67
+        specifier: ^4.1.3
+        version: 4.1.3
     devDependencies:
       '@types/node':
         specifier: ^24.0.4
@@ -7565,6 +7565,11 @@ snapshots:
     optionalDependencies:
       ws: 8.18.0
       zod: 3.25.67
+
+  openai@5.7.0(ws@8.18.0)(zod@4.1.3):
+    optionalDependencies:
+      ws: 8.18.0
+      zod: 4.1.3
 
   ora@8.2.0:
     dependencies:
