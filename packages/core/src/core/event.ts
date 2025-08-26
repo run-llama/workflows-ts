@@ -1,7 +1,12 @@
 declare const opaqueSymbol: unique symbol;
 
+type Callback = (evd: WorkflowEventData<any>) => void;
+
+type Cleanup = () => void;
+
 const eventMap = new WeakMap<WorkflowEvent<any>, WeakSet<object>>();
 const refMap = new WeakMap<WorkflowEventData<any>, WorkflowEvent<any>>();
+const initCallbackMap = new WeakMap<WorkflowEvent<any>, Set<Callback>>();
 let i = 0;
 let j = 0;
 
@@ -27,6 +32,7 @@ export type WorkflowEvent<Data, DebugLabel extends string = string> = {
   readonly uniqueId: string;
   with(data: Data): WorkflowEventData<Data, DebugLabel>;
   include(event: unknown): event is WorkflowEventData<Data, DebugLabel>;
+  onInit(callback: Callback): Cleanup;
 } & { readonly [opaqueSymbol]: DebugLabel };
 
 export type WorkflowEventConfig<DebugLabel extends string = string> = {
@@ -38,6 +44,7 @@ export const workflowEvent = <Data = void, DebugLabel extends string = string>(
   config?: WorkflowEventConfig<DebugLabel>,
 ): WorkflowEvent<Data, DebugLabel> => {
   const l1 = `${i++}`;
+  const cb = new Set<Callback>();
   const event = {
     debugLabel: config?.debugLabel ?? l1,
     include: (
@@ -62,12 +69,21 @@ export const workflowEvent = <Data = void, DebugLabel extends string = string>(
       } as unknown as WorkflowEventData<Data, DebugLabel>;
       s.add(ref);
       refMap.set(ref, event);
+      cb.forEach((c) => c(ref));
       return ref;
+    },
+    onInit: (callback: Callback) => {
+      cb.add(callback);
+      return () => {
+        cb.delete(callback);
+      };
     },
   } as unknown as WorkflowEvent<Data, DebugLabel>;
 
   const s = new WeakSet();
   eventMap.set(event, s);
+
+  initCallbackMap.set(event, cb);
 
   Object.defineProperty(event, Symbol.toStringTag, {
     get: () => event?.debugLabel ?? `WorkflowEvent<${l1}>`,
@@ -114,3 +130,76 @@ export const eventSource = (
   typeof instance === "object" && instance !== null
     ? refMap.get(instance as any)
     : undefined;
+
+// OR Event Implementation
+
+export type OrEvent<Events extends WorkflowEvent<any>[]> =
+  WorkflowEvent<any> & {
+    _type: "or";
+    events: Events;
+  };
+
+export const or = <const Events extends WorkflowEvent<any>[]>(
+  ...events: Events
+): OrEvent<Events> => {
+  const debugLabel = `or(${events.map((e) => e.debugLabel || e.uniqueId).join(", ")})`;
+  const l1 = `or_${i++}`;
+
+  const orEvent = {
+    _type: "or" as const,
+    events,
+    debugLabel,
+    include: (eventData: unknown): eventData is WorkflowEventData<any> => {
+      // Accept events from any constituent event OR events created by this OR event
+      return (
+        events.some((event) => event.include(eventData)) ||
+        s.has(eventData as any)
+      );
+    },
+    with: (data: any) => {
+      const l2 = `${j++}`;
+      const ref = {
+        [Symbol.toStringTag]: debugLabel,
+        toString: () => debugLabel,
+        toJSON: () => ({
+          type: debugLabel,
+          data,
+        }),
+        get data() {
+          return data;
+        },
+      } as unknown as WorkflowEventData<any>;
+      s.add(ref);
+      refMap.set(ref, orEvent);
+      return ref;
+    },
+  } as unknown as OrEvent<Events>;
+
+  const s = new WeakSet();
+  eventMap.set(orEvent as any, s);
+
+  let uniqueId: string;
+  Object.defineProperty(orEvent, "uniqueId", {
+    get: () => {
+      if (!uniqueId) {
+        uniqueId = l1;
+      }
+      return uniqueId;
+    },
+    set: () => {
+      throw new Error("uniqueId is readonly");
+    },
+  });
+
+  Object.defineProperty(orEvent, Symbol.toStringTag, {
+    get: () => debugLabel,
+  });
+
+  Object.defineProperty(orEvent, "displayName", {
+    value: debugLabel,
+  });
+
+  (orEvent as any).toString = () => debugLabel;
+
+  return orEvent;
+};

@@ -1,8 +1,8 @@
-import { mcpTool } from "@llama-flow/core/mcp";
+import { mcpTool } from "@llamaindex/workflow-core/mcp";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { fileParseWorkflow } from "../workflows/file-parse-agent.js";
-import { createWorkflow, workflowEvent } from "@llama-flow/core";
+import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 
 const server = new McpServer({
@@ -19,19 +19,22 @@ export const stopEvent = workflowEvent<{
 
 const wrappedWorkflow = createWorkflow();
 
-wrappedWorkflow.handle([startEvent], async ({ data: { filePath } }) => {
-  const { stream, sendEvent, state } = fileParseWorkflow.createContext();
-  sendEvent(startEvent.with({ filePath }));
-  await stream.until(stopEvent).toArray();
-  return stopEvent.with({
-    content: [
-      {
-        type: "text",
-        text: state.output,
-      },
-    ],
-  });
-});
+wrappedWorkflow.handle(
+  [startEvent],
+  async (context, { data: { filePath } }) => {
+    const { stream, sendEvent, state } = fileParseWorkflow.createContext();
+    sendEvent(startEvent.with({ filePath }));
+    await stream.until(stopEvent).toArray();
+    return stopEvent.with({
+      content: [
+        {
+          type: "text",
+          text: state.output,
+        },
+      ],
+    });
+  },
+);
 
 server.tool(
   "list directory",

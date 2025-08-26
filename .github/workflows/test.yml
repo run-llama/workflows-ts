@@ -17,7 +17,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node-version: [18.x, 20.x, 22.x, 23.x]
+        node-version: [20.x, 22.x, 24.x]
     name: Test on Node.js ${{ matrix.node-version }}
     runs-on: ubuntu-latest
     steps:
@@ -30,8 +30,10 @@ jobs:
           cache: "pnpm"
       - name: Install dependencies
         run: pnpm install
+      - name: Build packages
+        run: pnpm run build
       - name: Run tests
-        run: pnpx turbo run test
+        run: pnpm run test
   deno-test:
     name: Test on Deno
     runs-on: ubuntu-latest
@@ -49,7 +51,7 @@ jobs:
       - name: Install dependencies
         run: pnpm install
       - name: Run build
-        run: pnpx turbo run build --filter="./packages/*"
+        run: pnpm run build
       - name: Run Deno tests
         run: deno test
         working-directory: ./demo/deno
@@ -82,6 +84,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install
       - name: Run build
-        run: pnpx turbo run build --filter="./packages/*"
+        run: pnpm run build
       - name: Run type check
         run: pnpm run typecheck

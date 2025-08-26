@@ -9,14 +9,14 @@
     "cf-typegen": "wrangler types"
   },
   "dependencies": {
-    "@llama-flow/core": "latest",
-    "hono": "^4.7.7"
+    "@llamaindex/workflow-core": "latest",
+    "hono": "^4.8.3"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20250420.0",
-    "@types/node": "22.14.1",
+    "@cloudflare/workers-types": "^4.20250620.0",
+    "@types/node": "24.0.4",
     "@types/service-worker-mock": "^2.0.1",
-    "wrangler": "^4.12.0"
+    "wrangler": "^4.21.2"
   },
   "packageManager": "pnpm@9.15.5+sha512.845196026aab1cc3f098a0474b64dfbab2afe7a1b4e91dd86895d8e4aa32a7a6d03049e2d0ad770bbe4de023a7122fb68c1a1d6e0d033c7076085f9d5d4800d4"
 }

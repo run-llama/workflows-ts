@@ -1,10 +1,18 @@
-import { withSnapshot, request } from "@llama-flow/core/middleware/snapshot";
-import { createWorkflow, workflowEvent, getContext } from "@llama-flow/core";
+import {
+  createStatefulMiddleware,
+  request,
+} from "@llamaindex/workflow-core/middleware/state";
+import {
+  createWorkflow,
+  workflowEvent,
+  getContext,
+} from "@llamaindex/workflow-core";
 import { OpenAI } from "openai";
 
 const openai = new OpenAI();
 
-const workflow = withSnapshot(createWorkflow());
+const { withState } = createStatefulMiddleware();
+const workflow = withState(createWorkflow());
 
 const startEvent = workflowEvent<string>({
   debugLabel: "start",
@@ -16,7 +24,7 @@ const stopEvent = workflowEvent<string>({
   debugLabel: "stop",
 });
 
-workflow.handle([startEvent], async ({ data }) => {
+workflow.handle([startEvent], async (context, { data }) => {
   const response = await openai.chat.completions.create({
     stream: false,
     model: "gpt-4.1",
@@ -64,8 +72,8 @@ For example, alex is from "Alexander the Great", who was a king of the ancient G
   return stopEvent.with(response.choices[0].message.content!);
 });
 
-workflow.handle([humanInteractionEvent], async ({ data }) => {
-  const { sendEvent } = getContext();
+workflow.handle([humanInteractionEvent], async (context, { data }) => {
+  const { sendEvent } = context;
   // going back to the start event
   sendEvent(startEvent.with(data));
 });

@@ -1,4 +1,7 @@
-import type { WorkflowEvent, WorkflowEventData } from "@llama-flow/core";
+import type {
+  WorkflowEvent,
+  WorkflowEventData,
+} from "@llamaindex/workflow-core";
 import {
   createSubscribable,
   flattenEvents,
@@ -7,14 +10,16 @@ import {
   isPromiseLike,
   type Subscribable,
 } from "./utils";
-import { createAsyncContext } from "@llama-flow/core/async-context";
+import { AsyncContext } from "@llamaindex/workflow-core/async-context";
 import { WorkflowStream } from "./stream";
 
 export type Handler<
   AcceptEvents extends WorkflowEvent<any>[],
   Result extends WorkflowEventData<any> | void,
+  Context extends WorkflowContext = WorkflowContext,
 > = (
-  ...event: {
+  context: Context,
+  ...events: {
     [K in keyof AcceptEvents]: ReturnType<AcceptEvents[K]["with"]>;
   }
 ) => Result | Promise<Result>;
@@ -69,19 +74,87 @@ export type WorkflowContext = {
     [event: WorkflowEventData<any>, handlerContext: HandlerContext],
     void
   >;
+  __internal__property_inheritance_handlers?: Map<
+    string,
+    InheritanceTransformer
+  >;
 };
 
-export const _executorAsyncLocalStorage = createAsyncContext<WorkflowContext>();
+export type InheritanceTransformer = (
+  handlerContext: WorkflowContext,
+  originalDescriptor: PropertyDescriptor,
+) => PropertyDescriptor;
 
+export const _executorAsyncLocalStorage =
+  new AsyncContext.Variable<WorkflowContext>();
+
+/**
+ * @deprecated Use the context parameter directly from workflow handlers instead.
+ * The context passed to handlers already includes all state properties.
+ *
+ * @example
+ * ```ts
+ * workflow.handle([startEvent], (context, event) => {
+ *   const { sendEvent } = context;
+ *   sendEvent(processEvent.with());
+ * });
+ * ```
+ */
 export function getContext(): WorkflowContext {
-  const context = _executorAsyncLocalStorage.getStore();
+  const context = _executorAsyncLocalStorage.get();
   if (!context) {
     throw new Error("No current context found");
   }
   return context;
 }
 
-const handlerContextAsyncLocalStorage = createAsyncContext<HandlerContext>();
+/**
+ * Use this function to add or extend properties of the root context.
+ * Called by middleware's createContext to update the root context.
+ * Handler-scoped contexts will automatically inherit these properties from the root context.
+ * Never create a new object (e.g., using a spread `{...context}`) in your middleware's createContext.
+ *
+ * @param context The context to extend
+ * @param properties The properties to add to the context
+ * @param inheritanceTransformers The inheritance transformers to apply to existing properties (optional)
+ */
+export function extendContext(
+  context: WorkflowContext,
+  properties: Record<string, any>,
+  inheritanceTransformers?: Record<string, InheritanceTransformer>,
+): void {
+  // Add simple properties directly to the context (these inherit normally via prototype chain)
+  Object.assign(context, properties);
+
+  // Register inheritance transformers for properties that need custom inheritance behavior
+  if (inheritanceTransformers) {
+    if (!context.__internal__property_inheritance_handlers) {
+      context.__internal__property_inheritance_handlers = new Map();
+    }
+
+    for (const [propertyKey, transformer] of Object.entries(
+      inheritanceTransformers,
+    )) {
+      context.__internal__property_inheritance_handlers.set(
+        propertyKey,
+        transformer,
+      );
+
+      // Apply the transformer to the root context immediately
+      const rootDescriptor = Object.getOwnPropertyDescriptor(
+        context,
+        propertyKey,
+      );
+      if (rootDescriptor) {
+        const newDescriptor = transformer(context, rootDescriptor);
+        Object.defineProperty(context, propertyKey, newDescriptor);
+      }
+    }
+  }
+}
+
+const handlerContextAsyncLocalStorage =
+  new AsyncContext.Variable<HandlerContext>();
 
 const eventContextWeakMap = new WeakMap<
   WorkflowEventData<any>,
@@ -99,6 +172,7 @@ export const createContext = ({
   listeners,
 }: ExecutorParams): WorkflowContext => {
   const queue: WorkflowEventData<any>[] = [];
+  let rootWorkflowContext: WorkflowContext;
   const runHandler = (
     handler: Handler<WorkflowEvent<any>[], any>,
     inputEvents: WorkflowEvent<any>[],
@@ -129,7 +203,32 @@ export const createContext = ({
       },
     };
     handlerContext.prev.next.add(handlerContext);
-    const workflowContext = createWorkflowContext(handlerContext);
+    // Use prototype chain to inherit the properties of the root workflow context for the specific context for the handler
+    const specificContext = createWorkflowContext(handlerContext);
+    const workflowContext = Object.create(rootWorkflowContext);
+    const specificDescriptors =
+      Object.getOwnPropertyDescriptors(specificContext);
+
+    // Apply inheritance transformers if available
+    if (rootWorkflowContext.__internal__property_inheritance_handlers) {
+      for (const [
+        propertyKey,
+        transformer,
+      ] of rootWorkflowContext.__internal__property_inheritance_handlers) {
+        if (propertyKey in specificDescriptors) {
+          const originalDescriptor = specificDescriptors[propertyKey];
+          if (originalDescriptor) {
+            const newDescriptor = transformer(
+              workflowContext,
+              originalDescriptor,
+            );
+            specificDescriptors[propertyKey] = newDescriptor;
+          }
+        }
+      }
+    }
+
+    Object.defineProperties(workflowContext, specificDescriptors);
     handlerContextAsyncLocalStorage.run(handlerContext, () => {
       const cbs = [
         ...new Set([
@@ -144,7 +243,7 @@ export const createContext = ({
           if (i === cbs.length) {
             let result: any;
             try {
-              result = context.handler(...context.inputs);
+              result = context.handler(workflowContext, ...context.inputs);
             } catch (error) {
               if (handlerAbortController ?? rootAbortController) {
                 (handlerAbortController ?? rootAbortController).abort(error);
@@ -262,6 +361,6 @@ export const createContext = ({
     },
   };
 
-  const rootWorkflowContext = createWorkflowContext(handlerRootContext);
+  rootWorkflowContext = createWorkflowContext(handlerRootContext);
   return rootWorkflowContext;
 };

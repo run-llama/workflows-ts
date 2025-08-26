@@ -2,15 +2,14 @@ import { describe, expect, test, vi } from "vitest";
 import {
   createWorkflow,
   eventSource,
-  getContext,
   workflowEvent,
-} from "@llama-flow/core";
-import type { WorkflowEventData } from "@llama-flow/core";
+} from "@llamaindex/workflow-core";
+import type { WorkflowEventData } from "@llamaindex/workflow-core";
 import {
   runWorkflow,
   runAndCollect,
   runStream,
-} from "@llama-flow/core/stream/run";
+} from "@llamaindex/workflow-core/stream/run";
 
 describe("workflow helper functions", () => {
   test("runWorkflow should execute workflow and return the final event", async () => {
@@ -26,10 +25,10 @@ describe("workflow helper functions", () => {
     });
 
     const workflow = createWorkflow();
-    workflow.handle([startEvent], (start) => {
+    workflow.handle([startEvent], (context, start) => {
       return intermediateEvent.with(Number.parseInt(start.data, 10));
     });
-    workflow.handle([intermediateEvent], (convert) => {
+    workflow.handle([intermediateEvent], (context, convert) => {
       return stopEvent.with(convert.data > 0 ? 1 : -1);
     });
 
@@ -63,7 +62,7 @@ describe("workflow helper functions", () => {
     });
 
     const workflow = createWorkflow();
-    workflow.handle([startEvent], (start) => {
+    workflow.handle([startEvent], (context, start) => {
       const count = Number.parseInt(start.data, 10);
       for (let i = 0; i < count; i++) {
         return messageEvent.with(i);
@@ -71,7 +70,7 @@ describe("workflow helper functions", () => {
       return stopEvent.with("completed");
     });
 
-    workflow.handle([messageEvent], () => {
+    workflow.handle([messageEvent], (context) => {
       return stopEvent.with("processed");
     });
 
@@ -106,8 +105,8 @@ describe("workflow helper functions", () => {
 
     const workflow = createWorkflow();
 
-    workflow.handle([startEvent], async (start) => {
-      const { sendEvent } = getContext();
+    workflow.handle([startEvent], async (context, start) => {
+      const { sendEvent } = context;
 
       for (let i = 0; i < 10; i++) {
         sendEvent(intermediateEvent.with(i));
@@ -116,7 +115,7 @@ describe("workflow helper functions", () => {
       return stopEvent.with("completed");
     });
 
-    workflow.handle([intermediateEvent], async (intermediate) => {
+    workflow.handle([intermediateEvent], async (context, intermediate) => {
       // fake some work
       await new Promise((resolve) => setTimeout(resolve, 1));
     });

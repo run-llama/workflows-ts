@@ -31,7 +31,7 @@ jobs:
         run: pnpm install
 
       - name: Run build
-        run: pnpx turbo run build --filter="./packages/*"
+        run: pnpm run build
 
       - name: Pre Release
         run: pnpx pkg-pr-new publish --pnpm ./packages/*
@@ -46,7 +46,7 @@ jobs:
       - name: Checkout Repo
         uses: actions/checkout@v4
         with:
-          path: llamaflow
+          path: workflows-ts
           repository: "${{ github.repository }}"
           fetch-depth: "1"
       - name: Checkout LITS
@@ -57,31 +57,31 @@ jobs:
           fetch-depth: "1"
       - uses: pnpm/action-setup@v4
         with:
-          package_json_file: "llamaflow/package.json"
+          package_json_file: "workflows-ts/package.json"
       - uses: pnpm/action-setup@v4
         with:
           package_json_file: "llamaindex/package.json"
-      - name: Setup Node.js for Llamaflow
+      - name: Setup Node.js for workflows-ts
         uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: "pnpm"
-          cache-dependency-path: "llamaflow/pnpm-lock.yaml"
+          cache-dependency-path: "workflows-ts/pnpm-lock.yaml"
       - name: Setup Node.js for LlamaIndex
         uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: "pnpm"
           cache-dependency-path: "llamaindex/pnpm-lock.yaml"
-      - name: Install dependencies for llamaflow
+      - name: Install dependencies for workflows-ts
         run: pnpm install
-        working-directory: llamaflow
+        working-directory: workflows-ts
       - name: Install dependencies for llamaindex
         run: pnpm install
         working-directory: llamaindex
-      - name: Link Llamaflow docs to LlamaIndex
+      - name: Link workflows-ts docs to LlamaIndex
         run: |
-          pnpm link ${{github.workspace}}/llamaflow/docs
+          pnpm link ${{github.workspace}}/workflows/docs
         working-directory: llamaindex/apps/next
       - name: Install Vercel CLI
         run: npm install --global vercel@latest

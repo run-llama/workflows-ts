@@ -3,7 +3,7 @@ import {
   createWorkflow,
   type WorkflowEventData,
   eventSource,
-} from "@llama-flow/core";
+} from "@llamaindex/workflow-core";
 import { describe, expect, test } from "vitest";
 import * as events from "./shared/events";
 import { haltEvent } from "./shared/events";

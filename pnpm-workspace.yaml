@@ -1,7 +1,14 @@
 packages:
-  - "./demo"
-  - "./demo/cloudflare"
-  - "./demo/browser"
-  - "./demo/waku"
-  - "./docs"
-  - "./packages/*"
+  - ./demo
+  - ./demo/cloudflare
+  - ./demo/browser
+  - ./demo/waku
+  - ./docs
+  - ./packages/*
+  - ./tests/*
+
+onlyBuiltDependencies:
+  - "@tailwindcss/oxide"
+  - esbuild
+  - sharp
+  - workerd

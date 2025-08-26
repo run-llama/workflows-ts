@@ -3,11 +3,11 @@ import {
   createWorkflow,
   workflowEvent,
   type InferWorkflowEventData,
-} from "@llama-flow/core";
-import { createStatefulMiddleware } from "@llama-flow/core/middleware/state";
-import { withTraceEvents } from "@llama-flow/core/middleware/trace-events";
-import { pRetryHandler } from "@llama-flow/core/util/p-retry";
-import { zodEvent } from "@llama-flow/core/util/zod";
+} from "@llamaindex/workflow-core";
+import { createStatefulMiddleware } from "@llamaindex/workflow-core/middleware/state";
+import { withTraceEvents } from "@llamaindex/workflow-core/middleware/trace-events";
+import { pRetryHandler } from "@llamaindex/workflow-core/util/p-retry";
+import { zodEvent } from "@llamaindex/workflow-core/util/zod";
 import hash from "stable-hash";
 import { z } from "zod";
 import fs from "node:fs/promises";

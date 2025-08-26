@@ -2,7 +2,7 @@ import {
   type WorkflowEvent,
   type WorkflowEventData,
   WorkflowStream,
-} from "@llama-flow/core";
+} from "@llamaindex/workflow-core";
 
 const isWorkflowEvent = (value: unknown): value is WorkflowEvent<any> =>
   value != null &&

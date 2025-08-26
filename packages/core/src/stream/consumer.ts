@@ -1,4 +1,7 @@
-import { type WorkflowEventData, WorkflowStream } from "@llama-flow/core";
+import {
+  type WorkflowEventData,
+  WorkflowStream,
+} from "@llamaindex/workflow-core";
 
 const noopStream = new WritableStream({
   write: () => {

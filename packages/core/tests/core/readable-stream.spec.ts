@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
-import { getContext, type Workflow } from "@llama-flow/core";
-import { createWorkflow } from "@llama-flow/core";
+import { type Workflow } from "@llamaindex/workflow-core";
+import { createWorkflow } from "@llamaindex/workflow-core";
 import {
   eventSource,
   workflowEvent,
   type WorkflowEventData,
-} from "@llama-flow/core";
+} from "@llamaindex/workflow-core";
 
 describe("workflow basic", () => {
   const startEvent = workflowEvent<string>({
@@ -41,10 +41,10 @@ describe("workflow basic", () => {
   });
 
   test("sync", async () => {
-    workflow.handle([startEvent], (start) => {
+    workflow.handle([startEvent], (context, start) => {
       return convertEvent.with(Number.parseInt(start.data, 10));
     });
-    workflow.handle([convertEvent], (convert) => {
+    workflow.handle([convertEvent], (context, convert) => {
       return stopEvent.with(convert.data > 0 ? 1 : -1);
     });
 
@@ -58,10 +58,10 @@ describe("workflow basic", () => {
   });
 
   test("async", async () => {
-    workflow.handle([startEvent], async (start) => {
+    workflow.handle([startEvent], async (context, start) => {
       return convertEvent.with(Number.parseInt(start.data, 10));
     });
-    workflow.handle([convertEvent], async (convert) => {
+    workflow.handle([convertEvent], async (context, convert) => {
       return stopEvent.with(convert.data > 0 ? 1 : -1);
     });
 
@@ -75,10 +75,10 @@ describe("workflow basic", () => {
   });
 
   test("async + sync", async () => {
-    workflow.handle([startEvent], async (start) => {
+    workflow.handle([startEvent], async (context, start) => {
       return convertEvent.with(Number.parseInt(start.data, 10));
     });
-    workflow.handle([convertEvent], (convert) => {
+    workflow.handle([convertEvent], (context, convert) => {
       return stopEvent.with(convert.data > 0 ? 1 : -1);
     });
 
@@ -92,10 +92,10 @@ describe("workflow basic", () => {
   });
 
   test("async + timeout", async () => {
-    workflow.handle([startEvent], async (start) => {
+    workflow.handle([startEvent], async (context, start) => {
       return convertEvent.with(Number.parseInt(start.data, 10));
     });
-    workflow.handle([convertEvent], async (convert) => {
+    workflow.handle([convertEvent], async (context, convert) => {
       await new Promise((resolve) => setTimeout(resolve, 100));
       return stopEvent.with(convert.data > 0 ? 1 : -1);
     });
@@ -110,10 +110,10 @@ describe("workflow basic", () => {
   });
 
   test("stream.tee()", async () => {
-    workflow.handle([startEvent], async (start) => {
+    workflow.handle([startEvent], async (context, start) => {
       return convertEvent.with(Number.parseInt(start.data, 10));
     });
-    workflow.handle([convertEvent], async (convert) => {
+    workflow.handle([convertEvent], async (context, convert) => {
       await new Promise((resolve) => setTimeout(resolve, 100));
       return stopEvent.with(convert.data > 0 ? 1 : -1);
     });
@@ -180,7 +180,7 @@ describe("workflow simple logic", () => {
     const stopEvent = workflowEvent();
     const workflow = createWorkflow();
     const f1 = vi.fn(
-      async ({ data }: ReturnType<(typeof startEvent)["with"]>) =>
+      async (context, { data }: ReturnType<(typeof startEvent)["with"]>) =>
         data > 0 ? startEvent.with(data - 1) : stopEvent.with(),
     );
     workflow.handle([startEvent], f1);
@@ -210,11 +210,13 @@ describe("workflow simple logic", () => {
     const event1 = workflowEvent<number>();
     const event2 = workflowEvent<number>();
     const f1 = vi.fn(async () => event1.with(2));
-    const f2 = vi.fn(async ({ data }: ReturnType<(typeof event1)["with"]>) =>
-      event2.with(data - 1),
+    const f2 = vi.fn(
+      async (context, { data }: ReturnType<(typeof event1)["with"]>) =>
+        event2.with(data - 1),
     );
-    const f3 = vi.fn(async ({ data }: ReturnType<(typeof event2)["with"]>) =>
-      data > 0 ? event1.with(data) : stopEvent.with(),
+    const f3 = vi.fn(
+      async (context, { data }: ReturnType<(typeof event2)["with"]>) =>
+        data > 0 ? event1.with(data) : stopEvent.with(),
     );
     workflow.handle([startEvent], f1);
 
@@ -240,7 +242,7 @@ describe("workflow simple logic", () => {
       debugLabel: "stopEvent",
     });
     const workflow = createWorkflow();
-    workflow.handle([startEvent], (start) => {
+    workflow.handle([startEvent], (context, start) => {
       return start.data === "100" ? stopEvent.with(1) : stopEvent.with(-1);
     });
     {
@@ -294,7 +296,7 @@ describe("workflow simple logic", () => {
     });
     jokeFlow.handle(
       [analysisEvent, critiqueEvent],
-      async (analysisEvent, critiqueEvent) => {
+      async (context, analysisEvent, critiqueEvent) => {
         return stopEvent.with(
           critiqueEvent.data.critique + " " + analysisEvent.data.analysis,
         );
@@ -329,15 +331,18 @@ describe("workflow simple logic", () => {
     });
     const workflow = createWorkflow();
 
-    workflow.handle([startEvent], (start) => {
+    workflow.handle([startEvent], (context, start) => {
       const ev1 = convertEvent.with(Number.parseInt(start.data, 10));
       const ev2 = convertEvent.with(Number.parseInt(start.data, 10));
-      getContext().sendEvent(ev1);
+      context.sendEvent(ev1);
       return ev2;
     });
-    workflow.handle([convertEvent, convertEvent], (convert1, convert2) => {
-      return stopEvent.with(convert1.data + convert2.data > 0 ? 1 : -1);
-    });
+    workflow.handle(
+      [convertEvent, convertEvent],
+      (context, convert1, convert2) => {
+        return stopEvent.with(convert1.data + convert2.data > 0 ? 1 : -1);
+      },
+    );
 
     const { stream, sendEvent } = workflow.createContext();
     sendEvent(startEvent.with("100"));
@@ -366,11 +371,9 @@ describe("workflow simple logic", () => {
     });
     const workflow = createWorkflow();
 
-    workflow.handle([startEvent], (start) => {
+    workflow.handle([startEvent], (context, start) => {
       for (let i = 0; i < 100; i++) {
-        getContext().sendEvent(
-          convertEvent.with(Number.parseInt(start.data, 10)),
-        );
+        context.sendEvent(convertEvent.with(Number.parseInt(start.data, 10)));
       }
       return;
     });
@@ -406,8 +409,8 @@ describe("workflow simple logic", () => {
     });
     const workflow = createWorkflow();
 
-    workflow.handle([startEvent], async (start) => {
-      const { sendEvent } = getContext();
+    workflow.handle([startEvent], async (context, start) => {
+      const { sendEvent } = context;
       setTimeout(() => {
         sendEvent(convertEvent.with(Number.parseInt(start.data, 10)));
       }, 10);
@@ -445,8 +448,7 @@ describe("workflow simple logic", () => {
     });
     const workflow = createWorkflow();
 
-    workflow.handle([startEvent], async (start) => {
-      const context = getContext();
+    workflow.handle([startEvent], async (context, start) => {
       setTimeout(() => {
         for (let i = 0; i < 100; i++) {
           context.sendEvent(convertEvent.with(Number.parseInt(start.data, 10)));
@@ -482,8 +484,8 @@ describe("workflow simple logic", () => {
       debugLabel: "stopEvent",
     });
     const workflow = createWorkflow();
-    workflow.handle([startEvent], async () => {
-      const { sendEvent } = getContext();
+    workflow.handle([startEvent], async (context) => {
+      const { sendEvent } = context;
       setTimeout(() => {
         sendEvent(convertEvent.with(1));
       }, 100);

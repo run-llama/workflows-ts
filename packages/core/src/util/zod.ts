@@ -3,17 +3,20 @@ import {
   workflowEvent,
   type WorkflowEvent,
   type WorkflowEventConfig,
-} from "@llama-flow/core";
+} from "@llamaindex/workflow-core";
 
 export const zodEvent = <T, DebugLabel extends string>(
   schema: z.ZodType<T>,
   config?: WorkflowEventConfig<DebugLabel>,
-): WorkflowEvent<T, DebugLabel> => {
+): WorkflowEvent<T, DebugLabel> & { readonly schema: z.ZodType<T> } => {
   const event = workflowEvent<T, DebugLabel>(config);
-  const originalWith = event.with;
-  event.with = (data: T) => {
+  event.onInit(({ data }) => {
     schema.parse(data);
-    return originalWith(data);
-  };
-  return event;
+  });
+
+  return Object.assign(event, {
+    get schema() {
+      return schema;
+    },
+  });
 };

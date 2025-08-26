@@ -1,6 +1,6 @@
 {
-  "name": "@llama-flow/http",
-  "version": "0.0.1",
+  "name": "@llamaindex/workflow-http",
+  "version": "3.0.1",
   "type": "module",
   "description": "HTTP protocol for Llama Flow",
   "exports": {
@@ -17,17 +17,17 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/run-llama/llama-flow.git"
+    "url": "https://github.com/run-llama/workflows-ts.git"
   },
   "scripts": {
     "build": "bunchee",
     "dev": "bunchee --watch"
   },
   "devDependencies": {
-    "@llama-flow/core": "workspace:*",
-    "bunchee": "^6.5.1"
+    "@llamaindex/workflow-core": "workspace:*",
+    "bunchee": "^6.5.4"
   },
   "peerDependencies": {
-    "@llama-flow/core": "workspace:*"
+    "@llamaindex/workflow-core": "workspace:*"
   }
 }

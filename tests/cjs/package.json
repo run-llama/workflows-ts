@@ -1,0 +1,23 @@
+{
+  "name": "workflows-ts-cjs-test",
+  "version": "1.0.7",
+  "private": true,
+  "description": "CommonJS test for workflows-ts functionality",
+  "type": "commonjs",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@llamaindex/workflow-core": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.4",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.4"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

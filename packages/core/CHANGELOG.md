@@ -1,4 +1,104 @@
-# @llama-flow/core
+# @llamaindex/workflow-core
+
+## 1.2.1
+
+### Patch Changes
+
+- a3ce131: merge snapshot and state middleware and fix middleware chaining
+- a3ce131: fix: snapshot not passing createContext params
+
+## 1.2.0
+
+### Minor Changes
+
+- 0bc6a46: Add new `.handle([or(ev1, ev2)], ..)` api
+
+## 1.1.0
+
+### Minor Changes
+
+- f1f7954: feat: polyfill async context
+
+## 1.0.0
+
+### Major Changes
+
+- 095fb04: chore: major release
+
+  🌊 is a simple, lightweight workflow engine, in TypeScript.
+
+  ### First, define events
+
+  ```ts
+  import { workflowEvent } from "@llamaindex/workflow-core";
+
+  const startEvent = workflowEvent<string>();
+  const stopEvent = workflowEvent<1 | -1>();
+  ```
+
+  ### Connect events with workflow
+
+  ```ts
+  import { createWorkflow } from "@llamaindex/workflow-core";
+
+  const convertEvent = workflowEvent();
+
+  const workflow = createWorkflow();
+
+  workflow.handle([startEvent], (start) => {
+    return convertEvent.with(Number.parseInt(start.data, 10));
+  });
+  workflow.handle([convertEvent], (convert) => {
+    return stopEvent.with(convert.data > 0 ? 1 : -1);
+  });
+  ```
+
+  ### Trigger workflow
+
+  ```ts
+  import { pipeline } from "node:stream/promises";
+
+  const { stream, sendEvent } = workflow.createContext();
+  sendEvent(startEvent.with());
+  const allEvents = await stream.until(stopEvent).toArray();
+  ```
+
+## 0.4.6
+
+### Patch Changes
+
+- 59b9199: chore: bump version
+
+## 0.4.5
+
+### Patch Changes
+
+- 1fb29de: chore: rename package
+
+## 0.4.4
+
+### Patch Changes
+
+- 24fe0b2: Add support for zod schemas for events
+
+## 0.4.3
+
+### Patch Changes
+
+- 9c17c2e: fix: build and export all middlewares to esm and cjs modules
+
+## 0.4.2
+
+### Patch Changes
+
+- 23ecfc7: feat: update http protocol
+- 4402a6d: fix: workflow stream extends standard readable stream
+- 9c65785: feat: add `withSnapshot` middleware API
+
+  Add snapshot API, for human in the loop feature. The API is designed for cross JavaScript platform, including node.js, browser, and serverless platform such as cloudflare worker and edge runtime
+  - `workflow.createContext(): Context`
+  - `context.snapshot(): Promise<[requestEvent, snapshot]>`
+  - `workflow.resume(data, snapshot)`
 
 ## 0.4.1
 
@@ -7,17 +107,16 @@
 - 1005e84: feat: add stream helper
 
   In this release, we built-in some stream helper (inspired from (TC39 Async Iterator Helpers)[https://github.com/tc39/proposal-async-iterator-helpers])
-
-  - move `@llama-flow/core/stream/until` into `stream.until`
-  - move `@llama-flow/core/stream/filter` into `stream.filter`
-  - move `@llama-flow/core/stream/consumer` into `stream.toArray()`
+  - move `@llamaindex/workflow-core/stream/until` into `stream.until`
+  - move `@llamaindex/workflow-core/stream/filter` into `stream.filter`
+  - move `@llamaindex/workflow-core/stream/consumer` into `stream.toArray()`
   - add `stream.take(limit)`
   - add `stream.toArray()`
 
   ```diff
-  - import { collect } from "@llama-flow/core/stream/consumer";
-  - import { until } from "@llama-flow/core/stream/until";
-  - import { filter } from "@llama-flow/core/stream/filter";
+  - import { collect } from "@llamaindex/workflow-core/stream/consumer";
+  - import { until } from "@llamaindex/workflow-core/stream/until";
+  - import { filter } from "@llamaindex/workflow-core/stream/filter";
 
   -  const results = await collect(
   -    until(
@@ -58,7 +157,7 @@
   ### Before
 
   ```typescript
-  import { withState } from "@llama-flow/core/middleware/state";
+  import { withState } from "@llamaindex/workflow-core/middleware/state";
 
   const workflow = withState(
     () => ({
@@ -75,7 +174,7 @@
   ### After
 
   ```typescript
-  import { createStatefulMiddleware } from "@llama-flow/core/middleware/state";
+  import { createStatefulMiddleware } from "@llamaindex/workflow-core/middleware/state";
 
   const { withState, getContext } = createStatefulMiddleware(() => ({
     count: 0,
@@ -95,7 +194,6 @@
   ### Migration Guide
 
   To migrate existing code:
-
   1. Replace `withState` import with `createStatefulMiddleware`
   2. Update state initialization to use the new API
   3. Replace `workflow.getState()` calls with `getContext().state`

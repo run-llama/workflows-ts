@@ -3,29 +3,27 @@
   "private": true,
   "version": "0.0.1",
   "type": "module",
-  "packageManager": "pnpm@10.8.1",
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "@swc/core"
-    ]
-  },
+  "packageManager": "pnpm@10.15.0",
   "scripts": {
+    "build": "turbo build --filter=\"./packages/*\"",
+    "test": "turbo test --filter=\"./packages/*\"",
     "typecheck": "tsc -b --verbose",
     "lint": "prettier . --check",
     "lint:fix": "prettier . --write",
-    "publish": "turbo build --filter=\"./packages/*\" && changeset publish",
+    "publish": "pnpm run build && changeset publish",
     "prepare": "husky"
   },
   "devDependencies": {
-    "@changesets/cli": "^2.29.2",
+    "@changesets/cli": "^2.29.5",
     "@edge-runtime/vm": "^5.0.0",
-    "happy-dom": "^17.4.4",
+    "happy-dom": "^18.0.1",
     "husky": "^9.1.7",
-    "lint-staged": "^15.5.1",
-    "prettier": "^3.5.3",
-    "tsdown": "^0.11.12",
-    "turbo": "^2.5.0",
+    "lint-staged": "^16.1.2",
+    "prettier": "^3.6.1",
+    "tsdown": "^0.12.9",
+    "turbo": "^2.5.4",
+    "typescript": "^5.9.2",
     "vite-tsconfig-paths": "^5.1.4",
-    "vitest": "^3.1.1"
+    "vitest": "^3.2.4"
   }
 }

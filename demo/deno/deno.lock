@@ -1,13 +1,13 @@
 {
-  "version": "4",
+  "version": "5",
   "specifiers": {
-    "jsr:@std/assert@1": "1.0.12",
+    "jsr:@std/assert@1": "1.0.13",
     "jsr:@std/internal@^1.0.6": "1.0.6",
-    "npm:@llama-flow/core@*": "0.3.9"
+    "npm:@llamaindex/workflow-core@*": "0.4.5"
   },
   "jsr": {
-    "@std/assert@1.0.12": {
-      "integrity": "08009f0926dda9cbd8bef3a35d3b6a4b964b0ab5c3e140a4e0351fbf34af5b9a",
+    "@std/assert@1.0.13": {
+      "integrity": "ae0d31e41919b12c656c742b22522c32fb26ed0cba32975cb0de2a273cb68b29",
       "dependencies": [
         "jsr:@std/internal"
       ]
@@ -17,15 +17,15 @@
     }
   },
   "npm": {
-    "@llama-flow/core@0.3.9": {}
+    "@llamaindex/workflow-core@0.4.5": {}
   },
   "workspace": {
     "dependencies": [
       "jsr:@std/assert@1",
-      "npm:@llama-flow/core@*"
+      "npm:@llamaindex/workflow-core@*"
     ],
-    "patches": {
-      "npm:@llama-flow/core@0.3.9": {
+    "links": {
+      "npm:@llamaindex/workflow-core@0.4.5": {
         "peerDependencies": [
           "npm:@modelcontextprotocol/sdk@^1.7.0",
           "npm:hono@^4.7.4",

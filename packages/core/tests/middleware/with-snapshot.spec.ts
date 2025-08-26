@@ -1,11 +1,13 @@
 import { describe, expect, test, vi } from "vitest";
-import { withSnapshot, request } from "@llama-flow/core/middleware/snapshot";
+import {
+  createStatefulMiddleware,
+  request,
+} from "@llamaindex/workflow-core/middleware/state";
 import {
   createWorkflow,
   eventSource,
-  getContext,
   workflowEvent,
-} from "@llama-flow/core";
+} from "@llamaindex/workflow-core";
 
 const startEvent = workflowEvent({
   debugLabel: "start",
@@ -24,12 +26,13 @@ const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 describe("with snapshot - snapshot API", () => {
   test("single handler (sync)", async () => {
-    const workflow = withSnapshot(createWorkflow());
+    const { withState } = createStatefulMiddleware();
+    const workflow = withState(createWorkflow());
     workflow.handle([startEvent], () => {
       return request(humanResponseEvent);
     });
 
-    workflow.handle([humanResponseEvent], ({ data }) => {
+    workflow.handle([humanResponseEvent], (context, { data }) => {
       expect(data).toBe("hello world");
       return stopEvent.with();
     });
@@ -45,6 +48,7 @@ describe("with snapshot - snapshot API", () => {
           1,
         ],
         "queue": [],
+        "state": undefined,
         "unrecoverableQueue": [],
         "version": "@@@0,,4~,,@@1,,7~,,",
       }
@@ -58,12 +62,13 @@ describe("with snapshot - snapshot API", () => {
   });
 
   test("single handler (async)", async () => {
-    const workflow = withSnapshot(createWorkflow());
+    const { withState } = createStatefulMiddleware();
+    const workflow = withState(createWorkflow());
     workflow.handle([startEvent], async () => {
       return request(humanResponseEvent);
     });
 
-    workflow.handle([humanResponseEvent], ({ data }) => {
+    workflow.handle([humanResponseEvent], (context, { data }) => {
       expect(data).toBe("hello world");
       return stopEvent.with();
     });
@@ -79,6 +84,7 @@ describe("with snapshot - snapshot API", () => {
           1,
         ],
         "queue": [],
+        "state": undefined,
         "unrecoverableQueue": [],
         "version": "@@@0,,4~,,@@1,,7~,,",
       }
@@ -92,13 +98,14 @@ describe("with snapshot - snapshot API", () => {
   });
 
   test("single handler (timer)", async () => {
-    const workflow = withSnapshot(createWorkflow());
+    const { withState } = createStatefulMiddleware();
+    const workflow = withState(createWorkflow());
     workflow.handle([startEvent], async () => {
       await sleep(10);
       return request(humanResponseEvent);
     });
 
-    workflow.handle([humanResponseEvent], ({ data }) => {
+    workflow.handle([humanResponseEvent], (context, { data }) => {
       expect(data).toBe("hello world");
       return stopEvent.with();
     });
@@ -114,6 +121,7 @@ describe("with snapshot - snapshot API", () => {
           1,
         ],
         "queue": [],
+        "state": undefined,
         "unrecoverableQueue": [],
         "version": "@@@0,,4~,,@@1,,7~,,",
       }
@@ -127,7 +135,8 @@ describe("with snapshot - snapshot API", () => {
   });
 
   test("multiple message in the queue", async () => {
-    const workflow = withSnapshot(createWorkflow());
+    const { withState, getContext } = createStatefulMiddleware();
+    const workflow = withState(createWorkflow());
     workflow.handle([startEvent], async () => {
       const { sendEvent } = getContext();
       await sleep(10);
@@ -136,7 +145,7 @@ describe("with snapshot - snapshot API", () => {
       return request(humanResponseEvent);
     });
 
-    workflow.handle([humanResponseEvent], ({ data }) => {
+    workflow.handle([humanResponseEvent], (context, { data }) => {
       expect(data).toBe("hello world");
       return stopEvent.with();
     });
@@ -153,6 +162,7 @@ describe("with snapshot - snapshot API", () => {
           1,
         ],
         "queue": [],
+        "state": undefined,
         "unrecoverableQueue": [
           [
             "1",
@@ -175,7 +185,8 @@ describe("with snapshot - snapshot API", () => {
   });
 
   test("multiple requests in the response", async () => {
-    const workflow = withSnapshot(createWorkflow());
+    const { withState } = createStatefulMiddleware();
+    const workflow = withState(createWorkflow());
     workflow.handle([startEvent], async () => {
       return request(humanResponseEvent);
     });
@@ -184,7 +195,7 @@ describe("with snapshot - snapshot API", () => {
       return request(humanResponseEvent);
     });
 
-    workflow.handle([humanResponseEvent], ({ data }) => {
+    workflow.handle([humanResponseEvent], (context, { data }) => {
       expect(data).toBe("hello world");
       return stopEvent.with();
     });
@@ -201,6 +212,7 @@ describe("with snapshot - snapshot API", () => {
           1,
         ],
         "queue": [],
+        "state": undefined,
         "unrecoverableQueue": [],
         "version": "@@@0,,4~,,@@0,,7~,,@@1,,10~,,",
       }
@@ -217,7 +229,8 @@ describe("with snapshot - snapshot API", () => {
     vi.stubGlobal("console", {
       warn,
     });
-    const workflow = withSnapshot(createWorkflow());
+    const { withState, getContext } = createStatefulMiddleware();
+    const workflow = withState(createWorkflow());
     workflow.handle([startEvent], async () => {
       const { sendEvent } = getContext();
       setTimeout(() => {
@@ -233,6 +246,7 @@ describe("with snapshot - snapshot API", () => {
       {
         "missing": [],
         "queue": [],
+        "state": undefined,
         "unrecoverableQueue": [],
         "version": "@@@0,,4~,,",
       }
@@ -247,12 +261,13 @@ describe("with snapshot - snapshot API", () => {
   });
 
   test("onRequestEvent callback", async () => {
-    const workflow = withSnapshot(createWorkflow());
+    const { withState } = createStatefulMiddleware();
+    const workflow = withState(createWorkflow());
     workflow.handle([startEvent], async () => {
       return request(humanResponseEvent, 1);
     });
 
-    workflow.handle([humanResponseEvent], ({ data }) => {
+    workflow.handle([humanResponseEvent], (context, { data }) => {
       expect(data).toBe("hello world");
       return stopEvent.with();
     });

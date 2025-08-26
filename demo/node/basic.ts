@@ -1,6 +1,10 @@
-import { createWorkflow, workflowEvent, getContext } from "@llama-flow/core";
+import {
+  createWorkflow,
+  workflowEvent,
+  getContext,
+} from "@llamaindex/workflow-core";
 import { pipeline } from "node:stream/promises";
-import { collect } from "@llama-flow/core/stream/consumer";
+import { collect } from "@llamaindex/workflow-core/stream/consumer";
 
 //#region define workflow events
 const startEvent = workflowEvent<string>();
@@ -26,19 +30,19 @@ workflow.handle([startEvent], async () => {
   return allCompleteEvent.with(results.map((e) => e.data).join(", "));
 });
 
-workflow.handle([branchAEvent], (branchA) => {
+workflow.handle([branchAEvent], (context, branchA) => {
   return branchCompleteEvent.with(branchA.data);
 });
 
-workflow.handle([branchBEvent], (branchB) => {
+workflow.handle([branchBEvent], (context, branchB) => {
   return branchCompleteEvent.with(branchB.data);
 });
 
-workflow.handle([branchCEvent], (branchC) => {
+workflow.handle([branchCEvent], (context, branchC) => {
   return branchCompleteEvent.with(branchC.data);
 });
 
-workflow.handle([allCompleteEvent], (allComplete) => {
+workflow.handle([allCompleteEvent], (context, allComplete) => {
   return stopEvent.with(allComplete.data);
 });
 

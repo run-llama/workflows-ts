@@ -2,7 +2,7 @@ import {
   type WorkflowEvent,
   type WorkflowEventData,
   WorkflowStream,
-} from "@llama-flow/core";
+} from "@llamaindex/workflow-core";
 
 /**
  * Consume a stream of events with a given event and time.

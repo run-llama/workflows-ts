@@ -1,8 +1,8 @@
 {
-  "name": "@llama-flow/docs",
-  "version": "0.0.8",
+  "name": "@llamaindex/workflow-docs",
+  "version": "0.1.2",
   "files": [
-    "llamaflow"
+    "workflows"
   ],
   "publishConfig": {
     "access": "public"

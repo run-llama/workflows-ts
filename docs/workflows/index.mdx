@@ -3,14 +3,14 @@ title: LlamaIndex Workflows
 description: LlamaIndex Workflows is a simple and lightweight engine for JavaScript and TypeScript apps.
 ---
 
-LlamaIndex Workflow (LlamaFlow) is a library for streaming event-driven programming in JavaScript and TypeScript.
+LlamaIndex Workflows are a library for event-driven programming in JavaScript and TypeScript.
 It provides a simple and lightweight orchestration solution for building complex workflows with minimal boilerplate.
 
 It combines [event-driven](#) programming, [async context](#) and [streaming](#) to create a flexible and efficient way to handle data processing tasks.
 
-The essential concepts of LlamaFlow are:
+The essential concepts of Workflows are:
 
-- **Events**: are the core building blocks of LlamaFlow. They represent data that flows through the system.
+- **Events**: are the core building blocks of Workflows. They represent data that flows through the system.
 - **Handlers**: are functions that process events and can produce new events.
 - **Context**: is the environment in which events are processed. It provides access to the event stream and allows sending new events.
 - **Workflow**: is the collection of events, handlers, and context that define the processing logic.
@@ -18,15 +18,15 @@ The essential concepts of LlamaFlow are:
 ## Getting Started
 
 ```shell
-npm i @llama-flow/core
+npm i @llamaindex/workflow-core
 
-yarn add @llama-flow/core
+yarn add @llamaindex/workflow-core
 
-pnpm add @llama-flow/core
+pnpm add @llamaindex/workflow-core
 
-bun add @llama-flow/core
+bun add @llamaindex/workflow-core
 
-deno add npm:@llama-flow/core
+deno add npm:@llamaindex/workflow-core
 ```
 
 ## First Example
@@ -35,43 +35,51 @@ With [workflowEvent](#) and [createWorkflow](#), you can create a simple workflo
 
 ```ts
 import { OpenAI } from "openai";
-import { createWorkflow, workflowEvent } from "@llama-flow/core";
+import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
-const startEvent = workflowEvent<string>();
-const stopEvent = workflowEvent<string>();
-
-const workflow = createWorkflow();
-
-workflow.handle([startEvent], async (event) => {
-  const response = await openai.chat.completions.create({
-    // ...
-    messages: [{ role: "user", content: event.data }],
+const main = async () => {
+  const openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
   });
 
-  return stopEvent(response.choices[0].message.content);
-});
+  const startEvent = workflowEvent<string>();
+  const stopEvent = workflowEvent<string>();
 
-workflow.handle([stopEvent], (event) => {
-  console.log("Response:", event.data);
-});
+  const workflow = createWorkflow();
 
-const { sendEvent } = workflow.createContext();
-sendEvent(startEvent.with("Hello, LlamaFlow!"));
+  workflow.handle([startEvent], async (event) => {
+    const response = await openai.chat.completions.create({
+      model: "gpt-4.1-mini",
+      messages: [{ role: "user", content: event.data }],
+    });
+
+    return stopEvent.with(response.choices[0].message.content ?? "");
+  });
+
+  workflow.handle([stopEvent], (event) => {
+    console.log("Response:", event.data);
+  });
+
+  const { sendEvent } = workflow.createContext();
+  sendEvent(startEvent.with("Hello, Workflows!"));
+};
+
+void main().catch(console.error);
 ```
 
 ## Parallel processing with async handlers
 
 Tool calls are a common pattern in LLM applications, where the model generates a call to an external function or API.
 
-### With LlamaFlow
+### With Workflows
 
-LlamaFlow provides [abort signals](#) and [parallel processing](#) out of the box.
+Workflows provide [abort signals](#) and [parallel processing](#) out of the box.
+
+For example, imagine you have a workflow handler for calling tools that an agent has selection:
 
 ```ts
+import { getContext } from "@llamaindex/workflow-core";
+
 workflow.handle([toolCallEvent], ({ data: { id, name, args } }) => {
   const { signal, sendEvent } = getContext();
   signal.onabort = () =>
@@ -82,7 +90,6 @@ workflow.handle([toolCallEvent], ({ data: { id, name, args } }) => {
         content: "ERROR WHILE CALLING FUNCTION" + signal.reason.message,
       }),
     );
-
   const result = callFunction(name, args);
   return toolCallResultEvent.with({
     role: "tool",
@@ -129,7 +136,7 @@ sendEvent(
   startEvent.with([
     {
       role: "user",
-      content: "Hello, LlamaFlow!",
+      content: "Hello, Workflows!",
     },
   ]),
 );
@@ -143,7 +150,7 @@ We provide tons of [middleware](#) and [integrations](#) to make it easy to ship
 
 ```ts
 import { Hono } from "hono";
-import { createHonoHandler } from "@llama-flow/core/interrupter/hono";
+import { createHonoHandler } from "@llamaindex/workflow-core/interrupter/hono";
 import { openaiChatWorkflow, startEvent, stopEvent } from "@/lib/workflow";
 
 const app = new Hono();
@@ -163,7 +170,7 @@ export default app;
 ### Next.js
 
 ```ts
-import { createNextHandler } from "@llama-flow/core/interrupter/next";
+import { createNextHandler } from "@llamaindex/workflow-core/interrupter/next";
 import { openaiChatWorkflow, startEvent, stopEvent } from "@/lib/workflows";
 
 export const { GET } = createNextHandler(

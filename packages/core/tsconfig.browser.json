@@ -5,14 +5,14 @@
     "tsBuildInfoFile": "./lib/browser/.tsbuildinfo",
     "target": "es2015",
     "paths": {
-      "@llama-flow/core": ["./src/core/index.ts"],
-      "@llama-flow/core/stream/*": ["./src/stream/*.ts"],
-      "@llama-flow/core/async-context": [
+      "@llamaindex/workflow-core": ["./src/core/index.ts"],
+      "@llamaindex/workflow-core/stream/*": ["./src/stream/*.ts"],
+      "@llamaindex/workflow-core/async-context": [
         "./src/async-context/index.browser.ts"
       ],
-      "@llama-flow/core/interrupter/*": ["./src/interrupter/*.ts"],
-      "@llama-flow/core/middleware/*": ["./src/middleware/*.ts"],
-      "@llama-flow/core/util/*": ["./src/util/*.ts"]
+      "@llamaindex/workflow-core/interrupter/*": ["./src/interrupter/*.ts"],
+      "@llamaindex/workflow-core/middleware/*": ["./src/middleware/*.ts"],
+      "@llamaindex/workflow-core/util/*": ["./src/util/*.ts"]
     }
   },
   "include": ["./src"]

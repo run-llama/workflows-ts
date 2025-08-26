@@ -1,4 +1,4 @@
-import { createServer } from "@llama-flow/http/server";
+import { createServer } from "@llamaindex/workflow-http/server";
 import { workflow } from "../../workflow/basic";
 import { upload } from "../../workflow/llama-parse";
 import { storeEvent, stopEvent, searchEvent } from "../../workflow/events";

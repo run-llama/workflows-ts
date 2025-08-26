@@ -2,9 +2,10 @@ import {
   getContext,
   type Handler,
   type Workflow,
+  type WorkflowContext,
   type WorkflowEvent,
   type WorkflowEventData,
-} from "@llama-flow/core";
+} from "@llamaindex/workflow-core";
 
 export type ValidationHandler<
   Validation extends [
@@ -13,6 +14,7 @@ export type ValidationHandler<
   ][],
   AcceptEvents extends WorkflowEvent<any>[],
   Result extends WorkflowEventData<any> | void,
+  Context extends WorkflowContext = WorkflowContext,
 > = (
   sendEvent: (
     ...inputs: Array<
@@ -25,6 +27,7 @@ export type ValidationHandler<
         : never
     >
   ) => void,
+  context: Context,
   ...events: {
     [K in keyof AcceptEvents]: ReturnType<AcceptEvents[K]["with"]>;
   }
@@ -35,13 +38,14 @@ export type WithValidationWorkflow<
     inputs: WorkflowEvent<any>[],
     output: WorkflowEvent<any>[],
   ][],
+  Context extends WorkflowContext = WorkflowContext,
 > = {
   strictHandle<
     const AcceptEvents extends WorkflowEvent<any>[],
     Result extends ReturnType<WorkflowEvent<any>["with"]> | void,
   >(
     accept: AcceptEvents,
-    handler: ValidationHandler<Validation, AcceptEvents, Result>,
+    handler: ValidationHandler<Validation, AcceptEvents, Result, Context>,
   ): void;
 };
 

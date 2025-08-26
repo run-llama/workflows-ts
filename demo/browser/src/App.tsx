@@ -1,8 +1,12 @@
 import reactLogo from "./assets/react.svg";
 import llamaindexLogo from "/llamaindex.svg";
 import "./App.css";
-import { createWorkflow, getContext, workflowEvent } from "@llama-flow/core";
-import { runWorkflow } from "@llama-flow/core/stream/run";
+import {
+  createWorkflow,
+  getContext,
+  workflowEvent,
+} from "@llamaindex/workflow-core";
+import { runWorkflow } from "@llamaindex/workflow-core/stream/run";
 import { Suspense } from "react";
 
 const startEvent = workflowEvent();
@@ -11,8 +15,8 @@ const stopEvent = workflowEvent<string>();
 const workflow = createWorkflow();
 
 workflow.handle([startEvent], () => {
-  const context = getContext();
   setTimeout(() => {
+    const context = getContext();
     context.sendEvent(stopEvent.with("Hello, World!"));
   }, 1000);
 });

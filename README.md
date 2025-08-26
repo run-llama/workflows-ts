@@ -1,10 +1,10 @@
-# llama-flow
+# LlamaIndex Workflows TS
 
-llama-flow 🌊 is a simple, lightweight workflow engine, in TypeScript.
+🌊 is a simple, lightweight workflow engine, in TypeScript.
 
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz_small.svg)](https://stackblitz.com/github/run-llama/llama-flow/tree/main/demo/browser?file=src%2FApp.tsx)
-[![Build Status](https://img.shields.io/github/actions/workflow/status/run-llama/llama-flow/test.yml?branch=main&style=flat&colorA=000000&colorB=45dff8)](https://github.com/run-llama/llama-flow/actions/workflows/test.yml?query=branch%3Amain)
-[![Bundle Size](https://img.shields.io/bundlephobia/minzip/@llama-flow/core?style=flat&colorA=000000&colorB=45dff8)](https://bundlephobia.com/result?p=@llama-flow/core)
+[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz_small.svg)](https://stackblitz.com/github/run-llama/workflows-ts/tree/main/demo/browser?file=src%2FApp.tsx)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/run-llama/workflows-ts/test.yml?branch=main&style=flat&colorA=000000&colorB=45dff8)](https://github.com/run-llama/workflows-ts/actions/workflows/test.yml?query=branch%3Amain)
+[![Bundle Size](https://img.shields.io/bundlephobia/minzip/@llamaindex/workflow-core?style=flat&colorA=000000&colorB=45dff8)](https://bundlephobia.com/result?p=@llamaindex/workflow-core)
 
 - Minimal core API (<=2kb)
 - 100% Type safe
@@ -14,21 +14,21 @@ llama-flow 🌊 is a simple, lightweight workflow engine, in TypeScript.
 ## Usage
 
 ```shell
-npm i @llama-flow/core
+npm i @llamaindex/workflow-core
 
-yarn add @llama-flow/core
+yarn add @llamaindex/workflow-core
 
-pnpm add @llama-flow/core
+pnpm add @llamaindex/workflow-core
 
-bun add @llama-flow/core
+bun add @llamaindex/workflow-core
 
-deno add npm:@llama-flow/core
+deno add npm:@llamaindex/workflow-core
 ```
 
 ### First, define events
 
 ```ts
-import { workflowEvent } from "@llama-flow/core";
+import { workflowEvent } from "@llamaindex/workflow-core";
 
 const startEvent = workflowEvent<string>();
 const stopEvent = workflowEvent<1 | -1>();
@@ -37,7 +37,7 @@ const stopEvent = workflowEvent<1 | -1>();
 ### Connect events with workflow
 
 ```ts
-import { createWorkflow } from "@llama-flow/core";
+import { createWorkflow } from "@llamaindex/workflow-core";
 
 const convertEvent = workflowEvent();
 
@@ -79,7 +79,7 @@ import {
   runWorkflow,
   runAndCollect,
   runWorkflowWithFilter,
-} from "@llama-flow/core/stream/run";
+} from "@llamaindex/workflow-core/stream/run";
 
 // Run workflow and get final result
 const result = await runWorkflow(workflow, startEvent.with("42"), stopEvent);
@@ -148,7 +148,7 @@ Workflow can be used as middleware in any server framework, like `express`, `hon
 ```ts
 import { Hono } from "hono";
 import { serve } from "@hono/node-server";
-import { createHonoHandler } from "@llama-flow/core/interrupter/hono";
+import { createHonoHandler } from "@llamaindex/workflow-core/interrupter/hono";
 import {
   agentWorkflow,
   startEvent,
@@ -214,7 +214,7 @@ Adding a `state` property to the workflow context, which returns a state object,
 context.
 
 ```ts
-import { createStatefulMiddleware } from "@llama-flow/core/middleware/state";
+import { createStatefulMiddleware } from "@llamaindex/workflow-core/middleware/state";
 
 const { withState, getContext } = createStatefulMiddleware(() => ({
   pendingTasks: new Set<Promise<unknown>>(),
@@ -247,6 +247,18 @@ const workflow = withState(createWorkflow());
 const { state } = workflow.createContext({ id: "1" });
 ```
 
+`withState` also supports snapshot, you can use `snapshot` to save the state of the workflow, and `resume` to restore the state of the workflow.
+
+```ts
+const { snapshot, resume } = workflow.createContext();
+
+// create snapshot
+const [req, snapshotData] = await snapshot();
+
+// resume workflow from snapshot
+const { stream } = workflow.resume(["hello"], snapshotData);
+```
+
 ### `withValidation`
 
 Make first parameter of `handler` to be `sendEvent` and its type safe and runtime safe
@@ -260,7 +272,7 @@ workflow.handle([startEvent], (sendEvent, start) => {});
 ```
 
 ```ts
-import { withValidation } from "@llama-flow/core/middleware/validation";
+import { withValidation } from "@llamaindex/workflow-core/middleware/validation";
 
 const startEvent = workflowEvent<void, "start">();
 const disallowedEvent = workflowEvent<void, "disallowed">({
@@ -293,7 +305,7 @@ it collects events based on the directed graph of the runtime and provide lifecy
 import {
   withTraceEvents,
   runOnce,
-} from "@llama-flow/core/middleware/trace-events";
+} from "@llamaindex/workflow-core/middleware/trace-events";
 
 const workflow = withTraceEvents(createWorkflow());
 
@@ -380,7 +392,7 @@ For example:
 You can create your own handler decorator to modify the behavior of the handler.
 
 ```ts
-import { createHandlerDecorator } from "@llama-flow/core/middleware/trace-events";
+import { createHandlerDecorator } from "@llamaindex/workflow-core/middleware/trace-events";
 
 const noop: (...args: any[]) => void = function noop() {};
 export const runOnce = createHandlerDecorator({
@@ -455,6 +467,6 @@ rootHandlerContext(0)
 
 You can use any directed graph library to visualize the directed graph of the workflow.
 
-# LICENSE
+## Related Packages
 
-MIT
+- [Python Workflows](https://github.com/run-llama/workflows-py)

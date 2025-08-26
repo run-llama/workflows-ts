@@ -4,8 +4,8 @@ import {
   eventSource,
   getContext,
   workflowEvent,
-} from "@llama-flow/core";
-import { run } from "@llama-flow/core/stream/run";
+} from "@llamaindex/workflow-core";
+import { run } from "@llamaindex/workflow-core/stream/run";
 
 describe("sub workflow", () => {
   test("basic", async () => {

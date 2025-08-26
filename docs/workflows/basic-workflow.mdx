@@ -10,7 +10,11 @@ This guide explores common patterns you can use to build more complex workflows 
 One of the most powerful features of workflows is the ability to run tasks in parallel:
 
 ```ts
-import { createWorkflow, workflowEvent, getContext } from "@llama-flow/core";
+import {
+  createWorkflow,
+  workflowEvent,
+  getContext,
+} from "@llamaindex/workflow-core";
 
 // Define events
 const startEvent = workflowEvent<string>();
@@ -96,7 +100,7 @@ This pattern allows you to:
 You can implement conditional logic in your workflows:
 
 ```ts
-import { createWorkflow, workflowEvent } from "@llama-flow/core";
+import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";
 
 const inputEvent = workflowEvent<number>();
 const evenNumberEvent = workflowEvent<string>();
@@ -153,7 +157,8 @@ LlamaIndex workflows provide middleware that can enhance your workflows:
 The `withState` middleware adds a persistent state to your workflow context:
 
 ```ts
-import { createStatefulMiddleware } from "@llama-flow/core/middleware/state";
+import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";
+import { createStatefulMiddleware } from "@llamaindex/workflow-core/middleware/state";
 
 // Define your state type
 type CounterState = {
@@ -161,11 +166,17 @@ type CounterState = {
   history: number[];
 };
 
-// Create a workflow with state middleware
-const { withState } = createStatefulMiddleware<CounterState>(() => ({
-  count: 0,
-  history: [],
-}));
+// Define events
+const startEvent = workflowEvent<void>();
+const incrementEvent = workflowEvent<number>();
+const resultEvent = workflowEvent<number>();
+
+const { withState, getContext } = createStatefulMiddleware<CounterState>(
+  () => ({
+    count: 0,
+    history: [],
+  }),
+);
 
 const workflow = withState(createWorkflow());
 
@@ -220,8 +231,8 @@ const { state } = workflow.createContext({ initialCount: 10 });
 The `withValidation` middleware adds compile-time and runtime validation to your workflows:
 
 ```ts
-import { createWorkflow, workflowEvent } from "@llama-flow/core";
-import { withValidation } from "@llama-flow/core/middleware/validation";
+import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";
+import { withValidation } from "@llamaindex/workflow-core/middleware/validation";
 
 const startEvent = workflowEvent<string, "start">();
 const processEvent = workflowEvent<number, "process">();
@@ -252,7 +263,11 @@ workflow.strictHandle([startEvent], (sendEvent, start) => {
 LlamaIndex workflows provide built-in mechanisms for handling errors:
 
 ```ts
-import { createWorkflow, workflowEvent, getContext } from "@llama-flow/core";
+import {
+  createWorkflow,
+  workflowEvent,
+  getContext,
+} from "@llamaindex/workflow-core";
 
 const startEvent = workflowEvent<string>();
 const processEvent = workflowEvent<number>();
@@ -304,8 +319,8 @@ Workflow can be used as middleware in server frameworks like Express, Hono, or F
 ```ts
 import { Hono } from "hono";
 import { serve } from "@hono/node-server";
-import { createHonoHandler } from "@llama-flow/core/interrupter/hono";
-import { createWorkflow, workflowEvent } from "@llama-flow/core";
+import { createHonoHandler } from "@llamaindex/workflow-core/interrupter/hono";
+import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";
 
 // Define events
 const queryEvent = workflowEvent<string>();
