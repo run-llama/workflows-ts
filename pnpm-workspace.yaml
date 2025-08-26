@@ -3,6 +3,7 @@ packages:
   - ./demo/cloudflare
   - ./demo/browser
   - ./demo/waku
+  - ./demo/visualization
   - ./docs
   - ./packages/*
   - ./tests/*

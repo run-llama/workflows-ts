@@ -27,9 +27,9 @@ const stopEvent = workflowEvent<string>({
 
 //#region defines workflow
 const workflow = withGraph(createWorkflow());
-workflow.handle([startEvent], async () => {
+workflow.handle([startEvent], async (context) => {
+  const { sendEvent, stream } = context;
   // emit 3 different events, handled separately
-  const { sendEvent, stream } = getContext();
   sendEvent(branchAEvent.with("Branch A"));
   sendEvent(branchBEvent.with("Branch B"));
   sendEvent(branchCEvent.with("Branch C"));
@@ -39,19 +39,19 @@ workflow.handle([startEvent], async () => {
   return allCompleteEvent.with(results.map((e) => e.data).join(", "));
 });
 
-workflow.handle([branchAEvent], (branchA) => {
+workflow.handle([branchAEvent], (_context1, branchA) => {
   return branchCompleteEvent.with(branchA.data);
 });
 
-workflow.handle([branchBEvent], (branchB) => {
+workflow.handle([branchBEvent], (_context2, branchB) => {
   return branchCompleteEvent.with(branchB.data);
 });
 
-workflow.handle([branchCEvent], (branchC) => {
+workflow.handle([branchCEvent], (_context3, branchC) => {
   return branchCompleteEvent.with(branchC.data);
 });
 
-workflow.handle([allCompleteEvent], (allComplete) => {
+workflow.handle([allCompleteEvent], (_context4, allComplete) => {
   return stopEvent.with(allComplete.data);
 });
 
