@@ -16,6 +16,7 @@ export function withGraph<WorkflowLike extends Workflow>(
   workflow: WorkflowLike,
 ): WithGraphWorkflow & WorkflowLike {
   const graph = new Graph();
+  let counter = 1; // handle counter
 
   return {
     ...workflow,
@@ -23,7 +24,7 @@ export function withGraph<WorkflowLike extends Workflow>(
       accept: AcceptEvents,
       handler: Handler<AcceptEvents, Result>,
     ): void => {
-      const nodeName = handler.toString().slice(0, 10);
+      const nodeName = `Handler ${counter++}`;
       const inEvents = [
         ...accept.map((event) => ensureEventName(event.debugLabel)),
         ...getAwaitedEventNames(handler).map(ensureEventName),
