@@ -218,26 +218,19 @@ app.post("/workflow/start", async (req, res) => {
       humanToolId: null,
     });
 
-    const stream = context.stream.pipeThrough(
-      new TransformStream({
-        async transform(event, controller) {
-          if (humanRequestEvent.include(event)) {
-            // workflow is interrupted by a human request, we need to save the current state
-            const [_, snapshotData] = await context.snapshot();
-            snapshots.set(requestId, snapshotData);
-            res.json({
-              type: "waiting_for_human",
-              requestId,
-              messages: context.state.messages,
-            });
-          }
-          controller.enqueue(event);
-        },
-      }),
-    );
+    context.stream.on(humanRequestEvent, async () => {
+      // workflow is interrupted by a human request, we need to save the current state
+      const [_, snapshotData] = await context.snapshot();
+      snapshots.set(requestId, snapshotData);
+      res.json({
+        type: "waiting_for_human",
+        requestId,
+        messages: context.state.messages,
+      });
+    });
 
     context.sendEvent(userInputEvent.with({ messages }));
-    await stream.until(finalResponseEvent).toArray();
+    await context.stream.until(finalResponseEvent).toArray();
 
     res.json({
       type: "completed",
