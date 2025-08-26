@@ -1,5 +1,5 @@
 import { AsyncContext } from "@llamaindex/workflow-core/async-context";
-import { z, type ZodRawShape, type ZodTypeAny } from "zod";
+import { z, type ZodRawShape } from "zod";
 import type { Workflow, WorkflowEvent } from "@llamaindex/workflow-core";
 import { runWorkflow } from "./stream/run";
 import type { RequestHandlerExtra } from "@modelcontextprotocol/sdk/shared/protocol.js";
@@ -19,7 +19,7 @@ export const getReqHandlerExtra = () => {
 
 export function mcpTool<
   Args extends ZodRawShape,
-  Start extends z.objectOutputType<Args, ZodTypeAny>,
+  Start extends z.output<Args>,
   Stop extends CallToolResult,
 >(
   workflow: Workflow,
