@@ -240,6 +240,28 @@ importers:
         specifier: ^6.5.4
         version: 6.5.4(typescript@5.9.2)
 
+  packages/viz:
+    dependencies:
+      '@babel/parser':
+        specifier: ^7.27.2
+        version: 7.27.5
+      graphology:
+        specifier: ^0.26.0
+        version: 0.26.0(graphology-types@0.24.8)
+    devDependencies:
+      '@babel/types':
+        specifier: ^7.27.1
+        version: 7.27.6
+      '@llamaindex/workflow-core':
+        specifier: workspace:*
+        version: link:../core
+      '@types/node':
+        specifier: ^22.15.19
+        version: 22.15.33
+      bunchee:
+        specifier: ^6.5.1
+        version: 6.5.4(typescript@5.9.2)
+
   tests/cjs:
     dependencies:
       '@llamaindex/workflow-core':
@@ -2691,6 +2713,14 @@ packages:
 
   graceful-fs@4.2.11:
     resolution: {integrity: sha512-RbJ5/jmFcNNCcDV5o9eTnBLJ/HszWV0P73bc+Ff4nS/rJj+YaS6IGyiOL0VoBYX+l1Wrl3k63h/KrH+nhJ0XvQ==}
+
+  graphology-types@0.24.8:
+    resolution: {integrity: sha512-hDRKYXa8TsoZHjgEaysSRyPdT6uB78Ci8WnjgbStlQysz7xR52PInxNsmnB7IBOM1BhikxkNyCVEFgmPKnpx3Q==}
+
+  graphology@0.26.0:
+    resolution: {integrity: sha512-8SSImzgUUYC89Z042s+0r/vMibY7GX/Emz4LDO5e7jYXhuoWfHISPFJYjpRLUSJGq6UQ6xlenvX1p/hJdfXuXg==}
+    peerDependencies:
+      graphology-types: '>=0.24.0'
 
   handlebars@4.7.8:
     resolution: {integrity: sha512-vafaFqs8MZkRrSX7sFVUdo3ap/eNiLnb4IakshzvP56X5Nr1iGKAIqdX6tMlm6HcNRIkr6AxO5jFEoJzzpT8aQ==}
@@ -5600,7 +5630,7 @@ snapshots:
 
   '@types/pg@8.15.4':
     dependencies:
-      '@types/node': 22.15.33
+      '@types/node': 24.0.4
       pg-protocol: 1.10.2
       pg-types: 2.2.0
 
@@ -6454,6 +6484,13 @@ snapshots:
   gopd@1.2.0: {}
 
   graceful-fs@4.2.11: {}
+
+  graphology-types@0.24.8: {}
+
+  graphology@0.26.0(graphology-types@0.24.8):
+    dependencies:
+      events: 3.3.0
+      graphology-types: 0.24.8
 
   handlebars@4.7.8:
     dependencies:

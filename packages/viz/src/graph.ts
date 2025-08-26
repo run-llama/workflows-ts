@@ -1,4 +1,4 @@
-import { type Handler, type Workflow } from "@llama-flow/core";
+import { type Handler, type Workflow } from "@llamaindex/workflow-core";
 import Graph from "graphology";
 import type { ResultType } from "./types";
 import type { AcceptEventsType } from "./types";

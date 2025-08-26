@@ -31,12 +31,12 @@
   },
   "devDependencies": {
     "@babel/types": "^7.27.1",
-    "@llama-flow/core": "workspace:*",
+    "@llamaindex/workflow-core": "workspace:*",
     "@types/node": "^22.15.19",
     "bunchee": "^6.5.1"
   },
   "peerDependencies": {
-    "@llama-flow/core": "workspace:*"
+    "@llamaindex/workflow-core": "workspace:*"
   },
   "license": "MIT",
   "repository": {

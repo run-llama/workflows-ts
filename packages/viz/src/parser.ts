@@ -1,6 +1,6 @@
 import * as babelParser from "@babel/parser";
 import { type Expression, type Node } from "@babel/types";
-import type { Handler } from "@llama-flow/core";
+import type { Handler } from "@llamaindex/workflow-core";
 import type { AcceptEventsType, ResultType } from "./types";
 
 // Helper function to parse handler code and traverse AST

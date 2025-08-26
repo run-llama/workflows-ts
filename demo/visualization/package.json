@@ -9,7 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@llama-flow/core": "latest",
+    "@llamaindex/workflow-core": "latest",
     "@llama-flow/viz": "workspace:*",
     "graphology": "^0.26.0",
     "graphology-layout-force": "^0.2.4",
