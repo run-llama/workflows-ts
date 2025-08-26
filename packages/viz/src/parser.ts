@@ -145,9 +145,13 @@ export function getSentEventNames<
     { sentEventNames: new Set<string>() },
     (node, context) => {
       if (node.type === "CallExpression") {
+        // Handle both direct sendEvent() and ctx.sendEvent()
         if (
-          node.callee.type === "Identifier" &&
-          node.callee.name === "sendEvent"
+          (node.callee.type === "Identifier" &&
+            node.callee.name === "sendEvent") ||
+          (node.callee.type === "MemberExpression" &&
+            node.callee.property.type === "Identifier" &&
+            node.callee.property.name === "sendEvent")
         ) {
           if (node.arguments.length > 0) {
             const firstArg = node.arguments[0];
@@ -187,15 +191,32 @@ export function getAwaitedEventNames<
       if (node.type === "CallExpression") {
         if (
           node.callee.type === "MemberExpression" &&
-          node.callee.object.type === "Identifier" &&
-          node.callee.object.name === "stream" &&
           node.callee.property.type === "Identifier" &&
           node.callee.property.name === "filter"
         ) {
-          if (node.arguments.length > 0) {
-            const firstArg = node.arguments[0];
-            if (firstArg && firstArg.type === "Identifier") {
-              context.awaitedEventNames.add(firstArg.name);
+          // Handle both direct stream.filter() and ctx.stream.filter()
+          if (
+            node.callee.object.type === "Identifier" &&
+            node.callee.object.name === "stream"
+          ) {
+            // Direct stream.filter() case
+            if (node.arguments.length > 0) {
+              const firstArg = node.arguments[0];
+              if (firstArg && firstArg.type === "Identifier") {
+                context.awaitedEventNames.add(firstArg.name);
+              }
+            }
+          } else if (
+            node.callee.object.type === "MemberExpression" &&
+            node.callee.object.property.type === "Identifier" &&
+            node.callee.object.property.name === "stream"
+          ) {
+            // ctx.stream.filter() case
+            if (node.arguments.length > 0) {
+              const firstArg = node.arguments[0];
+              if (firstArg && firstArg.type === "Identifier") {
+                context.awaitedEventNames.add(firstArg.name);
+              }
             }
           }
         }
