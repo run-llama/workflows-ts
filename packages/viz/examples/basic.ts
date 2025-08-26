@@ -1,4 +1,4 @@
-import { createWorkflow, workflowEvent, getContext } from "@llamaindex/workflow-core";
+import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";
 import { withGraph } from "@llama-flow/viz";
 
 //#region define workflow events
