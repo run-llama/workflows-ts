@@ -27,13 +27,18 @@
   ],
   "scripts": {
     "build": "bunchee",
-    "dev": "bunchee --watch"
+    "dev": "bunchee --watch",
+    "test": "vitest run",
+    "test:ui": "vitest --ui",
+    "test:watch": "vitest"
   },
   "devDependencies": {
     "@babel/types": "^7.27.1",
     "@llamaindex/workflow-core": "workspace:*",
     "@types/node": "^22.15.19",
-    "bunchee": "^6.5.1"
+    "bunchee": "^6.5.1",
+    "vitest": "^2.0.0",
+    "@vitest/ui": "^2.0.0"
   },
   "peerDependencies": {
     "@llamaindex/workflow-core": "workspace:*"
