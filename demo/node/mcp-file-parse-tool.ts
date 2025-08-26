@@ -1,6 +1,6 @@
 import { mcpTool } from "@llamaindex/workflow-core/mcp";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { z } from "zod";
+import { z } from "zod/v3";
 import { fileParseWorkflow } from "../workflows/file-parse-agent.js";
 import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
