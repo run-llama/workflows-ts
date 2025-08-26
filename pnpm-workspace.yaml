@@ -4,6 +4,7 @@ packages:
   - ./demo/browser
   - ./demo/waku
   - ./demo/visualization
+  - ./demo/express
   - ./docs
   - ./packages/*
   - ./tests/*
