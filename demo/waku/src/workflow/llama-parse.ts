@@ -46,7 +46,7 @@ const URLS = {
   "us-staging": "https://api.staging.llamaindex.ai",
 } as const;
 
-const { withState, getContext } = createStatefulMiddleware(
+const { withState } = createStatefulMiddleware(
   (params: LlamaParseWorkflowParams) => {
     const apiKey = params.apiKey ?? getEnv("LLAMA_CLOUD_API_KEY");
     const region = params.region ?? "us";
@@ -69,8 +69,8 @@ const { withState, getContext } = createStatefulMiddleware(
 
 const llamaParseWorkflow = withState(withTraceEvents(createWorkflow()));
 
-llamaParseWorkflow.handle([startEvent], async ({ data: form }) => {
-  const { state } = getContext();
+llamaParseWorkflow.handle([startEvent], async (context, { data: form }) => {
+  const { state } = context;
   const finalForm = { ...form };
   if ("file" in form) {
     // support loads from the file system
@@ -102,8 +102,8 @@ llamaParseWorkflow.handle([startEvent], async ({ data: form }) => {
 llamaParseWorkflow.handle(
   [checkStatusEvent],
   pRetryHandler(
-    async ({ data: uuid }) => {
-      const { state } = getContext();
+    async (context, { data: uuid }) => {
+      const { state } = context;
       if (state.cache[uuid] === "SUCCESS") {
         return checkStatusSuccessEvent.with(uuid);
       }
@@ -129,41 +129,50 @@ llamaParseWorkflow.handle(
 );
 
 //#region sub workflow
-llamaParseWorkflow.handle([requestMarkdownEvent], async ({ data: job_id }) => {
-  const { state } = getContext();
-  const { data } = await getJobResultApiV1ParsingJobJobIdResultMarkdownGet({
-    throwOnError: true,
-    path: {
-      job_id,
-    },
-    client: state.client,
-  });
-  return markdownResultEvent.with(data.markdown);
-});
+llamaParseWorkflow.handle(
+  [requestMarkdownEvent],
+  async (context, { data: job_id }) => {
+    const { state } = context;
+    const { data } = await getJobResultApiV1ParsingJobJobIdResultMarkdownGet({
+      throwOnError: true,
+      path: {
+        job_id,
+      },
+      client: state.client,
+    });
+    return markdownResultEvent.with(data.markdown);
+  },
+);
 
-llamaParseWorkflow.handle([requestTextEvent], async ({ data: job_id }) => {
-  const { state } = getContext();
-  const { data } = await getJobTextResultApiV1ParsingJobJobIdResultTextGet({
-    throwOnError: true,
-    path: {
-      job_id,
-    },
-    client: state.client,
-  });
-  return textResultEvent.with(data.text);
-});
+llamaParseWorkflow.handle(
+  [requestTextEvent],
+  async (context, { data: job_id }) => {
+    const { state } = context;
+    const { data } = await getJobTextResultApiV1ParsingJobJobIdResultTextGet({
+      throwOnError: true,
+      path: {
+        job_id,
+      },
+      client: state.client,
+    });
+    return textResultEvent.with(data.text);
+  },
+);
 
-llamaParseWorkflow.handle([requestJsonEvent], async ({ data: job_id }) => {
-  const { state } = getContext();
-  const { data } = await getJobJsonResultApiV1ParsingJobJobIdResultJsonGet({
-    throwOnError: true,
-    path: {
-      job_id,
-    },
-    client: state.client,
-  });
-  return jsonResultEvent.with(data.pages);
-});
+llamaParseWorkflow.handle(
+  [requestJsonEvent],
+  async (context, { data: job_id }) => {
+    const { state } = context;
+    const { data } = await getJobJsonResultApiV1ParsingJobJobIdResultJsonGet({
+      throwOnError: true,
+      path: {
+        job_id,
+      },
+      client: state.client,
+    });
+    return jsonResultEvent.with(data.pages);
+  },
+);
 //#endregion
 
 const cacheMap = new Map<

@@ -124,7 +124,7 @@ describe("Llama Flow Pure CJS Tests", () => {
       const doubleEvent = workflowEvent<number>();
 
       const mathFlow = createWorkflow();
-      mathFlow.handle([numberEvent], (event) => {
+      mathFlow.handle([numberEvent], (_context, event) => {
         return doubleEvent.with(event.data * 2);
       });
 
@@ -163,7 +163,7 @@ describe("Llama Flow Pure CJS Tests", () => {
       const asyncResultEvent = workflowEvent<string>();
 
       const asyncFlow = createWorkflow();
-      asyncFlow.handle([asyncEvent], async (event) => {
+      asyncFlow.handle([asyncEvent], async (context, event) => {
         // Simulate async work
         await new Promise<void>((resolve) => setTimeout(resolve, 10));
         return asyncResultEvent.with(`Async result: ${event.data}`);

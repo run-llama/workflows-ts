@@ -29,9 +29,6 @@
       "path": "./demo/visualization/tsconfig.json"
     },
     {
-      "path": "./demo/waku/tsconfig.json"
-    },
-    {
       "path": "./packages/core/tsconfig.json"
     },
     {
