@@ -75,7 +75,7 @@ describe("state with snapshot middleware", () => {
     resumedContext.sendEvent(requestEvent.with("hello"));
 
     const events = await resumedContext.stream.until(stopEvent).toArray();
-    expect(events.length).toBe(1);
+    expect(events.length).toBe(2);
     expect(handlerState).toBeDefined();
     expect(handlerState!.counter).toBe(42);
     expect(handlerState!.message).toBe("original state");
@@ -149,7 +149,7 @@ describe("state with snapshot middleware", () => {
     });
 
     secondContext.stream.on(humanRequestEvent, async () => {
-      const snapshotData = await firstContext.snapshot();
+      const snapshotData = await secondContext.snapshot();
       expect(JSON.parse(snapshotData.state!).count).toBe(33);
     });
 

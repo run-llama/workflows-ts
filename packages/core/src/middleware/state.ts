@@ -1,6 +1,7 @@
 import {
   eventSource,
   getContext,
+  WorkflowStream,
   type Workflow,
   type WorkflowContext,
   type Workflow as WorkflowCore,
@@ -292,6 +293,9 @@ export function createStatefulMiddleware<
 
           // Call the stateful createContext with the resumed state
           const context = createStatefulContext(resumedState);
+
+          // triggers the lazy initialization of the stream wrapper
+          context.stream;
 
           context.sendEvent(
             ...serializable.queue.map(([data, id]) => {
