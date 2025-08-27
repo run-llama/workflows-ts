@@ -66,12 +66,12 @@ const workflow = withState(createWorkflow());
 workflow.handle([startEvent], (context, event) => {
   const { sendEvent } = context;
   const action = event.data;
-  
+
   // Check if action needs approval
   if (action.includes("delete")) {
     return sendEvent(humanRequestEvent.with(`Confirm: ${action}?`));
   }
-  
+
   return resultEvent.with(`Executed: ${action}`);
 });
 
@@ -86,11 +86,11 @@ const context = workflow.createContext();
 // Listen for human input requests
 context.stream.on(humanRequestEvent, async (event) => {
   console.log("Human input needed:", event.data);
-  
+
   // Take snapshot to save current state
   const snapshot = await context.snapshot();
   // Store snapshot for later resume...
-  
+
   // Simulate user response
   context.sendEvent(humanResponseEvent.with("yes"));
 });
@@ -110,7 +110,10 @@ for await (const event of context.stream) {
 ```ts
 import express from "express";
 import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";
-import { createStatefulMiddleware, SnapshotData } from "@llamaindex/workflow-core/middleware/state";
+import {
+  createStatefulMiddleware,
+  SnapshotData,
+} from "@llamaindex/workflow-core/middleware/state";
 
 const startEvent = workflowEvent<string>();
 const humanRequestEvent = workflowEvent<void>();
@@ -140,15 +143,15 @@ app.use(express.json());
 app.post("/workflow/start", async (req, res) => {
   const sessionId = crypto.randomUUID();
   const context = workflow.createContext();
-  
+
   context.stream.on(humanRequestEvent, async () => {
     const snapshotData = await context.snapshot();
     snapshots.set(sessionId, snapshotData);
     res.json({ sessionId, needsApproval: true });
   });
-  
+
   context.sendEvent(startEvent.with(req.body.action));
-  
+
   const results = await context.stream.until(resultEvent).toArray();
   if (results.length > 0) {
     res.json({ result: results[0].data });
@@ -158,17 +161,17 @@ app.post("/workflow/start", async (req, res) => {
 app.post("/workflow/approve", async (req, res) => {
   const { sessionId, response } = req.body;
   const snapshotData = snapshots.get(sessionId);
-  
+
   if (!snapshotData) {
     return res.status(404).json({ error: "Session not found" });
   }
-  
+
   const context = workflow.resume(snapshotData);
   context.sendEvent(humanResponseEvent.with(response));
-  
+
   const results = await context.stream.until(resultEvent).toArray();
   snapshots.delete(sessionId);
-  
+
   res.json({ result: results[0].data });
 });
 ```
@@ -176,7 +179,7 @@ app.post("/workflow/approve", async (req, res) => {
 ## Key APIs
 
 - **`snapshot()`** - Returns `SnapshotData` to save current workflow state
-- **`resume(snapshotData)`** - Continues workflow from saved snapshot  
+- **`resume(snapshotData)`** - Continues workflow from saved snapshot
 - **`stream.on(event, callback)`** - Listen for specific events (replaces old `onRequest`)
 - **`sendEvent(event.with(data))`** - Send events directly (replaces old `request()`)
 
