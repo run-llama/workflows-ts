@@ -8,8 +8,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - **Build all packages**: `pnpm run build` (uses Turbo for monorepo builds)
 - **Type check**: `pnpm run typecheck` (TypeScript build check across all packages)
-- **Lint**: `pnpm run lint` (Prettier formatting check)
-- **Fix formatting**: `pnpm run lint:fix` (Auto-format with Prettier)
+- **Format check**: `pnpm run format` (Prettier formatting check)
+- **Fix formatting**: `pnpm run format:write` (Auto-format with Prettier)
 
 ### Package-specific commands
 

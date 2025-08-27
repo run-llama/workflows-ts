@@ -1,8 +1,5 @@
 import { describe, expect, test, vi } from "vitest";
-import {
-  createStatefulMiddleware,
-  request,
-} from "@llamaindex/workflow-core/middleware/state";
+import { createStatefulMiddleware } from "@llamaindex/workflow-core/middleware/state";
 import {
   createWorkflow,
   eventSource,
@@ -14,6 +11,9 @@ const startEvent = workflowEvent({
 });
 const messageEvent = workflowEvent<string>({
   debugLabel: "message",
+});
+const humanRequestEvent = workflowEvent<void>({
+  debugLabel: "human-request",
 });
 const humanResponseEvent = workflowEvent<string>({
   debugLabel: "human-response",
@@ -29,34 +29,22 @@ describe("with snapshot - snapshot API", () => {
     const { withState } = createStatefulMiddleware();
     const workflow = withState(createWorkflow());
     workflow.handle([startEvent], () => {
-      return request(humanResponseEvent);
+      return humanRequestEvent.with();
     });
 
-    workflow.handle([humanResponseEvent], (context, { data }) => {
+    workflow.handle([humanResponseEvent], (_context, { data }) => {
       expect(data).toBe("hello world");
       return stopEvent.with();
     });
 
     const { sendEvent, snapshot } = workflow.createContext();
     sendEvent(startEvent.with());
-    const [req, sd] = await snapshot();
-    expect(req.length).toBe(1);
-    expect(req[0]!).toBe(humanResponseEvent);
-    expect(sd).toMatchInlineSnapshot(`
-      {
-        "missing": [
-          1,
-        ],
-        "queue": [],
-        "state": undefined,
-        "unrecoverableQueue": [],
-        "version": "@@@0,,4~,,@@1,,7~,,",
-      }
-    `);
+    const sd = await snapshot();
 
     // recover
-    const { stream } = workflow.resume(["hello world"], sd);
-    const events = await stream.until(stopEvent).toArray();
+    const context = workflow.resume(sd);
+    context.sendEvent(humanResponseEvent.with("hello world"));
+    const events = await context.stream.until(stopEvent).toArray();
     expect(events.length).toBe(2);
     expect(events.map(eventSource)).toEqual([humanResponseEvent, stopEvent]);
   });
@@ -65,34 +53,22 @@ describe("with snapshot - snapshot API", () => {
     const { withState } = createStatefulMiddleware();
     const workflow = withState(createWorkflow());
     workflow.handle([startEvent], async () => {
-      return request(humanResponseEvent);
+      return humanRequestEvent.with();
     });
 
-    workflow.handle([humanResponseEvent], (context, { data }) => {
+    workflow.handle([humanResponseEvent], (_context, { data }) => {
       expect(data).toBe("hello world");
       return stopEvent.with();
     });
 
     const { sendEvent, snapshot } = workflow.createContext();
     sendEvent(startEvent.with());
-    const [req, sd] = await snapshot();
-    expect(req.length).toBe(1);
-    expect(req[0]!).toBe(humanResponseEvent);
-    expect(sd).toMatchInlineSnapshot(`
-      {
-        "missing": [
-          1,
-        ],
-        "queue": [],
-        "state": undefined,
-        "unrecoverableQueue": [],
-        "version": "@@@0,,4~,,@@1,,7~,,",
-      }
-    `);
+    const sd = await snapshot();
 
     // recover
-    const { stream } = workflow.resume(["hello world"], sd);
-    const events = await stream.until(stopEvent).toArray();
+    const context = workflow.resume(sd);
+    context.sendEvent(humanResponseEvent.with("hello world"));
+    const events = await context.stream.until(stopEvent).toArray();
     expect(events.length).toBe(2);
     expect(events.map(eventSource)).toEqual([humanResponseEvent, stopEvent]);
   });
@@ -102,34 +78,22 @@ describe("with snapshot - snapshot API", () => {
     const workflow = withState(createWorkflow());
     workflow.handle([startEvent], async () => {
       await sleep(10);
-      return request(humanResponseEvent);
+      return humanRequestEvent.with();
     });
 
-    workflow.handle([humanResponseEvent], (context, { data }) => {
+    workflow.handle([humanResponseEvent], (_context, { data }) => {
       expect(data).toBe("hello world");
       return stopEvent.with();
     });
 
     const { sendEvent, snapshot } = workflow.createContext();
     sendEvent(startEvent.with());
-    const [req, sd] = await snapshot();
-    expect(req.length).toBe(1);
-    expect(req[0]!).toBe(humanResponseEvent);
-    expect(sd).toMatchInlineSnapshot(`
-      {
-        "missing": [
-          1,
-        ],
-        "queue": [],
-        "state": undefined,
-        "unrecoverableQueue": [],
-        "version": "@@@0,,4~,,@@1,,7~,,",
-      }
-    `);
+    const sd = await snapshot();
 
     // recover
-    const { stream } = workflow.resume(["hello world"], sd);
-    const events = await stream.until(stopEvent).toArray();
+    const context = workflow.resume(sd);
+    context.sendEvent(humanResponseEvent.with("hello world"));
+    const events = await context.stream.until(stopEvent).toArray();
     expect(events.length).toBe(2);
     expect(events.map(eventSource)).toEqual([humanResponseEvent, stopEvent]);
   });
@@ -142,38 +106,21 @@ describe("with snapshot - snapshot API", () => {
       await sleep(10);
       sendEvent(messageEvent.with("1"));
       sendEvent(messageEvent.with("2"));
-      return request(humanResponseEvent);
+      return humanRequestEvent.with();
     });
 
-    workflow.handle([humanResponseEvent], (context, { data }) => {
+    workflow.handle([humanResponseEvent], (_context, { data }) => {
       expect(data).toBe("hello world");
       return stopEvent.with();
     });
 
     const { sendEvent, snapshot } = workflow.createContext();
     sendEvent(startEvent.with());
-    const [req, sd] = await snapshot();
-    expect(req.length).toBe(1);
-    expect(req[0]!).toBe(humanResponseEvent);
-    // messageEvent is not in the queue, because it's not in any handler
-    expect(sd).toMatchInlineSnapshot(`
-      {
-        "missing": [
-          1,
-        ],
-        "queue": [],
-        "state": undefined,
-        "unrecoverableQueue": [
-          "1",
-          "2",
-        ],
-        "version": "@@@0,,4~,,@@1,,7~,,",
-      }
-    `);
-
+    const sd = await snapshot();
     // recover
-    const { stream } = workflow.resume(["hello world"], sd);
-    const events = await stream.until(stopEvent).toArray();
+    const context = workflow.resume(sd);
+    context.sendEvent(humanResponseEvent.with("hello world"));
+    const events = await context.stream.until(stopEvent).toArray();
     expect(events.length).toBe(2);
     expect(events.map(eventSource)).toEqual([humanResponseEvent, stopEvent]);
   });
@@ -182,38 +129,26 @@ describe("with snapshot - snapshot API", () => {
     const { withState } = createStatefulMiddleware();
     const workflow = withState(createWorkflow());
     workflow.handle([startEvent], async () => {
-      return request(humanResponseEvent);
+      return humanRequestEvent.with();
     });
     workflow.handle([startEvent], async () => {
       await sleep(10);
-      return request(humanResponseEvent);
+      return humanRequestEvent.with();
     });
 
-    workflow.handle([humanResponseEvent], (context, { data }) => {
+    workflow.handle([humanResponseEvent], (_context, { data }) => {
       expect(data).toBe("hello world");
       return stopEvent.with();
     });
 
     const { sendEvent, snapshot } = workflow.createContext();
     sendEvent(startEvent.with());
-    const [req, sd] = await snapshot();
-    expect(req.length).toBe(2);
-    expect(req[0]!).toBe(humanResponseEvent);
-    expect(sd).toMatchInlineSnapshot(`
-      {
-        "missing": [
-          1,
-          1,
-        ],
-        "queue": [],
-        "state": undefined,
-        "unrecoverableQueue": [],
-        "version": "@@@0,,4~,,@@0,,7~,,@@1,,10~,,",
-      }
-    `);
+    const sd = await snapshot();
+
     // recover
-    const { stream } = workflow.resume(["hello world"], sd);
-    const events = await stream.until(stopEvent).toArray();
+    const context = workflow.resume(sd);
+    context.sendEvent(humanResponseEvent.with("hello world"));
+    const events = await context.stream.until(stopEvent).toArray();
     expect(events.length).toBe(2);
     expect(events.map(eventSource)).toEqual([humanResponseEvent, stopEvent]);
   });
@@ -228,23 +163,13 @@ describe("with snapshot - snapshot API", () => {
     workflow.handle([startEvent], async (context) => {
       const { sendEvent } = context;
       setTimeout(() => {
-        sendEvent(request(humanResponseEvent));
+        sendEvent(humanRequestEvent.with());
       }, 100);
     });
 
     const { sendEvent, snapshot } = workflow.createContext();
     sendEvent(startEvent.with());
-    const [req, se] = await snapshot();
-    expect(req.length).toBe(0);
-    expect(se).toMatchInlineSnapshot(`
-      {
-        "missing": [],
-        "queue": [],
-        "state": undefined,
-        "unrecoverableQueue": [],
-        "version": "@@@0,,4~,,",
-      }
-    `);
+    await snapshot();
     await sleep(100);
     expect(warn.mock.calls.length).toBe(1);
     expect(warn.mock.calls[0]).toMatchInlineSnapshot(`
@@ -258,29 +183,29 @@ describe("with snapshot - snapshot API", () => {
     const { withState } = createStatefulMiddleware();
     const workflow = withState(createWorkflow());
     workflow.handle([startEvent], async () => {
-      return request(humanResponseEvent, 1);
+      return humanRequestEvent.with();
     });
 
-    workflow.handle([humanResponseEvent], (context, { data }) => {
+    workflow.handle([humanResponseEvent], (_context, { data }) => {
       expect(data).toBe("hello world");
       return stopEvent.with();
     });
 
-    const { sendEvent, stream, onRequest } = workflow.createContext();
+    const { sendEvent, stream } = workflow.createContext();
     sendEvent(startEvent.with());
 
-    const onRequestCallback = vi.fn((reason) => {
-      expect(reason).toBe(1);
+    const onRequestCallback = vi.fn(() => {
       sendEvent(humanResponseEvent.with("hello world"));
     });
-    onRequest(humanResponseEvent, onRequestCallback);
+    stream.on(humanRequestEvent, onRequestCallback);
 
     expect(onRequestCallback).toBeCalledTimes(0);
     const events = await stream.until(stopEvent).toArray();
     expect(onRequestCallback).toBeCalledTimes(1);
-    expect(events.length).toBe(3);
+    expect(events.length).toBe(4);
     expect(events.map(eventSource)).toEqual([
       startEvent,
+      humanRequestEvent,
       humanResponseEvent,
       stopEvent,
     ]);

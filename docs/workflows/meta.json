@@ -8,6 +8,7 @@
     "basic-workflow",
     "streaming",
     "advanced-events",
-    "llamaindex-integration"
+    "llamaindex-integration",
+    "human-in-the-loop"
   ]
 }

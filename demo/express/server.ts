@@ -219,7 +219,7 @@ app.post("/workflow/start", async (req, res) => {
 
     context.stream.on(humanRequestEvent, async () => {
       // workflow is interrupted by a human request, we need to save the current state
-      const [_, snapshotData] = await context.snapshot();
+      const snapshotData = await context.snapshot();
       snapshots.set(requestId, snapshotData);
       res.json({
         type: "waiting_for_human",
@@ -252,7 +252,7 @@ app.post("/workflow/resume", async (req, res) => {
       return;
     }
 
-    const context = workflow.resume([], snapshotData);
+    const context = workflow.resume(snapshotData);
     context.sendEvent(humanResponseEvent.with(userInput));
     await context.stream.until(finalResponseEvent).toArray();
 

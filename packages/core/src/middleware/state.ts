@@ -1,55 +1,16 @@
 import {
   eventSource,
   getContext,
+  WorkflowStream,
   type Workflow,
   type WorkflowContext,
   type Workflow as WorkflowCore,
   type WorkflowEvent,
-  workflowEvent,
   type WorkflowEventData,
-  WorkflowStream,
 } from "@llamaindex/workflow-core";
 import type { Handler, HandlerContext } from "../core/context";
 import { extendContext } from "../core/context";
-import { createSubscribable, isPromiseLike } from "../core/utils";
 import { createStableHash } from "./snapshot/stable-hash";
-
-/**
- * @internal We don't want to expose this special event to the user
- */
-const snapshotEvent = workflowEvent<WorkflowEvent<any>>();
-const reasonWeakMap = new WeakMap<WorkflowEventData<any>, any>();
-
-const noop = () => {};
-
-export const request = <T>(
-  event: WorkflowEvent<T>,
-  reason?: any,
-): WorkflowEventData<WorkflowEvent<T>> => {
-  const ev = snapshotEvent.with(event);
-  reasonWeakMap.set(ev, reason);
-  return ev;
-};
-
-export type SnapshotFn = () => Promise<
-  [requestEvents: WorkflowEvent<any>[], serializable: SnapshotData]
->;
-
-export type SnapshotWorkflowContext<Workflow extends WorkflowCore> = ReturnType<
-  Workflow["createContext"]
-> & {
-  onRequest: <Event extends WorkflowEvent<any>>(
-    event: Event,
-    callback: (reason: any) => void | Promise<void>,
-  ) => () => void;
-  /**
-   * Snapshot will lock the context and wait for there is no pending event.
-   *
-   * This is useful when you want to take a current snapshot of the workflow
-   *
-   */
-  snapshot: SnapshotFn;
-};
 
 export interface SnapshotData {
   queue: [data: any, id: number][];
@@ -65,7 +26,6 @@ export interface SnapshotData {
    * Change any of the handlers will change the version
    */
   version: string;
-  missing: number[];
 
   /**
    * Save the current serializable state of the workflow
@@ -74,64 +34,46 @@ export interface SnapshotData {
   state?: string | undefined;
 }
 
-type OnRequestFn<Event extends WorkflowEvent<any> = WorkflowEvent<any>> = (
-  eventData: Event,
-  reason: any,
-) => void | Promise<void>;
-
-export interface SnapshotableContext {
-  snapshot: SnapshotFn;
-  onRequest: <Event extends WorkflowEvent<any>>(
-    event: Event,
-    callback: (reason: any) => void | Promise<void>,
-  ) => () => void;
-}
-
-export interface SnapshotableWorkflow<State> {
-  handle<
-    const AcceptEvents extends WorkflowEvent<any>[],
-    Result extends ReturnType<WorkflowEvent<any>["with"]> | void,
-  >(
-    accept: AcceptEvents,
-    handler: Handler<AcceptEvents, Result, StatefulContextWithSnapshot<State>>,
-  ): void;
-  resume: ResumeFunction<State>;
-}
+export type SnapshotFn = () => Promise<SnapshotData>;
 
 export type StatefulContext<
   State = any,
   Context extends WorkflowContext = WorkflowContext,
 > = Context & {
   get state(): State;
-} & SnapshotableContext;
+  snapshot: SnapshotFn;
+};
 
-export type StatefulContextWithSnapshot<State> = ReturnType<
-  Workflow["createContext"]
-> & {
-  get state(): State;
-} & SnapshotableContext;
+export type StatefulHandleFn<State> = <
+  AcceptEvents extends WorkflowEvent<any>[],
+  Result extends ReturnType<WorkflowEvent<any>["with"]> | void,
+>(
+  accept: AcceptEvents,
+  handler: Handler<AcceptEvents, Result, StatefulContext<State>>,
+) => void;
 
 export type ResumeFunction<State> = (
-  data: any[],
   serializable: Omit<SnapshotData, "unrecoverableQueue">,
-) => StatefulContextWithSnapshot<State>;
+) => StatefulContext<State>;
 
 export type WorkflowWithState<State, Input> = Input extends void | undefined
   ? {
       <Workflow extends WorkflowCore>(
         workflow: Workflow,
-      ): Omit<Workflow, "createContext" | "handle"> &
-        SnapshotableWorkflow<State> & {
-          createContext(): StatefulContextWithSnapshot<State>;
-        };
+      ): Omit<Workflow, "createContext" | "handle"> & {
+        createContext(): StatefulContext<State>;
+        handle: StatefulHandleFn<State>;
+        resume: ResumeFunction<State>;
+      };
     }
   : {
       <Workflow extends WorkflowCore>(
         workflow: Workflow,
-      ): Omit<Workflow, "createContext" | "handle"> &
-        SnapshotableWorkflow<State> & {
-          createContext(input: Input): StatefulContextWithSnapshot<State>;
-        };
+      ): Omit<Workflow, "createContext" | "handle"> & {
+        createContext(input: Input): StatefulContext<State>;
+        handle: StatefulHandleFn<State>;
+        resume: ResumeFunction<State>;
+      };
     };
 
 type CreateState<State, Input, Context extends WorkflowContext> = {
@@ -161,7 +103,6 @@ export function createStatefulMiddleware<
   return {
     getContext: getContext as never,
     withState: ((workflow: Workflow) => {
-      const requests = createSubscribable<OnRequestFn>();
       const pendingRequestSetMap = new WeakMap<
         WorkflowContext,
         Set<PromiseLike<unknown>>
@@ -222,21 +163,10 @@ export function createStatefulMiddleware<
               .map((context) => context.pending),
           );
           // 2. collect all necessary data for a snapshot after lock
-          const collectedEvents = contextEventQueueWeakMap.get(context)!;
-          const requestEvents = collectedEvents
-            .filter((event) => snapshotEvent.include(event))
-            .map((event) => event.data);
-          // there might have pending events in the queue, we need to collect them
-          const queue = collectedEvents.filter(
-            (event) => !snapshotEvent.include(event),
-          );
+          const queue = contextEventQueueWeakMap.get(context)!;
 
           // 3. serialize the data
           isContextSnapshotReadyWeakSet.add(context);
-
-          if (requestEvents.some((event) => !registeredEvents.has(event))) {
-            console.warn("request event is not registered in the workflow");
-          }
 
           const serializable: SnapshotData = {
             queue: queue
@@ -249,15 +179,11 @@ export function createStatefulMiddleware<
               .filter((event) => !eventCounterWeakMap.has(eventSource(event)!))
               .map((event) => event.data),
             version: getVersion(),
-            missing: requestEvents
-              // if you are request an event that is not in the handler, it's meaningless (from a logic perspective)
-              .filter((event) => eventCounterWeakMap.has(event))
-              .map((event) => getEventCounter(event)),
             state: (context as any).state
               ? JSON.stringify((context as any).state)
               : undefined,
           };
-          return [requestEvents, serializable];
+          return serializable;
         };
       };
 
@@ -301,7 +227,7 @@ export function createStatefulMiddleware<
         context.__internal__call_context.subscribe((handlerContext, next) => {
           if (isContextLocked(context)) {
             // replace it with noop, avoid calling the handler after snapshot
-            handlerContext.handler = noop;
+            handlerContext.handler = () => {};
             next(handlerContext);
           } else {
             const queue = contextEventQueueWeakMap.get(context)!;
@@ -326,74 +252,21 @@ export function createStatefulMiddleware<
 
       // Create a function to generate stream transform wrappers
       // Shared function to create stateful context
-      const createStatefulContext = (state: State): any => {
-        const context = (workflow.createContext as any)();
+      const createStatefulContext = (state: State): StatefulContext<State> => {
+        const context = workflow.createContext();
         initContext(context);
 
         const snapshotFn = createSnapshotFn(context);
 
-        extendContext(
-          context,
-          {
-            get state() {
-              return state;
-            },
-            snapshot: snapshotFn,
-            onRequest: (
-              event: WorkflowEvent<any>,
-              callback: (reason: any) => void | Promise<void>,
-            ): (() => void) =>
-              requests.subscribe((ev, reason) => {
-                if (ev === event) {
-                  return callback(reason);
-                }
-              }),
+        extendContext(context, {
+          get state() {
+            return state;
           },
-          {
-            stream: (currentContext, originalDescriptor) => {
-              let lazyWrappedStream: WorkflowStream | null = null;
-
-              return {
-                ...originalDescriptor,
-                get() {
-                  if (!lazyWrappedStream) {
-                    const originalStream =
-                      originalDescriptor.get?.call(currentContext);
-                    if (originalStream) {
-                      lazyWrappedStream = originalStream.pipeThrough(
-                        createStreamWrapper(context),
-                      );
-                    }
-                  }
-                  return lazyWrappedStream;
-                },
-              };
-            },
-          },
-        );
-
-        return context;
-      };
-
-      const createStreamWrapper = (context: WorkflowContext) =>
-        new TransformStream({
-          transform: (event, controller) => {
-            if (snapshotEvent.include(event)) {
-              const data = event.data;
-              const results = requests.publish(data, reasonWeakMap.get(event));
-              const pendingRequests = getPendingRequestSet(context);
-              results.filter(isPromiseLike).forEach((promise) => {
-                const task = promise.then(() => {
-                  pendingRequests.delete(task);
-                });
-                pendingRequests.add(task);
-              });
-            } else {
-              // ignore snapshot event from stream
-              controller.enqueue(event);
-            }
-          },
+          snapshot: snapshotFn,
         });
+
+        return context as StatefulContext<State>;
+      };
 
       return {
         ...workflow,
@@ -412,15 +285,11 @@ export function createStatefulMiddleware<
           return workflow.handle(events, handler);
         },
         resume(
-          data: any[],
           serializable: Omit<SnapshotData, "unrecoverableQueue">,
-        ): any {
+        ): StatefulContext<State> {
           const resumedState = serializable.state
             ? JSON.parse(serializable.state)
             : undefined;
-          const events = data.map((d, i) =>
-            getCounterEvent(serializable.missing[i]!).with(d),
-          );
 
           // Call the stateful createContext with the resumed state
           const context = createStatefulContext(resumedState);
@@ -434,15 +303,14 @@ export function createStatefulMiddleware<
               return event.with(data);
             }),
           );
-          context.sendEvent(...events);
 
           return context;
         },
-        createContext(input?: Input): any {
+        createContext(input?: Input): StatefulContext<State> {
           const state = init?.(input as Input) as State;
           return createStatefulContext(state);
         },
       };
-    }) as unknown as WorkflowWithState<State, Input>,
+    }) as WorkflowWithState<State, Input>,
   };
 }

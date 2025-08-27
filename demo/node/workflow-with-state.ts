@@ -225,8 +225,7 @@ const context = workflow.createContext({
 
 context.stream.on(humanRequestEvent, async () => {
   // workflow is interrupted by a human request, we need to save the current state
-  const [_, snapshotData_] = await context.snapshot();
-  snapshotData = snapshotData_;
+  snapshotData = await context.snapshot();
 });
 
 context.sendEvent(
@@ -254,7 +253,7 @@ const rl = readline.createInterface({
 const userName = await rl.question("Name? ");
 rl.close();
 
-const resumedContext = workflow.resume([], snapshotData);
+const resumedContext = workflow.resume(snapshotData);
 resumedContext.sendEvent(humanResponseEvent.with(userName));
 
 const result = await resumedContext.stream.until(finalResponseEvent).toArray();

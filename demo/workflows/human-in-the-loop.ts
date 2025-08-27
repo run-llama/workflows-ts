@@ -1,12 +1,5 @@
-import {
-  createStatefulMiddleware,
-  request,
-} from "@llamaindex/workflow-core/middleware/state";
-import {
-  createWorkflow,
-  workflowEvent,
-  getContext,
-} from "@llamaindex/workflow-core";
+import { createStatefulMiddleware } from "@llamaindex/workflow-core/middleware/state";
+import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";
 import { OpenAI } from "openai";
 
 const openai = new OpenAI();
@@ -19,6 +12,9 @@ const startEvent = workflowEvent<string>({
 });
 const humanInteractionEvent = workflowEvent<string>({
   debugLabel: "humanInteraction",
+});
+const humanRequestEvent = workflowEvent<string>({
+  debugLabel: "humanRequest",
 });
 const stopEvent = workflowEvent<string>({
   debugLabel: "stop",
@@ -66,7 +62,9 @@ For example, alex is from "Alexander the Great", who was a king of the ancient G
   if (tools && tools.length > 0) {
     const askName = tools.find((tool) => tool.function.name === "ask_name");
     if (askName) {
-      return request(humanInteractionEvent, askName.function.arguments);
+      return context.sendEvent(
+        humanRequestEvent.with(askName.function.arguments),
+      );
     }
   }
   return stopEvent.with(response.choices[0].message.content!);
@@ -78,4 +76,10 @@ workflow.handle([humanInteractionEvent], async (context, { data }) => {
   sendEvent(startEvent.with(data));
 });
 
-export { workflow, startEvent, humanInteractionEvent, stopEvent };
+export {
+  workflow,
+  startEvent,
+  humanInteractionEvent,
+  humanRequestEvent,
+  stopEvent,
+};
