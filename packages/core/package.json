@@ -98,20 +98,6 @@
         "default": "./middleware/validation.js"
       }
     },
-    "./middleware/snapshot": {
-      "import": {
-        "types": "./middleware/snapshot.d.ts",
-        "default": "./middleware/snapshot.js"
-      },
-      "require": {
-        "types": "./middleware/snapshot.d.cts",
-        "default": "./middleware/snapshot.cjs"
-      },
-      "default": {
-        "types": "./middleware/snapshot.d.ts",
-        "default": "./middleware/snapshot.js"
-      }
-    },
     "./util/p-retry": {
       "types": "./util/p-retry.d.ts",
       "default": "./util/p-retry.js"
