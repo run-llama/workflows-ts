@@ -68,8 +68,8 @@ jobs:
           cache: "pnpm"
       - name: Install dependencies
         run: pnpm install
-      - name: Run lint
-        run: pnpm run lint
+      - name: Run format
+        run: pnpm run format
   type:
     name: Type Check
     runs-on: ubuntu-latest
