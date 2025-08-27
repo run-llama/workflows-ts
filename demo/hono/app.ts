@@ -21,9 +21,13 @@ app.post(
 const serializableMemoryMap = new Map<string, any>();
 
 app.post("/human-in-the-loop", async (ctx) => {
-  const { workflow, stopEvent, startEvent, humanRequestEvent, humanInteractionEvent } = await import(
-    "../workflows/human-in-the-loop"
-  );
+  const {
+    workflow,
+    stopEvent,
+    startEvent,
+    humanRequestEvent,
+    humanInteractionEvent,
+  } = await import("../workflows/human-in-the-loop");
   const json = await ctx.req.json();
   let context: ReturnType<typeof workflow.createContext>;
   if (json.requestId) {
