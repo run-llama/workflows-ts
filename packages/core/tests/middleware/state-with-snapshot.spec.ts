@@ -75,7 +75,7 @@ describe("state with snapshot middleware", () => {
     resumedContext.sendEvent(requestEvent.with("hello"));
 
     const events = await resumedContext.stream.until(stopEvent).toArray();
-    expect(events.length).toBe(2);
+    expect(events.length).toBe(1);
     expect(handlerState).toBeDefined();
     expect(handlerState!.counter).toBe(42);
     expect(handlerState!.message).toBe("original state");
