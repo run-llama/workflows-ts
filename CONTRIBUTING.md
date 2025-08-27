@@ -13,17 +13,20 @@ Thank you for your interest in contributing to workflows-ts! This guide will hel
 ### Initial Setup
 
 1. **Fork and clone the repository**
+
    ```bash
    git clone https://github.com/your-username/workflows-ts.git
    cd workflows-ts
    ```
 
 2. **Install dependencies**
+
    ```bash
    pnpm install
    ```
 
 3. **Build all packages**
+
    ```bash
    pnpm run build
    ```
@@ -40,7 +43,7 @@ Thank you for your interest in contributing to workflows-ts! This guide will hel
 This is a monorepo with the following key packages:
 
 - **`packages/core/`**: Core workflow engine (`@llamaindex/workflow-core`)
-- **`packages/http/`**: HTTP protocol adapter (`@llamaindex/workflow-http`)  
+- **`packages/http/`**: HTTP protocol adapter (`@llamaindex/workflow-http`)
 - **`packages/llamaindex/`**: LlamaIndex integration
 - **`demo/`**: Example implementations and integrations
 - **`tests/cjs/`**: CommonJS compatibility tests
@@ -84,6 +87,7 @@ pnpm run dev      # Watch mode with Bunchee
 ### Making Changes
 
 1. **Create a feature branch**
+
    ```bash
    git checkout -b feature/your-feature-name
    ```
@@ -94,6 +98,7 @@ pnpm run dev      # Watch mode with Bunchee
    - Update documentation as needed
 
 3. **Test your changes**
+
    ```bash
    pnpm run test           # Run all tests
    pnpm run typecheck      # Check TypeScript types
@@ -101,11 +106,12 @@ pnpm run dev      # Watch mode with Bunchee
    ```
 
 4. **Commit your changes**
+
    ```bash
    git add .
    git commit -m "feat: add your feature description"
    ```
-   
+
    We use Husky for pre-commit hooks that will automatically format your code and run checks.
 
 ## Code Style and Standards
@@ -135,6 +141,7 @@ pnpm run dev      # Watch mode with Bunchee
 ### Pull Request Process
 
 1. **Push your branch**
+
    ```bash
    git push origin feature/your-feature-name
    ```
@@ -166,6 +173,7 @@ We follow conventional commit format:
 For changes that affect published packages:
 
 1. **Create a changeset**
+
    ```bash
    npx changeset
    ```
