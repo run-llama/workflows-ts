@@ -3,7 +3,7 @@ import tsconfigPaths from "vite-tsconfig-paths";
 
 export default defineConfig({
   test: {
-    workspace: [
+    projects: [
       {
         plugins: [
           tsconfigPaths({
@@ -11,7 +11,7 @@ export default defineConfig({
           }),
         ],
         test: {
-          exclude: ["**/dist/**", "**/lib/**"],
+          exclude: ["**/dist/**", "**/lib/**", "**/node_modules/**"],
           name: "DOM",
           environment: "happy-dom",
         },
@@ -23,7 +23,7 @@ export default defineConfig({
           }),
         ],
         test: {
-          exclude: ["**/dist/**", "**/lib/**"],
+          exclude: ["**/dist/**", "**/lib/**", "**/node_modules/**"],
           name: "Node.js",
           environment: "node",
         },
@@ -35,7 +35,7 @@ export default defineConfig({
           }),
         ],
         test: {
-          exclude: ["**/dist/**", "**/lib/**"],
+          exclude: ["**/dist/**", "**/lib/**", "**/node_modules/**"],
           name: "Edge Runtime",
           environment: "edge-runtime",
         },
