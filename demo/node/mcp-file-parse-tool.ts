@@ -39,6 +39,8 @@ wrappedWorkflow.handle(
 server.tool(
   "list directory",
   {
+    // ModelContextProtocol SDK doesn't support zod v4 yet
+    // https://github.com/modelcontextprotocol/typescript-sdk/issues/555
     filePath: z.string(),
   },
   mcpTool(wrappedWorkflow, startEvent, stopEvent),
