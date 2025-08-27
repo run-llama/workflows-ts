@@ -4,7 +4,6 @@ import { chain } from "stream-chain";
 import {
   workflowEvent,
   createWorkflow,
-  getContext,
   type WorkflowEventData,
 } from "@llamaindex/workflow-core";
 
@@ -44,8 +43,8 @@ describe("stream-chain", () => {
       debugLabel: "stop",
     });
     const workflow = createWorkflow();
-    workflow.handle([startEvent], () => {
-      const { sendEvent } = getContext();
+    workflow.handle([startEvent], (context) => {
+      const { sendEvent } = context;
       for (let i = 0; i < 10; i++) {
         sendEvent(messageEvent.with());
       }

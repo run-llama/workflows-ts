@@ -10,11 +10,7 @@ This guide explores common patterns you can use to build more complex workflows 
 One of the most powerful features of workflows is the ability to run tasks in parallel:
 
 ```ts
-import {
-  createWorkflow,
-  workflowEvent,
-  getContext,
-} from "@llamaindex/workflow-core";
+import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";
 
 // Define events
 const startEvent = workflowEvent<string>();
@@ -30,8 +26,8 @@ let itemsToProcess = 10; // Total number of items
 let itemsProcessed = 0;
 
 // Process start event: fan out to multiple processItemEvent events
-workflow.handle([startEvent], async (start) => {
-  const { sendEvent, stream } = getContext();
+workflow.handle([startEvent], async (context, start) => {
+  const { sendEvent, stream } = context;
   itemsProcessed = 0; // Reset counter for this execution context
 
   // Emit multiple events to be processed in parallel
@@ -171,25 +167,23 @@ const startEvent = workflowEvent<void>();
 const incrementEvent = workflowEvent<number>();
 const resultEvent = workflowEvent<number>();
 
-const { withState, getContext } = createStatefulMiddleware<CounterState>(
-  () => ({
-    count: 0,
-    history: [],
-  }),
-);
+const { withState } = createStatefulMiddleware<CounterState>(() => ({
+  count: 0,
+  history: [],
+}));
 
 const workflow = withState(createWorkflow());
 
 // Use the state in your handlers
-workflow.handle([startEvent], () => {
-  const { state } = getContext();
+workflow.handle([startEvent], (context) => {
+  const { state } = context;
   state.count += 1;
   state.history.push(state.count);
   return incrementEvent.with(state.count);
 });
 
-workflow.handle([incrementEvent], (increment) => {
-  const { state } = getContext();
+workflow.handle([incrementEvent], (context, increment) => {
+  const { state } = context;
   console.log("Current count:", state.count);
   console.log("History:", state.history);
   return resultEvent.with(state.count);
@@ -263,11 +257,7 @@ workflow.strictHandle([startEvent], (sendEvent, start) => {
 LlamaIndex workflows provide built-in mechanisms for handling errors:
 
 ```ts
-import {
-  createWorkflow,
-  workflowEvent,
-  getContext,
-} from "@llamaindex/workflow-core";
+import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";
 
 const startEvent = workflowEvent<string>();
 const processEvent = workflowEvent<number>();
@@ -297,11 +287,11 @@ workflow.handle([errorEvent], (event) => {
 });
 ```
 
-You can also use the signal in `getContext()` to handle errors:
+You can also use the signal in the context parameter to handle errors:
 
 ```ts
-workflow.handle([processEvent], () => {
-  const { signal } = getContext();
+workflow.handle([processEvent], (context) => {
+  const { signal } = context;
 
   signal.onabort = () => {
     console.error("Process aborted:", signal.reason);

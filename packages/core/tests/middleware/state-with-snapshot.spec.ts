@@ -97,14 +97,14 @@ describe("state with snapshot middleware", () => {
   });
 
   test("should have different snapshot in handler when using getContext", async () => {
-    const { withState, getContext } = createStatefulMiddleware(
+    const { withState } = createStatefulMiddleware(
       (input: { count: number }) => input,
     );
     const workflow = withState(createWorkflow());
     let lastSnapshot: any = null;
 
-    workflow.handle([startEvent], async () => {
-      const { snapshot } = getContext();
+    workflow.handle([startEvent], async (context) => {
+      const { snapshot } = context;
       const [, sd] = await snapshot();
 
       if (lastSnapshot) {
@@ -125,13 +125,13 @@ describe("state with snapshot middleware", () => {
   });
 
   test("onRequest should have different snapshot", async () => {
-    const { withState, getContext } = createStatefulMiddleware(
+    const { withState } = createStatefulMiddleware(
       (input: { count: number }) => input,
     );
     const workflow = withState(createWorkflow());
 
-    workflow.handle([startEvent], async () => {
-      const { sendEvent } = getContext();
+    workflow.handle([startEvent], async (context) => {
+      const { sendEvent } = context;
       sendEvent(request(humanResponseEvent));
     });
 
