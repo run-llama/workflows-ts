@@ -244,10 +244,11 @@ const { state } = workflow.createContext({ id: "1" });
 const { snapshot, resume } = workflow.createContext();
 
 // create snapshot
-const [req, snapshotData] = await snapshot();
+const snapshotData = await snapshot();
 
 // resume workflow from snapshot
-const { stream } = workflow.resume(["hello"], snapshotData);
+const { stream, sendEvent } = workflow.resume(snapshotData);
+sendEvent(humanResponseEvent.with("hello"));
 ```
 
 ### `withValidation`
