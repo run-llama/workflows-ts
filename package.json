@@ -8,8 +8,8 @@
     "build": "turbo build --filter=\"./packages/*\"",
     "test": "turbo test --filter=\"./packages/*\"",
     "typecheck": "tsc -b --diagnostics",
-    "lint": "prettier . --check",
-    "lint:fix": "prettier . --write",
+    "format": "prettier --ignore-unknown --cache --check .",
+    "format:write": "prettier --ignore-unknown --write .",
     "publish": "pnpm run build && changeset publish",
     "prepare": "husky"
   },
