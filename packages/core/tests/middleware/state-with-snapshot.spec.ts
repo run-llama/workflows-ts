@@ -6,7 +6,7 @@ import {
 } from "@llamaindex/workflow-core";
 import {
   createStatefulMiddleware,
-  request,
+  type SnapshotData,
 } from "@llamaindex/workflow-core/middleware/state";
 
 const startEvent = workflowEvent({});
@@ -15,6 +15,7 @@ const requestEvent = workflowEvent<string>({});
 
 const stopEvent = workflowEvent({});
 
+const humanRequestEvent = workflowEvent<void>();
 const humanResponseEvent = workflowEvent<string>();
 
 type TestState = {
@@ -28,7 +29,7 @@ describe("state with snapshot middleware", () => {
     const workflow = withState(createWorkflow());
 
     let handlerState: TestState | null = null;
-    let snapshotData: any = null;
+    let snapshotData: SnapshotData | null = null;
 
     // Handler that modifies state and creates a snapshot
     workflow.handle([startEvent], async (context) => {
@@ -38,9 +39,8 @@ describe("state with snapshot middleware", () => {
       state.counter = 42;
       state.message = "original state";
 
-      // Send a request and snapshot
-      context.sendEvent(request(requestEvent));
-      const [_, sd] = await snapshot();
+      // Store snapshot
+      const sd = await snapshot();
       snapshotData = sd;
 
       return stopEvent.with();
@@ -71,7 +71,8 @@ describe("state with snapshot middleware", () => {
     expect(context.state.counter).toBe(42);
     expect(context.state.message).toBe("original state");
 
-    const resumedContext = workflow.resume(["hello"], snapshotData);
+    const resumedContext = workflow.resume(snapshotData!);
+    resumedContext.sendEvent(requestEvent.with("hello"));
 
     const events = await resumedContext.stream.until(stopEvent).toArray();
     expect(events.length).toBe(2);
@@ -89,8 +90,8 @@ describe("state with snapshot middleware", () => {
     const firstContext = workflow.createContext({ count: 22 });
     const secondContext = workflow.createContext({ count: 33 });
 
-    const [, sd1] = await firstContext.snapshot();
-    const [, sd2] = await secondContext.snapshot();
+    const sd1 = await firstContext.snapshot();
+    const sd2 = await secondContext.snapshot();
 
     expect(JSON.parse(sd1.state!).count).toBe(22);
     expect(JSON.parse(sd2.state!).count).toBe(33);
@@ -105,7 +106,7 @@ describe("state with snapshot middleware", () => {
 
     workflow.handle([startEvent], async (context) => {
       const { snapshot } = context;
-      const [, sd] = await snapshot();
+      const sd = await snapshot();
 
       if (lastSnapshot) {
         expect(JSON.parse(lastSnapshot.state!).count).toBe(22);
@@ -132,7 +133,7 @@ describe("state with snapshot middleware", () => {
 
     workflow.handle([startEvent], async (context) => {
       const { sendEvent } = context;
-      sendEvent(request(humanResponseEvent));
+      sendEvent(humanRequestEvent.with());
     });
 
     workflow.handle([humanResponseEvent], async (context) => {
@@ -142,15 +143,13 @@ describe("state with snapshot middleware", () => {
     const firstContext = workflow.createContext({ count: 22 });
     const secondContext = workflow.createContext({ count: 33 });
 
-    firstContext.onRequest(humanResponseEvent, async () => {
-      console.log("onRequest firstContext");
-      const [_, snapshotData] = await firstContext.snapshot();
+    firstContext.stream.on(humanRequestEvent, async () => {
+      const snapshotData = await firstContext.snapshot();
       expect(JSON.parse(snapshotData.state!).count).toBe(22);
     });
 
-    secondContext.onRequest(humanResponseEvent, async () => {
-      console.log("onRequest secondContext");
-      const [_, snapshotData] = await secondContext.snapshot();
+    secondContext.stream.on(humanRequestEvent, async () => {
+      const snapshotData = await secondContext.snapshot();
       expect(JSON.parse(snapshotData.state!).count).toBe(33);
     });
 
