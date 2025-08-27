@@ -202,9 +202,10 @@ describe("with snapshot - snapshot API", () => {
     expect(onRequestCallback).toBeCalledTimes(0);
     const events = await stream.until(stopEvent).toArray();
     expect(onRequestCallback).toBeCalledTimes(1);
-    expect(events.length).toBe(3);
+    expect(events.length).toBe(4);
     expect(events.map(eventSource)).toEqual([
       startEvent,
+      humanRequestEvent,
       humanResponseEvent,
       stopEvent,
     ]);
