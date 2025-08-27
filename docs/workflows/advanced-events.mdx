@@ -68,11 +68,7 @@ void main().catch(console.error);
 You can create complex event flows with branching and merging patterns:
 
 ```ts
-import {
-  createWorkflow,
-  workflowEvent,
-  getContext,
-} from "@llamaindex/workflow-core";
+import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";
 import { pipeline } from "node:stream/promises";
 
 // Define events for a data processing pipeline with branching and merging
@@ -88,8 +84,8 @@ const resultEvent = workflowEvent<string[], "result">();
 const workflow = createWorkflow();
 
 // Initial handler: branch out to process multiple items
-workflow.handle([startEvent], (event) => {
-  const { sendEvent } = getContext();
+workflow.handle([startEvent], (context, event) => {
+  const { sendEvent } = context;
 
   // Fan out: emit an itemEvent for each input item
   console.log(`Received ${event.data.length} items to process`);
@@ -128,8 +124,8 @@ workflow.handle([invalidEvent], (event) => {
 });
 
 // Merge handler: collect results from both processing paths
-workflow.handle([startEvent], async (event) => {
-  const { stream } = getContext();
+workflow.handle([startEvent], async (context, event) => {
+  const { stream } = context;
   const totalItems = event.data.length;
 
   console.log(`Setting up merger to collect ${totalItems} processed results`);
@@ -198,11 +194,7 @@ This pattern is useful for parallel processing with different business logic for
 You can filter and transform events to build sophisticated data processing pipelines:
 
 ```ts
-import {
-  createWorkflow,
-  workflowEvent,
-  getContext,
-} from "@llamaindex/workflow-core";
+import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";
 
 // Define events
 const dataEvent = workflowEvent<number>();
@@ -235,8 +227,8 @@ workflow.handle([oddEvent], (event) => {
 });
 
 // Collect and organize results
-workflow.handle([initEvent], async (event) => {
-  const { stream, sendEvent } = getContext();
+workflow.handle([initEvent], async (context, event) => {
+  const { stream, sendEvent } = context;
 
   // Generate a sequence of numbers
   for (let i = 1; i <= event.data; i++) {
@@ -277,11 +269,7 @@ runFilterTransformWorkflow();
 You can use the `substream` feature to debug specific event flows:
 
 ```ts
-import {
-  createWorkflow,
-  workflowEvent,
-  getContext,
-} from "@llamaindex/workflow-core";
+import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";
 import { withTraceEvents } from "@llamaindex/workflow-core/middleware/trace-events";
 
 // Define events
@@ -299,8 +287,8 @@ const resultEvent = workflowEvent<string>({
 const workflow = withTraceEvents(createWorkflow());
 
 // Query handler
-workflow.handle([queryEvent], (event) => {
-  const { sendEvent, stream } = getContext();
+workflow.handle([queryEvent], (context, event) => {
+  const { sendEvent, stream } = context;
 
   // Create a specific fetch event for this query
   const fetchInstance = fetchEvent.with(event.data);
@@ -408,11 +396,7 @@ workflow.strictHandle([errorEvent], (sendEvent, event) => {
 You can extend your workflows to integrate with external systems:
 
 ```ts
-import {
-  createWorkflow,
-  workflowEvent,
-  getContext,
-} from "@llamaindex/workflow-core";
+import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";
 
 // Define events
 const fetchEvent = workflowEvent<string>();
@@ -423,8 +407,8 @@ const failureEvent = workflowEvent<Error>();
 const workflow = createWorkflow();
 
 // Handle external API calls with proper error handling
-workflow.handle([fetchEvent], async (event) => {
-  const { signal } = getContext();
+workflow.handle([fetchEvent], async (context, event) => {
+  const { signal } = context;
 
   try {
     // Use AbortSignal for cancellation support
@@ -476,11 +460,7 @@ workflow.handle([dbQueryEvent], async (event) => {
 LlamaIndex workflows excel at managing complex asynchronous patterns:
 
 ```ts
-import {
-  createWorkflow,
-  workflowEvent,
-  getContext,
-} from "@llamaindex/workflow-core";
+import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";
 
 // Events for an orchestration workflow
 const orchestrateEvent = workflowEvent<string[]>();
@@ -493,8 +473,8 @@ const aggregateEvent = workflowEvent<any>();
 const workflow = createWorkflow();
 
 // Orchestrator: distribute tasks and collect results
-workflow.handle([orchestrateEvent], async (event) => {
-  const { sendEvent, stream } = getContext();
+workflow.handle([orchestrateEvent], async (context, event) => {
+  const { sendEvent, stream } = context;
   const tasks = event.data;
 
   // Start all tasks
@@ -519,8 +499,8 @@ workflow.handle([orchestrateEvent], async (event) => {
 });
 
 // Task processor
-workflow.handle([taskEvent], async (event) => {
-  const { sendEvent } = getContext();
+workflow.handle([taskEvent], async (context, event) => {
+  const { sendEvent } = context;
   const task = event.data;
 
   // Simulate task processing with progress updates

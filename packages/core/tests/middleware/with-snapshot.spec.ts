@@ -135,10 +135,10 @@ describe("with snapshot - snapshot API", () => {
   });
 
   test("multiple message in the queue", async () => {
-    const { withState, getContext } = createStatefulMiddleware();
+    const { withState } = createStatefulMiddleware();
     const workflow = withState(createWorkflow());
-    workflow.handle([startEvent], async () => {
-      const { sendEvent } = getContext();
+    workflow.handle([startEvent], async (context) => {
+      const { sendEvent } = context;
       await sleep(10);
       sendEvent(messageEvent.with("1"));
       sendEvent(messageEvent.with("2"));
@@ -223,10 +223,10 @@ describe("with snapshot - snapshot API", () => {
     vi.stubGlobal("console", {
       warn,
     });
-    const { withState, getContext } = createStatefulMiddleware();
+    const { withState } = createStatefulMiddleware();
     const workflow = withState(createWorkflow());
-    workflow.handle([startEvent], async () => {
-      const { sendEvent } = getContext();
+    workflow.handle([startEvent], async (context) => {
+      const { sendEvent } = context;
       setTimeout(() => {
         sendEvent(request(humanResponseEvent));
       }, 100);

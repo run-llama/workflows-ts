@@ -1,17 +1,13 @@
 import { describe, expect, test, vi } from "vitest";
-import {
-  createWorkflow,
-  getContext,
-  workflowEvent,
-} from "@llamaindex/workflow-core";
+import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";
 
 describe("workflow listener api", () => {
   test("can listen message event", () => {
     const workflow = createWorkflow();
     const startEvent = workflowEvent();
     const messageEvent = workflowEvent<string>({});
-    workflow.handle([startEvent], () => {
-      const { sendEvent } = getContext();
+    workflow.handle([startEvent], (context) => {
+      const { sendEvent } = context;
       sendEvent(messageEvent.with("Hello World"));
     });
 

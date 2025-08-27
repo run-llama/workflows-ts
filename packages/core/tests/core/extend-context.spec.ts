@@ -2,7 +2,6 @@ import { describe, expect, test, vi } from "vitest";
 import {
   createWorkflow,
   extendContext,
-  getContext,
   workflowEvent,
   type InheritanceTransformer,
   type WorkflowContext,
@@ -376,8 +375,8 @@ describe("extendContext", () => {
     const workflow = createWorkflow();
     let handlerContext: WorkflowContext | null = null;
 
-    workflow.handle([startEvent], () => {
-      handlerContext = getContext();
+    workflow.handle([startEvent], (context) => {
+      handlerContext = context;
       return stopEvent.with();
     });
 
@@ -411,8 +410,8 @@ describe("extendContext", () => {
     let handlerContext: WorkflowContext | null = null;
     let transformedValue: string | null = null;
 
-    workflow.handle([startEvent], () => {
-      handlerContext = getContext();
+    workflow.handle([startEvent], (context) => {
+      handlerContext = context;
       transformedValue = (handlerContext as any).testProperty;
       return stopEvent.with();
     });

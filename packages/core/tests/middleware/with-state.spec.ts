@@ -24,12 +24,12 @@ describe("with state", () => {
   test("runtime call getState", async () => {
     const obj = {};
     const startEvent = workflowEvent();
-    const { withState, getContext } = createStatefulMiddleware(() => obj);
+    const { withState } = createStatefulMiddleware(() => obj);
     const workflow = withState(createWorkflow());
     const fn = vi.fn();
-    workflow.handle([startEvent], () => {
+    workflow.handle([startEvent], (context) => {
       fn();
-      expect(getContext()).toBe(obj);
+      expect(context.state).toBe(obj);
     });
     const { sendEvent, state } = workflow.createContext();
     expect(state).toBe(obj);

@@ -78,10 +78,8 @@ Workflows provide [abort signals](#) and [parallel processing](#) out of the box
 For example, imagine you have a workflow handler for calling tools that an agent has selection:
 
 ```ts
-import { getContext } from "@llamaindex/workflow-core";
-
-workflow.handle([toolCallEvent], ({ data: { id, name, args } }) => {
-  const { signal, sendEvent } = getContext();
+workflow.handle([toolCallEvent], (context, { data: { id, name, args } }) => {
+  const { signal, sendEvent } = context;
   signal.onabort = () =>
     sendEvent(
       toolCallResultEvent.with({
@@ -102,8 +100,8 @@ workflow.handle([toolCallEvent], ({ data: { id, name, args } }) => {
 You can collect the results of the tool calls from the stream and send them back to the workflow.
 
 ```ts
-workflow.handle([startEvent], async (event) => {
-  const { sendEvent, stream } = getContext();
+workflow.handle([startEvent], async (context, event) => {
+  const { sendEvent, stream } = context;
   // ...
   if (response.choices[0].message.tool_calls.length > 0) {
     response.choices[0].message.tool_calls.map((toolCall) => {
