@@ -23,19 +23,34 @@
       "path": "./demo/tsconfig.json"
     },
     {
-      "path": "./tsconfig.lint-staged.json"
+      "path": "./demo/cloudflare/tsconfig.json"
     },
     {
-      "path": "./packages/core/tsconfig.test.json"
+      "path": "./demo/visualization/tsconfig.json"
+    },
+    {
+      "path": "./demo/waku/tsconfig.json"
     },
     {
       "path": "./packages/core/tsconfig.json"
+    },
+    {
+      "path": "./packages/core/tsconfig.test.json"
     },
     {
       "path": "./packages/http/tsconfig.json"
     },
     {
       "path": "./packages/http/tsconfig.test.json"
+    },
+    {
+      "path": "./packages/viz/tsconfig.json"
+    },
+    {
+      "path": "./tests/cjs/tsconfig.json"
+    },
+    {
+      "path": "./tsconfig.lint-staged.json"
     }
   ]
 }
