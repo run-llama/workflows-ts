@@ -101,7 +101,8 @@ describe("with snapshot - snapshot API", () => {
   test("multiple message in the queue", async () => {
     const { withState } = createStatefulMiddleware();
     const workflow = withState(createWorkflow());
-    workflow.handle([startEvent], async ({ sendEvent }) => {
+    workflow.handle([startEvent], async (context) => {
+      const { sendEvent } = context;
       await sleep(10);
       sendEvent(messageEvent.with("1"));
       sendEvent(messageEvent.with("2"));
@@ -159,7 +160,8 @@ describe("with snapshot - snapshot API", () => {
     });
     const { withState } = createStatefulMiddleware();
     const workflow = withState(createWorkflow());
-    workflow.handle([startEvent], async ({ sendEvent }) => {
+    workflow.handle([startEvent], async (context) => {
+      const { sendEvent } = context;
       setTimeout(() => {
         sendEvent(humanRequestEvent.with());
       }, 100);

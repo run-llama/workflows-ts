@@ -1,7 +1,6 @@
 import { describe, test, vi, expectTypeOf, type Mock, expect } from "vitest";
 import {
   createWorkflow,
-  getContext,
   workflowEvent,
   type WorkflowEventData,
 } from "@llamaindex/workflow-core";
@@ -63,8 +62,8 @@ describe("with trace events", () => {
       debugLabel: "messageEvent",
     });
     let counter = 0;
-    workflow.handle([startEvent], () => {
-      getContext().sendEvent(messageEvent.with(counter++));
+    workflow.handle([startEvent], (context) => {
+      context.sendEvent(messageEvent.with(counter++));
     });
 
     const context = workflow.createContext();
@@ -98,8 +97,8 @@ describe("with trace events", () => {
       debugLabel: "messageEvent",
     });
     let counter = 0;
-    workflow.handle([startEvent], () => {
-      getContext().sendEvent(messageEvent.with(counter++));
+    workflow.handle([startEvent], (context) => {
+      context.sendEvent(messageEvent.with(counter++));
     });
 
     const context = workflow.createContext();
@@ -229,9 +228,8 @@ describe("get event origins", () => {
     });
 
     const workflow = withTraceEvents(createWorkflow());
-    workflow.handle([startEvent], async () => {
-      const { sendEvent, stream } = getContext();
-      const context = getContext();
+    workflow.handle([startEvent], async (context) => {
+      const { sendEvent, stream } = context;
       sendEvent(branchAEvent.with("Branch A"));
       sendEvent(branchBEvent.with("Branch B"));
       sendEvent(branchCEvent.with("Branch C"));

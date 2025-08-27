@@ -77,10 +77,6 @@ sendEvent(startEvent.with("42"));
 - **Main packages**: `@llamaindex/workflow-core` (core engine), `@llamaindex/workflow-http` (HTTP protocol)
 - **Package exports**: Core package has extensive subpath exports for middleware, utilities, and stream helpers
 
-### Browser Compatibility
-
-Important: Call `getContext()` at the top level of handlers due to browser async context limitations. Calling it after await will fail in browsers.
-
 ### Testing
 
 - Uses Vitest for testing across all packages

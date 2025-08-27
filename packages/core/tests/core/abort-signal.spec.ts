@@ -1,9 +1,5 @@
 import { describe, expect, test, vi } from "vitest";
-import {
-  createWorkflow,
-  getContext,
-  workflowEvent,
-} from "@llamaindex/workflow-core";
+import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";
 
 describe("abort signal", () => {
   test("basic", () => {
@@ -38,8 +34,8 @@ describe("abort signal", () => {
 
     const err = new Error("1");
     let handlerSignal: AbortSignal;
-    workflow.handle([startEvent], () => {
-      const { signal } = getContext();
+    workflow.handle([startEvent], (context) => {
+      const { signal } = context;
       handlerSignal = signal;
       signal.onabort = vi.fn(() => {
         expect(signal.reason).toBe(err);

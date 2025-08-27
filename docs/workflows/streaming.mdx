@@ -15,11 +15,7 @@ LlamaIndex workflows are designed from the ground up to work with streaming data
 Every workflow context provides a stream of events:
 
 ```ts
-import {
-  createWorkflow,
-  workflowEvent,
-  getContext,
-} from "@llamaindex/workflow-core";
+import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";
 
 // Define events
 const startEvent = workflowEvent<string>();
@@ -29,8 +25,8 @@ const resultEvent = workflowEvent<string>();
 // Create workflow
 const workflow = createWorkflow();
 
-workflow.handle([startEvent], (event) => {
-  const { sendEvent } = getContext();
+workflow.handle([startEvent], (context, event) => {
+  const { sendEvent } = context;
 
   // Emit multiple intermediate events
   for (let i = 0; i < 5; i++) {
@@ -60,11 +56,7 @@ for await (const event of stream) {
 Workflows provide utility functions to make working with streams easier:
 
 ```ts
-import {
-  createWorkflow,
-  workflowEvent,
-  getContext,
-} from "@llamaindex/workflow-core";
+import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";
 
 const startEvent = workflowEvent<void>();
 const progressEvent = workflowEvent<number>();
@@ -72,8 +64,8 @@ const resultEvent = workflowEvent<string>();
 
 const workflow = createWorkflow();
 
-workflow.handle([startEvent], () => {
-  const { sendEvent } = getContext();
+workflow.handle([startEvent], (context) => {
+  const { sendEvent } = context;
 
   // Emit progress events
   for (let i = 0; i < 100; i += 10) {
@@ -104,11 +96,7 @@ void main().catch(console.error);
 You can conditionally process events and even stop the stream early:
 
 ```ts
-import {
-  createWorkflow,
-  workflowEvent,
-  getContext,
-} from "@llamaindex/workflow-core";
+import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";
 
 const startEvent = workflowEvent<number>();
 const dataEvent = workflowEvent<number>();
@@ -117,8 +105,8 @@ const resultEvent = workflowEvent<number[]>();
 
 const workflow = createWorkflow();
 
-workflow.handle([startEvent], (event) => {
-  const { sendEvent } = getContext();
+workflow.handle([startEvent], (context, event) => {
+  const { sendEvent } = context;
   const max = event.data;
 
   for (let i = 0; i < max; i++) {
@@ -165,11 +153,7 @@ Workflow streams can be easily integrated with UI frameworks like React to creat
 ```tsx
 // In a React component
 import { useEffect, useState } from "react";
-import {
-  createWorkflow,
-  workflowEvent,
-  getContext,
-} from "@llamaindex/workflow-core";
+import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";
 
 function StreamingComponent() {
   const [updates, setUpdates] = useState([]);
@@ -183,8 +167,8 @@ function StreamingComponent() {
 
     const workflow = createWorkflow();
 
-    workflow.handle([startEvent], () => {
-      const { sendEvent, signal } = getContext();
+    workflow.handle([startEvent], (context) => {
+      const { sendEvent, signal } = context;
 
       // Simulate async updates
       const intervals = [
@@ -245,11 +229,7 @@ function StreamingComponent() {
 Workflows are also suitable for implementing Server-Sent Events:
 
 ```ts
-import {
-  createWorkflow,
-  workflowEvent,
-  getContext,
-} from "@llamaindex/workflow-core";
+import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";
 import express from "express";
 
 // Define events
@@ -259,8 +239,8 @@ const dataEvent = workflowEvent<string>();
 // Create workflow
 const workflow = createWorkflow();
 
-workflow.handle([startEvent], () => {
-  const { sendEvent, signal } = getContext();
+workflow.handle([startEvent], (context) => {
+  const { sendEvent, signal } = context;
 
   // Send periodic updates
   const intervalId = setInterval(() => {
