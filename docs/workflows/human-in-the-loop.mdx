@@ -3,10 +3,12 @@ title: Human-in-the-Loop Workflows
 description: Learn how to build human-in-the-loop workflows
 ---
 
-LlamaIndex workflows support human-in-the-loop patterns where a workflow can pause, wait for human input, and then resume. This is useful for scenarios like:
+LlamaIndex workflows support human-in-the-loop patterns where a workflow can pause, wait for human input, and then resume after the human input is received. This is useful for scenarios like:
 
 - Getting user approval for actions
 - Collecting additional information from users
+
+For this to work, you need to use the `withState` middleware, which allows you to save the state of the workflow using the `snapshot` function and to resume the workflow from a saved snapshot using the `resume` function.
 
 ## Basic Human-in-the-Loop Pattern
 
@@ -35,152 +37,17 @@ workflow.handle([humanResponseEvent], (context, { data }) => {
 });
 
 // Usage with snapshot/resume
-const { sendEvent, snapshot } = workflow.createContext();
+const { sendEvent, snapshot, stream } = workflow.createContext();
 sendEvent(startEvent.with("begin"));
 
-// Take snapshot when human input is needed
+// Wait for a human request and take a snapshot
+await stream.until(humanRequestEvent).toArray();
 const snapshotData = await snapshot();
 
-// Later: resume and provide human input
+// Later (in another request): resume and provide human input
 const resumedContext = workflow.resume(snapshotData);
 resumedContext.sendEvent(humanResponseEvent.with("hello world"));
 
 const events = await resumedContext.stream.until(stopEvent).toArray();
 console.log(events[events.length - 1].data); // "Human said: hello world"
 ```
-
-## Using stream.on() for Real-time Interaction
-
-```ts
-import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";
-import { createStatefulMiddleware } from "@llamaindex/workflow-core/middleware/state";
-
-const startEvent = workflowEvent<string>();
-const humanRequestEvent = workflowEvent<string>();
-const humanResponseEvent = workflowEvent<string>();
-const resultEvent = workflowEvent<string>();
-
-const { withState } = createStatefulMiddleware();
-const workflow = withState(createWorkflow());
-
-workflow.handle([startEvent], (context, event) => {
-  const { sendEvent } = context;
-  const action = event.data;
-
-  // Check if action needs approval
-  if (action.includes("delete")) {
-    return sendEvent(humanRequestEvent.with(`Confirm: ${action}?`));
-  }
-
-  return resultEvent.with(`Executed: ${action}`);
-});
-
-workflow.handle([humanResponseEvent], (context, event) => {
-  const approved = event.data === "yes";
-  return resultEvent.with(approved ? "Approved!" : "Cancelled");
-});
-
-// Real-time interaction
-const context = workflow.createContext();
-
-// Listen for human input requests
-context.stream.on(humanRequestEvent, async (event) => {
-  console.log("Human input needed:", event.data);
-
-  // Take snapshot to save current state
-  const snapshot = await context.snapshot();
-  // Store snapshot for later resume...
-
-  // Simulate user response
-  context.sendEvent(humanResponseEvent.with("yes"));
-});
-
-context.sendEvent(startEvent.with("delete user"));
-
-for await (const event of context.stream) {
-  if (resultEvent.include(event)) {
-    console.log("Result:", event.data);
-    break;
-  }
-}
-```
-
-## Server Example
-
-```ts
-import express from "express";
-import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";
-import {
-  createStatefulMiddleware,
-  SnapshotData,
-} from "@llamaindex/workflow-core/middleware/state";
-
-const startEvent = workflowEvent<string>();
-const humanRequestEvent = workflowEvent<void>();
-const humanResponseEvent = workflowEvent<string>();
-const resultEvent = workflowEvent<string>();
-
-const { withState } = createStatefulMiddleware();
-const workflow = withState(createWorkflow());
-
-// Store snapshots (use Redis in production)
-const snapshots = new Map<string, SnapshotData>();
-
-workflow.handle([startEvent], (context, event) => {
-  if (event.data.includes("sensitive")) {
-    return context.sendEvent(humanRequestEvent.with());
-  }
-  return resultEvent.with(`Executed: ${event.data}`);
-});
-
-workflow.handle([humanResponseEvent], (context, event) => {
-  return resultEvent.with(`Approved: ${event.data}`);
-});
-
-const app = express();
-app.use(express.json());
-
-app.post("/workflow/start", async (req, res) => {
-  const sessionId = crypto.randomUUID();
-  const context = workflow.createContext();
-
-  context.stream.on(humanRequestEvent, async () => {
-    const snapshotData = await context.snapshot();
-    snapshots.set(sessionId, snapshotData);
-    res.json({ sessionId, needsApproval: true });
-  });
-
-  context.sendEvent(startEvent.with(req.body.action));
-
-  const results = await context.stream.until(resultEvent).toArray();
-  if (results.length > 0) {
-    res.json({ result: results[0].data });
-  }
-});
-
-app.post("/workflow/approve", async (req, res) => {
-  const { sessionId, response } = req.body;
-  const snapshotData = snapshots.get(sessionId);
-
-  if (!snapshotData) {
-    return res.status(404).json({ error: "Session not found" });
-  }
-
-  const context = workflow.resume(snapshotData);
-  context.sendEvent(humanResponseEvent.with(response));
-
-  const results = await context.stream.until(resultEvent).toArray();
-  snapshots.delete(sessionId);
-
-  res.json({ result: results[0].data });
-});
-```
-
-## Key APIs
-
-- **`snapshot()`** - Returns `SnapshotData` to save current workflow state
-- **`resume(snapshotData)`** - Continues workflow from saved snapshot
-- **`stream.on(event, callback)`** - Listen for specific events (replaces old `onRequest`)
-- **`sendEvent(event.with(data))`** - Send events directly (replaces old `request()`)
-
-Human-in-the-loop workflows are perfect for approval flows and any scenario where you need to pause execution and wait for external input.
