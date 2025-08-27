@@ -21,7 +21,9 @@
   },
   "scripts": {
     "build": "bunchee",
-    "dev": "bunchee --watch"
+    "dev": "bunchee --watch",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
   },
   "devDependencies": {
     "@llamaindex/workflow-core": "workspace:*",
