@@ -21,35 +21,33 @@ app.post(
 const serializableMemoryMap = new Map<string, any>();
 
 app.post("/human-in-the-loop", async (ctx) => {
-  const { workflow, stopEvent, startEvent, humanInteractionEvent } =
-    await import("../workflows/human-in-the-loop");
+  const { workflow, stopEvent, startEvent, humanRequestEvent, humanInteractionEvent } = await import(
+    "../workflows/human-in-the-loop"
+  );
   const json = await ctx.req.json();
   let context: ReturnType<typeof workflow.createContext>;
   if (json.requestId) {
     const data = json.data;
     const serializable = serializableMemoryMap.get(json.requestId);
-    context = workflow.resume(data, serializable);
+    context = workflow.resume(serializable);
+    context.sendEvent(humanInteractionEvent.with(data));
   } else {
     context = workflow.createContext();
     context.sendEvent(startEvent.with(json.data));
   }
 
-  const { onRequest, stream } = context;
+  const { stream } = context;
   return new Promise<Response>((resolve) => {
     // listen to human interaction
-    onRequest(humanInteractionEvent, async (reason) => {
-      context.snapshot().then(([re, sd]) => {
+    stream.on(humanRequestEvent, async (event) => {
+      context.snapshot().then((sd) => {
         const requestId = crypto.randomUUID();
         serializableMemoryMap.set(requestId, sd);
         resolve(
           Response.json({
             requestId: requestId,
-            reason: reason,
-            data: re.map((r) =>
-              r === humanInteractionEvent
-                ? "request human in the loop"
-                : "UNKNOWN",
-            ),
+            reason: event.data,
+            data: "request human in the loop",
           }),
         );
       });
