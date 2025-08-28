@@ -7,7 +7,6 @@
     "index",
     "tutorials/express_agent",
     "common_patterns",
-    "api-reference",
-    "human-in-the-loop"
+    "api-reference"
   ]
 }

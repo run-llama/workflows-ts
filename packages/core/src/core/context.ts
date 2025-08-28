@@ -67,10 +67,8 @@ export type ContextNext = (
  *
  * @example
  * ```typescript
- * import { getContext } from "@llamaindex/workflow-core";
- *
- * // Get the current context (inside a handler)
- * const { sendEvent, stream, signal } = getContext();
+ * // Use the current context (first parameter inside a handler)
+ * const { sendEvent, stream, signal } = context;
  *
  * // Send events
  * sendEvent(

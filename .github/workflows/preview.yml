@@ -83,7 +83,9 @@ jobs:
         run: pnpm install
         working-directory: llamaindex
       - name: Override workflow docs with local version
-        run: pnpm add @llamaindex/workflow-docs@file:${{github.workspace}}/workflows-ts/docs
+        run: |
+          # TODO: check if just linking is working: pnpm link ${{github.workspace}}/workflows-ts/docs
+          pnpm add @llamaindex/workflow-docs@file:${{github.workspace}}/workflows-ts/docs
         working-directory: llamaindex/apps/next
       - name: Install Vercel CLI
         run: npm install --global vercel@latest

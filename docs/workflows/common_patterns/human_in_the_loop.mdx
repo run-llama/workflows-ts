@@ -1,6 +1,53 @@
 ---
-title: "Human in the Loop"
-description: "Details about human in the loop in workflows"
+title: Human-in-the-Loop Workflows
+description: Learn how to build human-in-the-loop workflows
 ---
 
-# Human in the Loop with Workflows
+LlamaIndex workflows support human-in-the-loop patterns where a workflow can pause, wait for human input, and then resume after the human input is received. This is useful for scenarios like:
+
+- Getting user approval for actions
+- Collecting additional information from users
+
+For this to work, you need to use the `withState` middleware, which allows you to save the state of the workflow using the `snapshot` function and to resume the workflow from a saved snapshot using the `resume` function.
+
+## Basic Human-in-the-Loop Pattern
+
+Here's how to implement a workflow that pauses for human input:
+
+```ts
+import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";
+import { createStatefulMiddleware } from "@llamaindex/workflow-core/middleware/state";
+
+// Define events
+const startEvent = workflowEvent<string>();
+const humanRequestEvent = workflowEvent<void>();
+const humanResponseEvent = workflowEvent<string>();
+const stopEvent = workflowEvent<string>();
+
+const { withState } = createStatefulMiddleware();
+const workflow = withState(createWorkflow());
+
+// Workflow that needs human input
+workflow.handle([startEvent], () => {
+  return humanRequestEvent.with();
+});
+
+workflow.handle([humanResponseEvent], (context, { data }) => {
+  return stopEvent.with(`Human said: ${data}`);
+});
+
+// Usage with snapshot/resume
+const { sendEvent, snapshot, stream } = workflow.createContext();
+sendEvent(startEvent.with("begin"));
+
+// Wait for a human request and take a snapshot
+await stream.until(humanRequestEvent).toArray();
+const snapshotData = await snapshot();
+
+// Later (in another request): resume and provide human input
+const resumedContext = workflow.resume(snapshotData);
+resumedContext.sendEvent(humanResponseEvent.with("hello world"));
+
+const events = await resumedContext.stream.until(stopEvent).toArray();
+console.log(events[events.length - 1].data); // "Human said: hello world"
+```
