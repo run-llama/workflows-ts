@@ -72,6 +72,8 @@ jobs:
         run: pnpm run format
       - name: Run lint
         run: pnpm run lint
+      - name: Lint Staged
+        run: lint-staged --config lint-staged.config.ts
   type:
     name: Type Check
     runs-on: ubuntu-latest
