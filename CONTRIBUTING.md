@@ -67,6 +67,12 @@ pnpm run format
 
 # Auto-format code
 pnpm run format:write
+
+# Check linting
+pnpm run lint
+
+# Auto-lint code (might still leave linting problems)
+pnpm run lint:fix
 ```
 
 #### Package-specific Development
@@ -77,6 +83,8 @@ cd packages/core
 pnpm run build    # Build the core package
 pnpm run dev      # Watch mode for development
 pnpm run test     # Run core package tests
+pnpm run lint     # Lint
+pnpm run lint:fix # Lint and auto-fix errors
 
 # HTTP package development
 cd packages/http
@@ -103,6 +111,7 @@ pnpm run dev      # Watch mode with Bunchee
    pnpm run test           # Run all tests
    pnpm run typecheck      # Check TypeScript types
    pnpm run format         # Verify formatting
+   pnpm run lint           # Verify linting
    ```
 
 4. **Commit your changes**
@@ -121,6 +130,11 @@ pnpm run dev      # Watch mode with Bunchee
 - We use **Prettier** for code formatting
 - Formatting is automatically applied on commit via lint-staged
 - Run `pnpm run format:write` to format files manually
+
+### Linting
+
+- We use **Eslint** for linting
+- Running `pnpm run lint:fix` is a way of auto-linting the code, but it might leave untracked errors
 
 ### TypeScript
 
