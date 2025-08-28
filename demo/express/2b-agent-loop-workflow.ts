@@ -91,9 +91,9 @@ async function callTool(
 }
 
 // Handler for processing user input and LLM responses
-workflow.handle([userInputEvent], async (event) => {
-  const { sendEvent, stream } = getContext();
-  const { messages } = event.data;
+workflow.handle([userInputEvent], async (context, { data }) => {
+  const { sendEvent, stream } = context;
+  const { messages } = data;
 
   try {
     // Use our same llm() function
@@ -149,9 +149,9 @@ workflow.handle([userInputEvent], async (event) => {
 });
 
 // Handler for executing tool calls
-workflow.handle([toolCallEvent], async (event) => {
-  const { sendEvent } = getContext();
-  const { toolCall } = event.data;
+workflow.handle([toolCallEvent], async (context, { data }) => {
+  const { sendEvent } = context;
+  const { toolCall } = data;
 
   try {
     // Use our same callTool() function
