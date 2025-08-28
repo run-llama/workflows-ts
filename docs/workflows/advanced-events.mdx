@@ -513,6 +513,105 @@ workflow.handle([taskEvent], async (context, event) => {
 });
 ```
 
+## OpenTelemetry Tracing in Workflows
+
+You can integrate **OpenTelemetry (OTel)** to trace workflow events, inspect spans, and capture errors.
+
+### Setup
+
+```bash
+npm install @opentelemetry/api @opentelemetry/sdk-node @opentelemetry/sdk-trace-base
+```
+
+```ts
+import { NodeSDK } from "@opentelemetry/sdk-node";
+import {
+  ConsoleSpanExporter,
+  SimpleSpanProcessor,
+} from "@opentelemetry/sdk-trace-base";
+
+new NodeSDK({
+  spanProcessor: new SimpleSpanProcessor(new ConsoleSpanExporter()),
+}).start();
+```
+
+### Tracing Handlers
+
+Wrap workflow handlers with `otelTrace` to automatically create spans:
+
+```ts
+import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";
+import {
+  withTraceEvents,
+  otelTrace,
+} from "@llamaindex/workflow-core/middleware/trace-events";
+
+const startEvent = workflowEvent();
+const stepEvent = workflowEvent<{ value: string }>();
+const workflow = withTraceEvents(createWorkflow());
+
+workflow.handle([startEvent], (ctx) => {
+  ctx.sendEvent(stepEvent.with({ value: "ok" }));
+  ctx.sendEvent(stepEvent.with({ value: "error" }));
+});
+
+workflow.handle(
+  [stepEvent],
+  otelTrace((ctx, ev) => {
+    if (ev.data.value === "error") throw new Error("Failed!");
+    return ev.data.value;
+  }),
+);
+
+workflow.createContext().sendEvent(startEvent.with());
+```
+
+After starting the workflow, by using the ConsoleSpanExporter, each workflow span prints structured JSON that includes:
+
+- Trace ID: Unique identifier for a workflow execution
+- Span ID: Unique identifier for a single workflow event handler execution
+- Attributes: Metadata such as host, process info, or custom tags
+- Status & Exceptions: Captures errors thrown in handlers
+- Duration: Time taken by each handler to execute
+
+### Integration with Backend Platforms
+
+You can connect workflows to backend services such as Jaeger:
+
+```bash
+npm install @opentelemetry/exporter-jaeger
+```
+
+```ts
+import { NodeSDK } from "@opentelemetry/sdk-node";
+import { JaegerExporter } from "@opentelemetry/exporter-jaeger";
+import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";
+import {
+  withTraceEvents,
+  otelTrace,
+} from "@llamaindex/workflow-core/middleware/trace-events";
+
+// Setup OpenTelemetry with Jaeger
+const sdk = new NodeSDK({
+  traceExporter: new JaegerExporter({
+    endpoint: "http://localhost:14268/api/traces",
+  }),
+});
+sdk.start();
+
+// Workflow with tracing
+const fetchEvent = workflowEvent<string>();
+const workflow = withTraceEvents(createWorkflow());
+
+workflow.handle(
+  [fetchEvent],
+  otelTrace(async (_, ev) => {
+    const res = await fetch(ev.data);
+    return res.json();
+  }),
+);
+```
+
 ## Next Steps
 
 Now that you've explored advanced event handling with workflows, you're ready to build sophisticated applications:
