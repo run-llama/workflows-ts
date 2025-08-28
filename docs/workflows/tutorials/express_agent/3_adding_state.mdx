@@ -3,7 +3,203 @@ title: "Adding State"
 description: "Adding state to the Express Agent"
 ---
 
-# Adding State
+Managing state is crucial for building more sophisticated agents. State allows us to share data between different parts of the workflow without passing around explicit data through individual events or using a global state object.
 
-TODO: Add state to the agent to track chat history, errors, tool calls, etc.
-BONUS: Tools that access state
+## State Management in Workflows
+
+Workflows provide built-in state management through `createStatefulMiddleware`. This middleware allows you to define a state type and automatically manages state persistence across event handlers.
+
+## Implementation with State
+
+Here's how we can refactor our agent loop to use state management to store conversation state and tool call responses in `AgentWorkflowState`:
+
+```typescript
+import {
+  createWorkflow,
+  workflowEvent,
+  getContext,
+} from "@llamaindex/workflow-core";
+import { OpenAI } from "openai";
+import {
+  ChatCompletionMessage,
+  ChatCompletionMessageParam,
+  ChatCompletionMessageToolCall,
+  ChatCompletionTool,
+} from "openai/resources/chat/completions";
+import { createStatefulMiddleware } from "@llamaindex/workflow-core/middleware/state";
+
+type ToolResponseEventData = {
+  toolResponse: string;
+  toolId: string;
+};
+
+type AgentWorkflowState = {
+  expectedToolCount: number;
+  messages: ChatCompletionMessageParam[];
+  toolResponses: Array<ToolResponseEventData>;
+};
+
+const stateful = createStatefulMiddleware((state: AgentWorkflowState) => state);
+const workflow = stateful.withState(createWorkflow());
+
+// Define our events
+const userInputEvent = workflowEvent<{
+  messages: ChatCompletionMessageParam[];
+}>();
+const toolCallEvent = workflowEvent<{
+  toolCall: ChatCompletionMessageToolCall;
+}>();
+
+const toolResponseEvent = workflowEvent<ToolResponseEventData>();
+const finalResponseEvent = workflowEvent<string>();
+
+// Initialize OpenAI client (same as before)
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+// Define available tools (same as before)
+const tools = [...];
+
+// Same LLM function as before
+async function llm(
+  messages: ChatCompletionMessageParam[],
+  tools: ChatCompletionTool[]
+): Promise<ChatCompletionMessage> {
+  ...
+}
+
+// Same tool calling function as before
+async function callTool(
+  toolCall: ChatCompletionMessageToolCall
+): Promise<string> {
+  ...
+}
+
+// Handler for processing user input and LLM responses
+workflow.handle([userInputEvent], async (context, { data }) => {
+  const { sendEvent, state } = context;
+  const { messages } = data;
+
+  try {
+    // Use our same llm() function
+    const response = await llm(messages, tools);
+
+    // Add the assistant's response to the conversation
+    state.messages = [...messages, response];
+
+    // Check if the LLM wants to call tools
+    if (response.tool_calls && response.tool_calls.length > 0) {
+      state.expectedToolCount = response.tool_calls.length;
+      // Send tool call events for each requested tool
+      for (const toolCall of response.tool_calls) {
+        sendEvent(
+          toolCallEvent.with({
+            toolCall,
+          })
+        );
+      }
+    } else {
+      // No tools requested, send final response
+      sendEvent(finalResponseEvent.with(response.content || ""));
+    }
+  } catch (error) {
+    console.error("Error calling LLM:", error);
+    sendEvent(finalResponseEvent.with("Error processing request"));
+  }
+});
+
+// Handler for aggregating tool call responses
+workflow.handle([toolResponseEvent], async (context, { data }) => {
+  const { sendEvent, state } = context;
+
+  // Collect all tool responses until we have all of them
+  state.toolResponses.push(data);
+
+  // Once we have all responses, continue the conversation
+  if (state.toolResponses.length === state.expectedToolCount) {
+    // Add tool response messages
+    const finalMessages = [
+      ...state.messages,
+      // TODO: simplify this using openai type
+      ...state.toolResponses.map((response) => ({
+        role: "tool" as const,
+        content: response.toolResponse,
+        tool_call_id: response.toolId,
+      })),
+    ];
+
+    // Continue the loop with the updated conversation
+    sendEvent(userInputEvent.with({ messages: finalMessages }));
+  }
+});
+
+// Handler for executing tool calls
+workflow.handle([toolCallEvent], async (context, { data }) => {
+  const { sendEvent } = context;
+  const { toolCall } = data;
+
+  try {
+    // Use our same callTool() function
+    const toolResponse = await callTool(toolCall);
+
+    // Send the tool response back
+    sendEvent(
+      toolResponseEvent.with({
+        toolResponse,
+        toolId: toolCall.id,
+      })
+    );
+  } catch (error) {
+    const toolName =
+      "function" in toolCall ? toolCall.function.name : "unknown";
+    console.error(`Error executing tool ${toolName}:`, error);
+    sendEvent(
+      toolResponseEvent.with({
+        toolResponse: `Error executing ${toolName}: ${error}`,
+        toolId: toolCall.id,
+      })
+    );
+  }
+});
+
+// Run the workflow
+const { stream, sendEvent } = workflow.createContext({
+  expectedToolCount: 0,
+  messages: [],
+  toolResponses: [],
+});
+
+sendEvent(
+  userInputEvent.with({
+    messages: [
+      { role: "user", content: "What's the weather in San Francisco?" },
+    ],
+  })
+);
+
+const result = await stream.until(finalResponseEvent).toArray();
+console.log(result[result.length - 1].data);
+```
+
+## Key Improvements with State
+
+This stateful implementation provides several advantages:
+
+1. **Centralized State Management**: All conversation state is managed in one place through the `AgentWorkflowState` type
+2. **Simplified Handler Logic**: Handlers can directly modify state instead of passing data through events
+3. **Persistence**: State persists across the entire workflow execution
+
+## State Structure
+
+The `AgentWorkflowState` type defines:
+
+- **`expectedToolCount`**: Tracks how many tool responses we're waiting for
+- **`messages`**: Maintains the complete conversation history
+- **`toolResponses`**: Collects tool responses before processing them
+
+This structure allows for complex multi-turn conversations and sophisticated tool orchestration patterns.
+
+## Next Steps
+
+The next tutorial will explore adding human-in-the-loop capabilities to our agent.

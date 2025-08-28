@@ -48,7 +48,12 @@ Let's start by implementing the agent loop using the same structure as our pseud
 
 ```typescript
 import { OpenAI } from "openai";
-import { ChatCompletionMessageParam } from "openai/resources/chat/completions";
+import {
+  ChatCompletionMessage,
+  ChatCompletionMessageParam,
+  ChatCompletionMessageToolCall,
+  ChatCompletionTool,
+} from "openai/resources/chat/completions";
 
 // Initialize OpenAI client
 const openai = new OpenAI({
@@ -56,7 +61,7 @@ const openai = new OpenAI({
 });
 
 // Define available tools
-const tools = [
+const tools: ChatCompletionTool[] = [
   {
     type: "function" as const,
     function: {
@@ -79,12 +84,12 @@ const tools = [
 // LLM function - handles the AI reasoning
 async function llm(
   messages: ChatCompletionMessageParam[],
-  availableTools: any[],
-) {
+  tools: ChatCompletionTool[],
+): Promise<ChatCompletionMessage> {
   const completion = await openai.chat.completions.create({
     model: "gpt-4.1-mini",
-    messages: messages,
-    tools: availableTools,
+    messages,
+    tools,
     tool_choice: "auto",
   });
 
@@ -93,14 +98,13 @@ async function llm(
     throw new Error("No response from LLM");
   }
 
-  return {
-    content: message.content,
-    tool_calls: message.tool_calls,
-  };
+  return message;
 }
 
 // Tool calling function - executes the requested tools
-async function callTool(toolCall: any, availableTools: any[]) {
+async function callTool(
+  toolCall: ChatCompletionMessageToolCall,
+): Promise<string> {
   const toolName = toolCall.function.name;
   const toolInput = JSON.parse(toolCall.function.arguments);
 
@@ -125,16 +129,12 @@ async function runAgentLoop(userInput: string) {
     const response = await llm(messages, tools);
 
     // Add the assistant's response to the conversation
-    messages.push({
-      role: "assistant",
-      content: response.content,
-      tool_calls: response.tool_calls,
-    });
+    messages.push(response);
 
     if (response.tool_calls) {
       // Process each tool call
       for (const toolCall of response.tool_calls) {
-        const toolResponse = await callTool(toolCall, tools);
+        const toolResponse = await callTool(toolCall);
         messages.push({
           role: "tool",
           content: toolResponse,
@@ -173,18 +173,23 @@ Now let's see how workflows can help us structure this same logic. Workflows pro
 Let's convert our agent loop to use workflows. We'll keep the same `llm()` and `callTool()` functions, but structure the flow using events and handlers:
 
 ```typescript
-import { createWorkflow, workflowEvent, getContext } from "@llamaindex/workflow-core";
+import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";
 import { OpenAI } from "openai";
-import { ChatCompletionMessageParam } from "openai/resources/chat/completions";
+import {
+  ChatCompletionMessage,
+  ChatCompletionMessageParam,
+  ChatCompletionMessageToolCall,
+  ChatCompletionTool,
+} from "openai/resources/chat/completions";
 
 const workflow = createWorkflow();
 
 // Define our events
-const userInputEvent = workflowEvent<{ messages: ChatCompletionMessageParam[] }>();
+const userInputEvent = workflowEvent<{
+  messages: ChatCompletionMessageParam[];
+}>();
 const toolCallEvent = workflowEvent<{
-  toolName: string;
-  toolInput: Record<string, any>;
-  toolId: string;
+  toolCall: ChatCompletionMessageToolCall;
 }>();
 const toolResponseEvent = workflowEvent<{
   toolResponse: string;
@@ -201,43 +206,41 @@ const openai = new OpenAI({
 const tools = [...];
 
 // Same LLM function as before
-async function llm(messages: ChatCompletionMessageParam[], availableTools: any[]) {
+async function llm(
+  messages: ChatCompletionMessageParam[],
+  tools: ChatCompletionTool[]
+): Promise<ChatCompletionMessage> {
   ...
 }
 
 // Same tool calling function as before
-async function callTool(toolCall: any, availableTools: any[]) {
+async function callTool(
+  toolCall: ChatCompletionMessageToolCall
+): Promise<string> {
   ...
 }
 
 // Handler for processing user input and LLM responses
-workflow.handle([userInputEvent], async (event) => {
-  const { sendEvent, stream } = getContext();
-  const { messages } = event.data;
+workflow.handle([userInputEvent], async (context, { data }) => {
+  const { sendEvent, stream } = context;
+  const { messages } = data;
 
   try {
     // Use our same llm() function
     const response = await llm(messages, tools);
 
     // Add the assistant's response to the conversation
-    const updatedMessages = [
-      ...messages,
-      {
-        role: "assistant" as const,
-        content: response.content,
-        tool_calls: response.tool_calls,
-      },
-    ];
+    const updatedMessages = [...messages, response];
 
     // Check if the LLM wants to call tools
     if (response.tool_calls && response.tool_calls.length > 0) {
       // Send tool call events for each requested tool
       for (const toolCall of response.tool_calls) {
-        sendEvent(toolCallEvent.with({
-          toolName: toolCall.function.name,
-          toolInput: JSON.parse(toolCall.function.arguments),
-          toolId: toolCall.id,
-        }));
+        sendEvent(
+          toolCallEvent.with({
+            toolCall,
+          })
+        );
       }
 
       // Collect ALL tool responses before continuing
@@ -245,7 +248,7 @@ workflow.handle([userInputEvent], async (event) => {
       const toolResponses: Array<{ toolResponse: string; toolId: string }> = [];
 
       // Listen for tool responses until we have all of them
-      await stream.filter(toolResponseEvent).forEach(responseEvent => {
+      await stream.filter(toolResponseEvent).forEach((responseEvent) => {
         toolResponses.push(responseEvent.data);
 
         // Once we have all responses, continue the conversation
@@ -253,7 +256,7 @@ workflow.handle([userInputEvent], async (event) => {
           // Add tool response messages
           const finalMessages = [
             ...updatedMessages,
-            ...toolResponses.map(response => ({
+            ...toolResponses.map((response) => ({
               role: "tool" as const,
               content: response.toolResponse,
               tool_call_id: response.toolId,
@@ -276,37 +279,44 @@ workflow.handle([userInputEvent], async (event) => {
 });
 
 // Handler for executing tool calls
-workflow.handle([toolCallEvent], async (event) => {
-  const { sendEvent } = getContext();
-  const { toolName, toolInput, toolId } = event.data;
+workflow.handle([toolCallEvent], async (context, { data }) => {
+  const { sendEvent } = context;
+  const { toolCall } = data;
 
   try {
     // Use our same callTool() function
-    const toolResponse = await callTool({
-      function: { name: toolName, arguments: JSON.stringify(toolInput) },
-      id: toolId
-    }, tools);
+    const toolResponse = await callTool(toolCall);
 
     // Send the tool response back
-    sendEvent(toolResponseEvent.with({
-      toolResponse,
-      toolId,
-    }));
+    sendEvent(
+      toolResponseEvent.with({
+        toolResponse,
+        toolId: toolCall.id,
+      })
+    );
   } catch (error) {
+    const toolName =
+      "function" in toolCall ? toolCall.function.name : "unknown";
     console.error(`Error executing tool ${toolName}:`, error);
-    sendEvent(toolResponseEvent.with({
-      toolResponse: `Error executing ${toolName}: ${error}`,
-      toolId,
-    }));
+    sendEvent(
+      toolResponseEvent.with({
+        toolResponse: `Error executing ${toolName}: ${error}`,
+        toolId: toolCall.id,
+      })
+    );
   }
 });
 
 // Run the workflow
 const { stream, sendEvent } = workflow.createContext();
 
-sendEvent(userInputEvent.with({
-  messages: [{ role: "user", content: "What's the weather in San Francisco?" }]
-}));
+sendEvent(
+  userInputEvent.with({
+    messages: [
+      { role: "user", content: "What's the weather in San Francisco?" },
+    ],
+  })
+);
 
 const result = await stream.until(finalResponseEvent).toArray();
 console.log(result[result.length - 1].data);
