@@ -260,7 +260,6 @@ export const or = <const Events extends WorkflowEvent<any>[]>(
       );
     },
     with: (data: any) => {
-      const l2 = `${j++}`;
       const ref = {
         [Symbol.toStringTag]: debugLabel,
         toString: () => debugLabel,

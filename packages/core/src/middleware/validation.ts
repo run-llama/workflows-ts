@@ -64,6 +64,7 @@ export function withValidation<
       .filter(([inputs]) =>
         inputs.every((input, idx) => input.include(events[idx])),
       )
+      // eslint-disable-next-line  @typescript-eslint/no-unused-vars
       .map(([_, outputs]) => outputs);
     const store = getContext();
     const originalSendEvent = store.sendEvent;

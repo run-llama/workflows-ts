@@ -1,16 +1,11 @@
 import { describe, test, vi, expectTypeOf, type Mock, expect } from "vitest";
-import {
-  createWorkflow,
-  workflowEvent,
-  type WorkflowEventData,
-} from "@llamaindex/workflow-core";
+import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";
 import {
   withTraceEvents,
   runOnce,
   createHandlerDecorator,
   getEventOrigins,
 } from "@llamaindex/workflow-core/middleware/trace-events";
-import { collect } from "@llamaindex/workflow-core/stream/consumer";
 import { pipeline } from "node:stream/promises";
 
 const groupBy = <T>(

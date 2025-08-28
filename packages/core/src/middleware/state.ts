@@ -1,7 +1,6 @@
 import {
   eventSource,
   getContext,
-  WorkflowStream,
   type Workflow,
   type WorkflowContext,
   type Workflow as WorkflowCore,
