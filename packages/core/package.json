@@ -189,6 +189,9 @@
     },
     "zod": {
       "optional": true
+    },
+    "@opentelemetry/api": {
+      "optional": true
     }
   },
   "repository": {
