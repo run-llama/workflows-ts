@@ -47,7 +47,7 @@ describe("full workflow middleware", () => {
       () => ({}),
     );
     workflow.strictHandle([startEvent], (sendEvent, events) => {
-      // @ts-expect-error
+      // @ts-expect-error - expecting error ts(2345) (argument of type X is not assignable to type Y)
       sendEvent(messageEvent.with());
       sendEvent(stopEvent.with(""));
     });

@@ -122,7 +122,7 @@ describe("workflow helper functions", () => {
 
     const stream = runStream(workflow, startEvent.with("run"), stopEvent);
 
-    let collectedEvents: WorkflowEventData<any>[] = [];
+    const collectedEvents: WorkflowEventData<any>[] = [];
     for await (const event of stream) {
       collectedEvents.push(event);
     }

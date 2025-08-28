@@ -419,7 +419,7 @@ export class WorkflowStream<R = any>
         transform: (ev, controller) => {
           if (
             typeof predicate === "function"
-              ? (predicate as Function)(ev)
+              ? (predicate as (event: R) => boolean)(ev)
               : isWorkflowEvent(predicate)
                 ? predicate.include(ev)
                 : predicate === ev
@@ -468,7 +468,7 @@ export class WorkflowStream<R = any>
           controller.enqueue(ev);
           if (
             typeof predicate === "function"
-              ? (predicate as Function)(ev)
+              ? (predicate as (event: R) => boolean)(ev)
               : isWorkflowEvent(predicate)
                 ? predicate.include(ev)
                 : predicate === ev

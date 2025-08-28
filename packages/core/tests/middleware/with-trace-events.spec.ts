@@ -164,7 +164,7 @@ describe("with trace events", () => {
     let p = new Promise<void>((_resolve) => {
       resolveNext = _resolve;
     });
-    let result: number[] = [];
+    const result: number[] = [];
     const ref = workflow.handle(
       [startEvent],
       noParallel(
