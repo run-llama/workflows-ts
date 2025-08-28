@@ -3,15 +3,17 @@
   "private": true,
   "version": "0.0.1",
   "type": "module",
-  "packageManager": "pnpm@10.12.4",
+  "packageManager": "pnpm@10.15.0",
   "scripts": {
-    "typecheck": "tsc -b --verbose",
-    "lint": "prettier . --check",
-    "lint:fix": "prettier . --write",
+    "build": "turbo build --filter=\"./packages/*\"",
+    "test": "turbo test --filter=\"./packages/*\"",
+    "typecheck": "tsc -b --diagnostics",
+    "format": "prettier --ignore-unknown --cache --check .",
+    "format:write": "prettier --ignore-unknown --write .",
     "build:docs": "node scripts/build-docs.js",
     "build:docs:core": "pnpm --filter=@llamaindex/workflow-core run build:docs",
     "add-frontmatter": "node scripts/add-frontmatter.js",
-    "publish": "turbo build --filter=\"./packages/*\" && pnpm run build:docs && changeset publish",
+    "publish": "pnpm run build && pnpm run build:docs && changeset publish",
     "prepare": "husky"
   },
   "devDependencies": {
@@ -23,6 +25,7 @@
     "prettier": "^3.6.1",
     "tsdown": "^0.12.9",
     "turbo": "^2.5.4",
+    "typescript": "^5.9.2",
     "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^3.2.4"
   }

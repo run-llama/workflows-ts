@@ -1,9 +1,5 @@
 import { OpenAI } from "openai";
-import {
-  createWorkflow,
-  getContext,
-  workflowEvent,
-} from "@llamaindex/workflow-core";
+import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";
 import type {
   ChatCompletionMessageToolCall,
   ChatCompletionTool,
@@ -36,16 +32,15 @@ const toolCallEvent = workflowEvent<ChatCompletionMessageToolCall>();
 const toolCallResultEvent = workflowEvent<string>();
 export const stopEvent = workflowEvent<string>();
 export const toolCallWorkflow = createWorkflow();
-toolCallWorkflow.handle([startEvent], async ({ data }) => {
+toolCallWorkflow.handle([startEvent], async (context, { data }) => {
   console.log("start event");
-  const context = getContext();
   context.sendEvent(chatEvent.with(data));
 });
 toolCallWorkflow.handle([toolCallEvent], async () => {
   console.log("tool call event");
   return toolCallResultEvent.with("Today is sunny.");
 });
-toolCallWorkflow.handle([chatEvent], async ({ data }) => {
+toolCallWorkflow.handle([chatEvent], async (context, { data }) => {
   console.log("chat event");
   const { choices } = await llm.chat.completions.create({
     model: "gpt-4-turbo",
@@ -61,7 +56,7 @@ toolCallWorkflow.handle([chatEvent], async ({ data }) => {
       },
     ],
   });
-  const { sendEvent, stream } = getContext();
+  const { sendEvent, stream } = context;
   if (
     choices[0]?.message?.tool_calls?.length &&
     choices[0].message.tool_calls.length > 0

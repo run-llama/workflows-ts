@@ -31,9 +31,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install
       - name: Build packages
-        run: pnpx turbo run build --filter="./packages/*"
+        run: pnpm run build
       - name: Run tests
-        run: pnpx turbo run test
+        run: pnpm run test
   deno-test:
     name: Test on Deno
     runs-on: ubuntu-latest
@@ -51,7 +51,7 @@ jobs:
       - name: Install dependencies
         run: pnpm install
       - name: Run build
-        run: pnpx turbo run build --filter="./packages/*"
+        run: pnpm run build
       - name: Run Deno tests
         run: deno test
         working-directory: ./demo/deno
@@ -68,8 +68,8 @@ jobs:
           cache: "pnpm"
       - name: Install dependencies
         run: pnpm install
-      - name: Run lint
-        run: pnpm run lint
+      - name: Run format
+        run: pnpm run format
   type:
     name: Type Check
     runs-on: ubuntu-latest
@@ -84,6 +84,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install
       - name: Run build
-        run: pnpx turbo run build --filter="./packages/*"
+        run: pnpm run build
       - name: Run type check
         run: pnpm run typecheck

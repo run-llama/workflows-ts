@@ -4,19 +4,20 @@ import {
   stopEvent,
   startEvent,
   humanInteractionEvent,
+  humanRequestEvent,
 } from "../workflows/human-in-the-loop";
 
 const name = await input({
   message: "What is your name?",
 });
-const { onRequest, stream, sendEvent } = workflow.createContext();
+const { stream, sendEvent } = workflow.createContext();
 
 sendEvent(startEvent.with(name));
 
-onRequest(humanInteractionEvent, async (reason) => {
+stream.on(humanRequestEvent, async (event) => {
   console.log("Requesting human interaction...");
   const name = await input({
-    message: JSON.parse(reason).message,
+    message: JSON.parse(event.data).message,
   });
   console.log("Human interaction completed.");
   sendEvent(humanInteractionEvent.with(name));

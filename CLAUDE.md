@@ -8,8 +8,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - **Build all packages**: `pnpm run build` (uses Turbo for monorepo builds)
 - **Type check**: `pnpm run typecheck` (TypeScript build check across all packages)
-- **Lint**: `pnpm run lint` (Prettier formatting check)
-- **Fix formatting**: `pnpm run lint:fix` (Auto-format with Prettier)
+- **Format check**: `pnpm run format` (Prettier formatting check)
+- **Fix formatting**: `pnpm run format:write` (Auto-format with Prettier)
 
 ### Package-specific commands
 
@@ -17,12 +17,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Core package dev**: `cd packages/core && pnpm run dev` (watch mode)
 - **Core package test**: `cd packages/core && pnpm run test` (Vitest)
 - **HTTP package build**: `cd packages/http && pnpm run build` (uses Bunchee)
-- **LlamaIndex package test**: `cd packages/llamaindex && pnpm run test`
+- **HTTP package dev**: `cd packages/http && pnpm run dev` (watch mode with Bunchee)
 
 ### Testing
 
-- **Run tests**: `vitest run` from package directories
+- **Run all tests**: `pnpm run test` (from root or individual packages)
 - **Test workspace**: Tests are configured in `vitest.workspace.ts` for all packages
+- **Browser tests**: Use `happy-dom` environment for browser-specific testing
+- **CJS compatibility tests**: Located in `tests/cjs/` directory
 
 ## Architecture
 
@@ -54,10 +56,9 @@ sendEvent(startEvent.with("42"));
 
 ### Middleware System
 
-- **State**: `withState()` adds stateful context
+- **State**: `withState()` adds stateful context (with built-in snapshot support)
 - **Validation**: `withValidation()` provides type-safe event handling
 - **Trace Events**: `withTraceEvents()` enables debugging and handler decorators
-- **Snapshot**: `withSnapshot()` allows workflow state save/restore
 
 ### Key Directories
 
@@ -71,15 +72,21 @@ sendEvent(startEvent.with("42"));
 ### Monorepo Structure
 
 - Uses pnpm workspaces with Turbo for build orchestration
-- Packages are independently versioned and published
+- Packages are independently versioned and published with Changesets
 - Demo projects showcase integrations with Next.js, Hono, Deno, browser environments
-
-### Browser Compatibility
-
-Important: Call `getContext()` at the top level of handlers due to browser async context limitations. Calling it after await will fail in browsers.
+- **Main packages**: `@llamaindex/workflow-core` (core engine), `@llamaindex/workflow-http` (HTTP protocol)
+- **Package exports**: Core package has extensive subpath exports for middleware, utilities, and stream helpers
 
 ### Testing
 
 - Uses Vitest for testing across all packages
 - Tests are colocated with source files (`.test.ts` files)
 - Browser-specific tests use `happy-dom` environment
+- TypeScript compilation builds configured for multiple targets (browser, Node.js, CommonJS)
+
+### Build System
+
+- **Core package**: Uses `tsdown` for building with multiple output formats (ESM, CJS, browser)
+- **HTTP package**: Uses `bunchee` for lightweight bundling
+- **Turbo**: Orchestrates builds across monorepo with dependency-aware caching
+- **Lint-staged**: Automatically formats files on commit with Prettier

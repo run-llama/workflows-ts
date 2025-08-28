@@ -2,7 +2,6 @@ import { describe, expect, test } from "vitest";
 import {
   createWorkflow,
   eventSource,
-  getContext,
   workflowEvent,
 } from "@llamaindex/workflow-core";
 import { run } from "@llamaindex/workflow-core/stream/run";
@@ -13,11 +12,11 @@ describe("sub workflow", () => {
     const startEvent = workflowEvent();
     const stopEvent = workflowEvent();
     const haltEvent = workflowEvent();
-    rootWorkflow.handle([startEvent], async () => {
-      const { sendEvent } = getContext();
+    rootWorkflow.handle([startEvent], async (context) => {
+      const { sendEvent } = context;
       const subWorkflow = createWorkflow();
-      subWorkflow.handle([startEvent], () => {
-        const { sendEvent } = getContext();
+      subWorkflow.handle([startEvent], (subContext) => {
+        const { sendEvent } = subContext;
         sendEvent(stopEvent.with());
       });
       await Promise.all([

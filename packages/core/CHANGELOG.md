@@ -1,5 +1,30 @@
 # @llamaindex/workflow-core
 
+## 1.3.1
+
+### Patch Changes
+
+- 00724d2: feat: add support for zod v4
+
+## 1.3.0
+
+### Minor Changes
+
+- f8bdcc3: chore: remove request and onRequest from stateful middleware
+- b725183: feat: update handler signature to use context parameter instead of getContext()
+
+### Patch Changes
+
+- e8451e7: fix: remove snapshot from exports
+- 5f3169b: fix: using getEventCounter make context not stable
+
+## 1.2.1
+
+### Patch Changes
+
+- a3ce131: merge snapshot and state middleware and fix middleware chaining
+- a3ce131: fix: snapshot not passing createContext params
+
 ## 1.2.0
 
 ### Minor Changes

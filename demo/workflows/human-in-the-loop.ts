@@ -1,17 +1,11 @@
-import {
-  withSnapshot,
-  request,
-} from "@llamaindex/workflow-core/middleware/snapshot";
-import {
-  createWorkflow,
-  workflowEvent,
-  getContext,
-} from "@llamaindex/workflow-core";
+import { createStatefulMiddleware } from "@llamaindex/workflow-core/middleware/state";
+import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";
 import { OpenAI } from "openai";
 
 const openai = new OpenAI();
 
-const workflow = withSnapshot(createWorkflow());
+const { withState } = createStatefulMiddleware();
+const workflow = withState(createWorkflow());
 
 const startEvent = workflowEvent<string>({
   debugLabel: "start",
@@ -19,11 +13,14 @@ const startEvent = workflowEvent<string>({
 const humanInteractionEvent = workflowEvent<string>({
   debugLabel: "humanInteraction",
 });
+const humanRequestEvent = workflowEvent<string>({
+  debugLabel: "humanRequest",
+});
 const stopEvent = workflowEvent<string>({
   debugLabel: "stop",
 });
 
-workflow.handle([startEvent], async ({ data }) => {
+workflow.handle([startEvent], async (context, { data }) => {
   const response = await openai.chat.completions.create({
     stream: false,
     model: "gpt-4.1",
@@ -65,16 +62,24 @@ For example, alex is from "Alexander the Great", who was a king of the ancient G
   if (tools && tools.length > 0) {
     const askName = tools.find((tool) => tool.function.name === "ask_name");
     if (askName) {
-      return request(humanInteractionEvent, askName.function.arguments);
+      return context.sendEvent(
+        humanRequestEvent.with(askName.function.arguments),
+      );
     }
   }
   return stopEvent.with(response.choices[0].message.content!);
 });
 
-workflow.handle([humanInteractionEvent], async ({ data }) => {
-  const { sendEvent } = getContext();
+workflow.handle([humanInteractionEvent], async (context, { data }) => {
+  const { sendEvent } = context;
   // going back to the start event
   sendEvent(startEvent.with(data));
 });
 
-export { workflow, startEvent, humanInteractionEvent, stopEvent };
+export {
+  workflow,
+  startEvent,
+  humanInteractionEvent,
+  humanRequestEvent,
+  stopEvent,
+};

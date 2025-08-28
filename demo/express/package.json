@@ -1,22 +1,25 @@
 {
   "name": "express",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "",
-  "private": true,
   "main": "index.js",
-  "type": "module",
   "scripts": {
+    "server": "tsx server.ts",
+    "client": "tsx client.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "packageManager": "pnpm@10.12.4",
+  "packageManager": "pnpm@10.15.0",
   "dependencies": {
-    "@llamaindex/workflow-core": "workspace:^",
-    "openai": "^5.7.0"
+    "@llamaindex/workflow-core": "workspace:*",
+    "express": "^5.1.0",
+    "openai": "^5.7.0",
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
-    "tsx": "^4.20.3"
+    "@types/express": "^5.0.0",
+    "tsx": "^4.20.4"
   }
 }

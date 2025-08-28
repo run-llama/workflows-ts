@@ -1,7 +1,6 @@
 import { describe, test, vi, expectTypeOf, type Mock, expect } from "vitest";
 import {
   createWorkflow,
-  getContext,
   workflowEvent,
   type WorkflowEventData,
 } from "@llamaindex/workflow-core";
@@ -63,8 +62,8 @@ describe("with trace events", () => {
       debugLabel: "messageEvent",
     });
     let counter = 0;
-    workflow.handle([startEvent], () => {
-      getContext().sendEvent(messageEvent.with(counter++));
+    workflow.handle([startEvent], (context) => {
+      context.sendEvent(messageEvent.with(counter++));
     });
 
     const context = workflow.createContext();
@@ -98,8 +97,8 @@ describe("with trace events", () => {
       debugLabel: "messageEvent",
     });
     let counter = 0;
-    workflow.handle([startEvent], () => {
-      getContext().sendEvent(messageEvent.with(counter++));
+    workflow.handle([startEvent], (context) => {
+      context.sendEvent(messageEvent.with(counter++));
     });
 
     const context = workflow.createContext();
@@ -154,7 +153,8 @@ describe("with trace events", () => {
           await context.pending;
           resolvedSet.add(context);
         }
-        return h();
+
+        return h(asyncContexts[0] as any);
       },
     });
     let count = 0;
@@ -228,9 +228,8 @@ describe("get event origins", () => {
     });
 
     const workflow = withTraceEvents(createWorkflow());
-    workflow.handle([startEvent], async () => {
-      const { sendEvent, stream } = getContext();
-      const context = getContext();
+    workflow.handle([startEvent], async (context) => {
+      const { sendEvent, stream } = context;
       sendEvent(branchAEvent.with("Branch A"));
       sendEvent(branchBEvent.with("Branch B"));
       sendEvent(branchCEvent.with("Branch C"));
@@ -270,19 +269,19 @@ describe("get event origins", () => {
       return allCompleteEvent.with(results.map((e) => e.data).join(", "));
     });
 
-    workflow.handle([branchAEvent], (branchA) => {
+    workflow.handle([branchAEvent], (_context, branchA) => {
       return branchCompleteEvent.with(branchA.data);
     });
 
-    workflow.handle([branchBEvent], (branchB) => {
+    workflow.handle([branchBEvent], (_context, branchB) => {
       return branchCompleteEvent.with(branchB.data);
     });
 
-    workflow.handle([branchCEvent], (branchC) => {
+    workflow.handle([branchCEvent], (_context, branchC) => {
       return branchCompleteEvent.with(branchC.data);
     });
 
-    workflow.handle([allCompleteEvent], (allComplete) => {
+    workflow.handle([allCompleteEvent], (context, allComplete) => {
       return stopEvent.with(allComplete.data);
     });
 

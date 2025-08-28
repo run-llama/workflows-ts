@@ -1,68 +1,316 @@
-import type {
-  Workflow,
-  Workflow as WorkflowCore,
-  WorkflowContext,
+import {
+  eventSource,
+  getContext,
+  WorkflowStream,
+  type Workflow,
+  type WorkflowContext,
+  type Workflow as WorkflowCore,
+  type WorkflowEvent,
+  type WorkflowEventData,
 } from "@llamaindex/workflow-core";
-import { getContext } from "@llamaindex/workflow-core";
+import type { Handler, HandlerContext } from "../core/context";
+import { extendContext } from "../core/context";
+import { createStableHash } from "./snapshot/stable-hash";
+
+export interface SnapshotData {
+  queue: [data: any, id: number][];
+  /**
+   * These events are not recoverable because they are not in any handler
+   *
+   * This is useful when you have `messageEvent` but you don't have any handler for it
+   */
+  unrecoverableQueue: any[];
+  /**
+   * This is the version of the snapshot
+   *
+   * Change any of the handlers will change the version
+   */
+  version: string;
+
+  /**
+   * Save the current serializable state of the workflow
+   * This state will be restored when you resume the workflow
+   */
+  state?: string | undefined;
+}
+
+export type SnapshotFn = () => Promise<SnapshotData>;
+
+export type StatefulContext<
+  State = any,
+  Context extends WorkflowContext = WorkflowContext,
+> = Context & {
+  get state(): State;
+  snapshot: SnapshotFn;
+};
+
+export type StatefulHandleFn<State> = <
+  AcceptEvents extends WorkflowEvent<any>[],
+  Result extends ReturnType<WorkflowEvent<any>["with"]> | void,
+>(
+  accept: AcceptEvents,
+  handler: Handler<AcceptEvents, Result, StatefulContext<State>>,
+) => void;
+
+export type ResumeFunction<State> = (
+  serializable: Omit<SnapshotData, "unrecoverableQueue">,
+) => StatefulContext<State>;
 
 export type WorkflowWithState<State, Input> = Input extends void | undefined
   ? {
       <Workflow extends WorkflowCore>(
         workflow: Workflow,
-      ): Omit<Workflow, "createContext"> & {
-        createContext(): ReturnType<Workflow["createContext"]> & {
-          get state(): State;
-        };
+      ): Omit<Workflow, "createContext" | "handle"> & {
+        createContext(): StatefulContext<State>;
+        handle: StatefulHandleFn<State>;
+        resume: ResumeFunction<State>;
       };
     }
   : {
       <Workflow extends WorkflowCore>(
         workflow: Workflow,
-      ): Omit<Workflow, "createContext"> & {
-        createContext(input: Input): ReturnType<Workflow["createContext"]> & {
-          get state(): State;
-        };
+      ): Omit<Workflow, "createContext" | "handle"> & {
+        createContext(input: Input): StatefulContext<State>;
+        handle: StatefulHandleFn<State>;
+        resume: ResumeFunction<State>;
       };
     };
 
 type CreateState<State, Input, Context extends WorkflowContext> = {
-  getContext(): Context & {
-    get state(): State;
-  };
+  /**
+   * @deprecated Use the context parameter directly from workflow handlers instead.
+   * The context passed to handlers already includes all state properties.
+   *
+   * @example
+   * ```ts
+   * workflow.handle([startEvent], (context, event) => {
+   *   const { sendEvent } = context;
+   *   sendEvent(processEvent.with());
+   * });
+   * ```
+   */
+  getContext(): StatefulContext<State, Context>;
   withState: WorkflowWithState<State, Input>;
 };
+
+type InitFunc<Input, State> = (input: Input) => State;
 
 export function createStatefulMiddleware<
   State,
   Input = void,
   Context extends WorkflowContext = WorkflowContext,
->(init: (input: Input) => State): CreateState<State, Input, Context> {
+>(init?: InitFunc<Input, State>): CreateState<State, Input, Context> {
   return {
     getContext: getContext as never,
     withState: ((workflow: Workflow) => {
+      const pendingRequestSetMap = new WeakMap<
+        WorkflowContext,
+        Set<PromiseLike<unknown>>
+      >();
+      const getPendingRequestSet = (context: WorkflowContext) => {
+        if (!pendingRequestSetMap.has(context)) {
+          pendingRequestSetMap.set(context, new Set());
+        }
+        return pendingRequestSetMap.get(context)!;
+      };
+      const stableHash = createStableHash();
+      /**
+       * This is to indicate the version of the snapshot
+       *
+       * It happens when you modify the workflow, all old snapshots should be invalidated
+       */
+      const versionObj: [number[], Function][] = [];
+      const getVersion = () => stableHash(versionObj);
+
+      const registeredEvents = new Set<WorkflowEvent<any>>();
+      const isContextLockedWeakMap = new WeakMap<WorkflowContext, boolean>();
+      const isContextLocked = (context: WorkflowContext): boolean => {
+        return isContextLockedWeakMap.get(context) === true;
+      };
+      const isContextSnapshotReadyWeakSet = new WeakSet<WorkflowContext>();
+      const isContextSnapshotReady = (context: WorkflowContext) => {
+        return isContextSnapshotReadyWeakSet.has(context);
+      };
+
+      const contextEventQueueWeakMap = new WeakMap<
+        WorkflowContext,
+        WorkflowEventData<any>[]
+      >();
+      const handlerContextSetWeakMap = new WeakMap<
+        WorkflowContext,
+        Set<HandlerContext>
+      >();
+      const collectedEventHandlerContextWeakMap = new WeakMap<
+        WorkflowEventData<any>,
+        Set<HandlerContext>
+      >();
+
+      const createSnapshotFn = (context: WorkflowContext): SnapshotFn => {
+        return async function snapshotHandler() {
+          if (isContextLocked(context)) {
+            throw new Error(
+              "Context is already locked, you cannot snapshot a same context twice",
+            );
+          }
+          isContextLockedWeakMap.set(context, true);
+
+          // 1. wait for all context is ready
+          const handlerContexts = handlerContextSetWeakMap.get(context)!;
+
+          await Promise.all(
+            [...handlerContexts]
+              .filter((context) => context.async)
+              .map((context) => context.pending),
+          );
+          // 2. collect all necessary data for a snapshot after lock
+          const queue = contextEventQueueWeakMap.get(context)!;
+
+          // 3. serialize the data
+          isContextSnapshotReadyWeakSet.add(context);
+
+          const serializable: SnapshotData = {
+            queue: queue
+              .filter((event) => eventCounterWeakMap.has(eventSource(event)!))
+              .map((event) => [
+                event.data,
+                getEventCounter(eventSource(event)!),
+              ]),
+            unrecoverableQueue: queue
+              .filter((event) => !eventCounterWeakMap.has(eventSource(event)!))
+              .map((event) => event.data),
+            version: getVersion(),
+            state: (context as any).state
+              ? JSON.stringify((context as any).state)
+              : undefined,
+          };
+          return serializable;
+        };
+      };
+
+      let counter = 0;
+      const eventCounterWeakMap = new WeakMap<WorkflowEvent<any>, number>();
+      const counterEventMap = new Map<number, WorkflowEvent<any>>();
+      const getEventCounter = (event: WorkflowEvent<any>) => {
+        if (!eventCounterWeakMap.has(event)) {
+          eventCounterWeakMap.set(event, counter++);
+        }
+        return eventCounterWeakMap.get(event)!;
+      };
+      const getCounterEvent = (counter: number) => {
+        if (!counterEventMap.has(counter)) {
+          throw new Error(`event counter ${counter} not found`);
+        }
+        return counterEventMap.get(counter)!;
+      };
+
+      function initContext(context: WorkflowContext) {
+        handlerContextSetWeakMap.set(context, new Set());
+        contextEventQueueWeakMap.set(context, []);
+        context.__internal__call_send_event.subscribe(
+          (eventData, handlerContext) => {
+            contextEventQueueWeakMap.get(context)!.push(eventData);
+            if (isContextLocked(context)) {
+              if (isContextSnapshotReady(context)) {
+                console.warn(
+                  "snapshot is already ready, sendEvent after snapshot is not allowed",
+                );
+              }
+              if (!collectedEventHandlerContextWeakMap.has(eventData)) {
+                collectedEventHandlerContextWeakMap.set(eventData, new Set());
+              }
+              collectedEventHandlerContextWeakMap
+                .get(eventData)!
+                .add(handlerContext);
+            }
+          },
+        );
+        context.__internal__call_context.subscribe((handlerContext, next) => {
+          if (isContextLocked(context)) {
+            // replace it with noop, avoid calling the handler after snapshot
+            handlerContext.handler = () => {};
+            next(handlerContext);
+          } else {
+            const queue = contextEventQueueWeakMap.get(context)!;
+            handlerContext.inputs.forEach((input) => {
+              queue.splice(queue.indexOf(input), 1);
+            });
+            const originalHandler = handlerContext.handler;
+            const pendingRequests = getPendingRequestSet(context);
+            const isPendingTask = pendingRequests.size !== 0;
+            if (isPendingTask) {
+              handlerContext.handler = async (...events) => {
+                return Promise.all([...pendingRequests]).finally(() => {
+                  return originalHandler(...events);
+                });
+              };
+            }
+            handlerContextSetWeakMap.get(context)!.add(handlerContext);
+            next(handlerContext);
+          }
+        });
+      }
+
+      // Create a function to generate stream transform wrappers
+      // Shared function to create stateful context
+      const createStatefulContext = (state: State): StatefulContext<State> => {
+        const context = workflow.createContext();
+        initContext(context);
+
+        const snapshotFn = createSnapshotFn(context);
+
+        extendContext(context, {
+          get state() {
+            return state;
+          },
+          snapshot: snapshotFn,
+        });
+
+        return context as StatefulContext<State>;
+      };
+
       return {
         ...workflow,
-        createContext: (input: Input) => {
-          const state = init(input);
-          const context = workflow.createContext();
-          context.__internal__call_context.subscribe((_, next) => {
-            // todo: make sure getContext is consistent with `workflow.createContext`
-            const context = getContext();
-            if (!Reflect.has(context, "state")) {
-              Object.defineProperty(context, "state", {
-                get: () => state,
-              });
-            }
-            next(_);
+        handle: (events: WorkflowEvent<any>[], handler: any) => {
+          // version the snapshot based on the input events and function
+          // I assume `uniqueId` is changeable
+          versionObj.push([events.map(getEventCounter), handler]);
+
+          events.forEach((event) => {
+            counterEventMap.set(getEventCounter(event), event);
           });
-          if (!Reflect.has(context, "state")) {
-            Object.defineProperty(context, "state", {
-              get: () => state,
-            });
-          }
-          return context as any;
+
+          events.forEach((event) => {
+            registeredEvents.add(event);
+          });
+          return workflow.handle(events, handler);
+        },
+        resume(
+          serializable: Omit<SnapshotData, "unrecoverableQueue">,
+        ): StatefulContext<State> {
+          const resumedState = serializable.state
+            ? JSON.parse(serializable.state)
+            : undefined;
+
+          // Call the stateful createContext with the resumed state
+          const context = createStatefulContext(resumedState);
+
+          // triggers the lazy initialization of the stream wrapper
+          context.stream;
+
+          context.sendEvent(
+            ...serializable.queue.map(([data, id]) => {
+              const event = getCounterEvent(id);
+              return event.with(data);
+            }),
+          );
+
+          return context;
+        },
+        createContext(input?: Input): StatefulContext<State> {
+          const state = init?.(input as Input) as State;
+          return createStatefulContext(state);
         },
       };
-    }) as unknown as WorkflowWithState<State, Input>,
+    }) as WorkflowWithState<State, Input>,
   };
 }

@@ -1,0 +1,59 @@
+{
+  "name": "@llamaindex/workflow-viz",
+  "version": "1.0.1",
+  "description": "Visualization components for LlamaFlow",
+  "type": "module",
+  "main": "dist/index.cjs",
+  "types": "dist/index.d.ts",
+  "module": "dist/index.js",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      },
+      "default": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "bunchee",
+    "dev": "bunchee --watch",
+    "test": "vitest run",
+    "test:ui": "vitest --ui",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "@babel/types": "^7.27.1",
+    "@llamaindex/workflow-core": "workspace:*",
+    "@types/node": "^22.15.19",
+    "bunchee": "^6.5.1",
+    "vitest": "^2.0.0",
+    "@vitest/ui": "^2.0.0"
+  },
+  "peerDependencies": {
+    "@llamaindex/workflow-core": "workspace:*"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/run-llama/llama-flow.git",
+    "directory": "packages/viz"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "@babel/parser": "^7.27.2",
+    "graphology": "^0.26.0"
+  }
+}

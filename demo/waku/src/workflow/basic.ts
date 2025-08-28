@@ -11,7 +11,7 @@ const sql = neon(getEnv("DATABASE_URL")!);
 
 export const workflow = createWorkflow();
 
-workflow.handle([storeEvent], async ({ data }) => {
+workflow.handle([storeEvent], async (context, { data }) => {
   const embeddingResponse = await openai.embeddings.create({
     model: "text-embedding-ada-002",
     input: data,
@@ -24,8 +24,8 @@ workflow.handle([storeEvent], async ({ data }) => {
   return stopEvent.with("success");
 });
 
-workflow.handle([searchEvent], async ({ data }) => {
-  const { signal } = getContext();
+workflow.handle([searchEvent], async (context, { data }) => {
+  const { signal } = context;
   signal.addEventListener("abort", () => {
     console.error("error", signal.reason);
   });
