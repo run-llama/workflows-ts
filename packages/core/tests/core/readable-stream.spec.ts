@@ -132,8 +132,8 @@ describe("workflow basic", () => {
     sendEvent(startEvent.with("100"));
     const [l, r] = newStream.tee();
     expect(newStream.locked).toBe(true);
-    await l.until(stopEvent).toArray();
-    await r.until(stopEvent).toArray();
+    await (l as any).until(stopEvent).toArray();
+    await (r as any).until(stopEvent).toArray();
   });
 });
 
