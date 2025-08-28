@@ -82,9 +82,10 @@ jobs:
       - name: Install dependencies for llamaindex
         run: pnpm install
         working-directory: llamaindex
-      - name: Override workflow docs with local version
+      - name: Add workflow docs to Next.js project
         run: |
-          pnpm link ${{github.workspace}}/workflows-ts/docs
+          mkdir -p llamaindex/apps/next/src/content/docs
+          cp -r ${{github.workspace}}/workflows-ts/docs/* llamaindex/apps/next/src/content/docs/
         working-directory: llamaindex/apps/next
       - name: Install Vercel CLI
         run: npm install --global vercel@latest
