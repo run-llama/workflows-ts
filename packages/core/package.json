@@ -158,7 +158,8 @@
     "typedoc": "^0.28.7",
     "typedoc-plugin-markdown": "^4.4.1",
     "typescript": "^5.8.3",
-    "zod": "^3.25.0 || ^4.0.0"
+    "zod": "^3.25.0 || ^4.0.0",
+    "@opentelemetry/api": "^1.9.0"
   },
   "peerDependencies": {
     "@modelcontextprotocol/sdk": "^1.7.0",
@@ -166,7 +167,8 @@
     "next": "^15.2.2",
     "p-retry": "^6.2.1",
     "rxjs": "^7.8.2",
-    "zod": "^3.25.0 || ^4.0.0"
+    "zod": "^3.25.0 || ^4.0.0",
+    "@opentelemetry/api": "^1.9.0"
   },
   "license": "MIT",
   "peerDependenciesMeta": {
@@ -186,6 +188,9 @@
       "optional": true
     },
     "zod": {
+      "optional": true
+    },
+    "@opentelemetry/api": {
       "optional": true
     }
   },
