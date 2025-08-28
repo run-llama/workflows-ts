@@ -100,6 +100,9 @@ async function llm(
 async function callTool(
   toolCall: ChatCompletionMessageToolCall,
 ): Promise<string> {
+  if (!("function" in toolCall)) {
+    throw new Error("Unsupported tool call type");
+  }
   const toolName = toolCall.function.name;
   const toolInput = JSON.parse(toolCall.function.arguments);
 
@@ -177,7 +180,7 @@ workflow.handle([toolCallEvent], async (context, event) => {
   const { sendEvent, state } = context;
 
   try {
-    if (toolCall.function.name.startsWith("human_")) {
+    if ("function" in toolCall && toolCall.function.name.startsWith("human_")) {
       // delegate to human if tool call starts with "human_"
       state.humanToolId = toolCall.id;
       sendEvent(humanRequestEvent.with());
@@ -195,10 +198,12 @@ workflow.handle([toolCallEvent], async (context, event) => {
       );
     }
   } catch (error) {
-    console.error(`Error executing tool ${toolCall.function.name}:`, error);
+    const toolName =
+      "function" in toolCall ? toolCall.function.name : "unknown";
+    console.error(`Error executing tool ${toolName}:`, error);
     sendEvent(
       toolResponseEvent.with({
-        toolResponse: `Error executing ${toolCall.function.name}: ${error}`,
+        toolResponse: `Error executing ${toolName}: ${error}`,
         toolId: toolCall.id,
       }),
     );

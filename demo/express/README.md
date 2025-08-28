@@ -4,8 +4,8 @@ This example demonstrates how to use the workflow engine in a client-server arch
 
 ## Files
 
-- `server.ts` - Express server that handles workflow execution and snapshot storage
-- `client.ts` - Client that communicates with the server via HTTP requests
+- `5-server.ts` - Express server that handles workflow execution and snapshot storage
+- `5-client.ts` - Client that communicates with the server via HTTP requests
 
 ## How it works
 

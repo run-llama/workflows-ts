@@ -58,9 +58,55 @@ export type ContextNext = (
   next: (context: HandlerContext) => void,
 ) => void;
 
+/**
+ * Execution context for workflow event processing.
+ *
+ * The workflow context provides the runtime environment for executing handlers
+ * and managing event flow. It offers access to the event stream, abort signals,
+ * and methods for sending events within the workflow.
+ *
+ * @example
+ * ```typescript
+ * // Use the current context (first parameter inside a handler)
+ * const { sendEvent, stream, signal } = context;
+ *
+ * // Send events
+ * sendEvent(
+ *   ProcessEvent.with({ step: 'validation' }),
+ *   LogEvent.with({ message: 'Processing started' })
+ * );
+ *
+ * // Access the event stream
+ * await stream.filter(CompletionEvent).take(1).toArray();
+ *
+ * // Check for cancellation
+ * if (signal.aborted) {
+ *   throw new Error('Operation cancelled');
+ * }
+ * ```
+ *
+ * @category Context
+ * @public
+ */
 export type WorkflowContext = {
+  /**
+   * Stream of all events flowing through this workflow context.
+   * Can be used to listen for specific events or create reactive processing chains.
+   */
   get stream(): WorkflowStream<WorkflowEventData<any>>;
+
+  /**
+   * Abort signal that indicates if the workflow has been cancelled.
+   * Handlers should check this periodically for long-running operations.
+   */
   get signal(): AbortSignal;
+
+  /**
+   * Sends one or more events into the workflow for processing.
+   * Events will be delivered to all matching handlers asynchronously.
+   *
+   * @param events - Event data instances to send
+   */
   sendEvent: (...events: WorkflowEventData<any>[]) => void;
 
   /**
