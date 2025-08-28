@@ -12,7 +12,10 @@
     "format:write": "prettier --ignore-unknown --write .",
     "lint": "turbo run lint",
     "lint:fix": "turbo run lint:fix",
-    "publish": "pnpm run build && changeset publish",
+    "build:docs": "node scripts/build-docs.js",
+    "build:docs:core": "pnpm --filter=@llamaindex/workflow-core run build:docs",
+    "add-frontmatter": "node scripts/add-frontmatter.js",
+    "publish": "pnpm run build && pnpm run build:docs && changeset publish",
     "prepare": "husky"
   },
   "devDependencies": {

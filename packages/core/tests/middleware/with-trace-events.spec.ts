@@ -74,12 +74,14 @@ describe("with trace events", () => {
     context.sendEvent(startEvent.with());
 
     const [l, r] = stream.tee();
-    const allEvents = await l.until((ev) => ev.data === 2).toArray();
+    const allEvents = await (l as any)
+      .until((ev: any) => ev.data === 2)
+      .toArray();
 
     const events = await workflow
       .substream(
         ev,
-        r.until((ev) => ev.data === 2),
+        (r as any).until((ev: any) => ev.data === 2),
       )
       .filter((e) => messageEvent.include(e))
       .toArray();

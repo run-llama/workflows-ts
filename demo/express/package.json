@@ -1,16 +1,18 @@
 {
-  "name": "express",
-  "version": "1.0.1",
+  "name": "@llamaindex/express-demo",
+  "private": true,
+  "version": "1.0.2",
   "description": "",
   "main": "index.js",
+  "type": "module",
   "scripts": {
-    "server": "tsx server.ts",
-    "client": "tsx client.ts",
+    "server": "tsx 5-server.ts",
+    "client": "tsx 5-client.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "packageManager": "pnpm@10.15.0",
   "dependencies": {
     "@llamaindex/workflow-core": "workspace:*",

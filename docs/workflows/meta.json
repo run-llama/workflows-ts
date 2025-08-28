@@ -5,10 +5,8 @@
   "defaultOpen": false,
   "pages": [
     "index",
-    "basic-workflow",
-    "streaming",
-    "advanced-events",
-    "llamaindex-integration",
-    "human-in-the-loop"
+    "tutorials/express_agent",
+    "common_patterns",
+    "api-reference"
   ]
 }
