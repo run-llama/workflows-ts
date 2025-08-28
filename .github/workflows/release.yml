@@ -21,6 +21,9 @@ jobs:
           cache: "pnpm"
       - name: Install dependencies
         run: pnpm install
+      - name: Generate API Documentation
+        run: |
+          pnpm run build:docs
       - name: Create Release Pull Request or Publish to npm
         id: changesets
         uses: changesets/action@v1

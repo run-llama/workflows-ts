@@ -14,16 +14,16 @@ describe("stream api", () => {
     const workflow = createWorkflow();
     const { sendEvent, stream } = workflow.createContext();
     sendEvent(events.messageEvent.with());
-    const response = stream
-      .pipeThrough(
+    const response = (
+      stream.pipeThrough(
         new TransformStream({
           transform(event, controller) {
             controller.enqueue(event);
             controller.terminate();
           },
         }),
-      )
-      .toResponse();
+      ) as any
+    ).toResponse();
     //#endregion
 
     //#region client

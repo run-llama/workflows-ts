@@ -137,6 +137,8 @@
   ],
   "scripts": {
     "build": "rimraf dist interrupter middleware stream util async-context && tsdown",
+    "build:docs": "typedoc --options typedoc.json",
+    "build:all": "npm run build && npm run build:docs",
     "dev": "tsdown --watch",
     "test": "vitest run",
     "test:ui": "vitest --ui",
@@ -153,6 +155,8 @@
     "simple-async-context": "^1.0.4",
     "stream-chain": "^3.4.0",
     "tsdown": "^0.12.9",
+    "typedoc": "^0.28.7",
+    "typedoc-plugin-markdown": "^4.4.1",
     "typescript": "^5.8.3",
     "zod": "^3.25.0 || ^4.0.0"
   },
