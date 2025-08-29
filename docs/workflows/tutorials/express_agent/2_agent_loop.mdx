@@ -46,13 +46,15 @@ Let's explore this in more detail, first with a basic implementation, then using
 
 Let's start by implementing the agent loop using the same structure as our pseudo-code, but with real functions. This will help us understand the core logic before we structure it with workflows.
 
+Note that we're using type aliases for the OpenAI API types to increase readability.
+
 ```typescript
 import { OpenAI } from "openai";
 import {
-  ChatCompletionMessage,
-  ChatCompletionMessageParam,
-  ChatCompletionMessageToolCall,
-  ChatCompletionTool,
+  ChatCompletionMessage as Message,
+  ChatCompletionMessageParam as InputMessage,
+  ChatCompletionMessageFunctionToolCall as ToolCall,
+  ChatCompletionTool as Tool,
 } from "openai/resources/chat/completions";
 
 // Initialize OpenAI client
@@ -61,7 +63,7 @@ const openai = new OpenAI({
 });
 
 // Define available tools
-const tools: ChatCompletionTool[] = [
+const tools: Tool[] = [
   {
     type: "function" as const,
     function: {
@@ -82,10 +84,7 @@ const tools: ChatCompletionTool[] = [
 ];
 
 // LLM function - handles the AI reasoning
-async function llm(
-  messages: ChatCompletionMessageParam[],
-  tools: ChatCompletionTool[],
-): Promise<ChatCompletionMessage> {
+async function llm(messages: InputMessage[], tools: Tool[]): Promise<Message> {
   const completion = await openai.chat.completions.create({
     model: "gpt-4.1-mini",
     messages,
@@ -102,9 +101,7 @@ async function llm(
 }
 
 // Tool calling function - executes the requested tools
-async function callTool(
-  toolCall: ChatCompletionMessageToolCall,
-): Promise<string> {
+async function callTool(toolCall: ToolCall): Promise<string> {
   const toolName = toolCall.function.name;
   const toolInput = JSON.parse(toolCall.function.arguments);
 
@@ -121,9 +118,7 @@ async function callTool(
 
 // Now implement our agent loop
 async function runAgentLoop(userInput: string) {
-  let messages: ChatCompletionMessageParam[] = [
-    { role: "user", content: userInput },
-  ];
+  let messages: InputMessage[] = [{ role: "user", content: userInput }];
 
   while (true) {
     const response = await llm(messages, tools);
@@ -134,6 +129,9 @@ async function runAgentLoop(userInput: string) {
     if (response.tool_calls) {
       // Process each tool call
       for (const toolCall of response.tool_calls) {
+        if (toolCall.type !== "function") {
+          throw new Error("Unsupported tool call type");
+        }
         const toolResponse = await callTool(toolCall);
         messages.push({
           role: "tool",
@@ -176,25 +174,23 @@ Let's convert our agent loop to use workflows. We'll keep the same `llm()` and `
 import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";
 import { OpenAI } from "openai";
 import {
-  ChatCompletionMessage,
-  ChatCompletionMessageParam,
-  ChatCompletionMessageToolCall,
-  ChatCompletionTool,
+  ChatCompletionMessage as Message,
+  ChatCompletionMessageParam as InputMessage,
+  ChatCompletionMessageFunctionToolCall as ToolCall,
+  ChatCompletionTool as Tool,
+  ChatCompletionToolMessageParam as ToolResponseMessage,
 } from "openai/resources/chat/completions";
 
 const workflow = createWorkflow();
 
 // Define our events
 const userInputEvent = workflowEvent<{
-  messages: ChatCompletionMessageParam[];
+  messages: InputMessage[];
 }>();
 const toolCallEvent = workflowEvent<{
-  toolCall: ChatCompletionMessageToolCall;
+  toolCall: ToolCall;
 }>();
-const toolResponseEvent = workflowEvent<{
-  toolResponse: string;
-  toolId: string;
-}>();
+const toolResponseEvent = workflowEvent<ToolResponseMessage>();
 const finalResponseEvent = workflowEvent<string>();
 
 // Initialize OpenAI client (same as before)
@@ -236,6 +232,9 @@ workflow.handle([userInputEvent], async (context, { data }) => {
     if (response.tool_calls && response.tool_calls.length > 0) {
       // Send tool call events for each requested tool
       for (const toolCall of response.tool_calls) {
+        if (toolCall.type !== "function") {
+          throw new Error("Unsupported tool call type");
+        }
         sendEvent(
           toolCallEvent.with({
             toolCall,
@@ -245,7 +244,7 @@ workflow.handle([userInputEvent], async (context, { data }) => {
 
       // Collect ALL tool responses before continuing
       const expectedToolCount = response.tool_calls.length;
-      const toolResponses: Array<{ toolResponse: string; toolId: string }> = [];
+      const toolResponses: Array<ToolResponseMessage> = [];
 
       // Listen for tool responses until we have all of them
       await stream.filter(toolResponseEvent).forEach((responseEvent) => {
@@ -254,14 +253,7 @@ workflow.handle([userInputEvent], async (context, { data }) => {
         // Once we have all responses, continue the conversation
         if (toolResponses.length === expectedToolCount) {
           // Add tool response messages
-          const finalMessages = [
-            ...updatedMessages,
-            ...toolResponses.map((response) => ({
-              role: "tool" as const,
-              content: response.toolResponse,
-              tool_call_id: response.toolId,
-            })),
-          ];
+          const finalMessages = [...updatedMessages, ...toolResponses];
 
           // Continue the loop with the updated conversation
           sendEvent(userInputEvent.with({ messages: finalMessages }));
@@ -290,18 +282,18 @@ workflow.handle([toolCallEvent], async (context, { data }) => {
     // Send the tool response back
     sendEvent(
       toolResponseEvent.with({
-        toolResponse,
-        toolId: toolCall.id,
+        role: "tool",
+        content: toolResponse,
+        tool_call_id: toolCall.id,
       })
     );
   } catch (error) {
-    const toolName =
-      "function" in toolCall ? toolCall.function.name : "unknown";
-    console.error(`Error executing tool ${toolName}:`, error);
+    console.error(`Error executing tool ${toolCall.function.name}:`, error);
     sendEvent(
       toolResponseEvent.with({
-        toolResponse: `Error executing ${toolName}: ${error}`,
-        toolId: toolCall.id,
+        role: "tool",
+        content: `Error executing ${toolCall.function.name}: ${error}`,
+        tool_call_id: toolCall.id,
       })
     );
   }

@@ -19,3 +19,16 @@ We will:
 - Basic knowledge of TypeScript and Node.js.
 - Basic knowledge of the command line.
 - An OpenAI API key or OpenAI-compatible service
+
+## Setup
+
+To run the examples, create a new folder and then type the following commands to initialize a new project and to install the required dependencies:
+
+```bash
+npm init
+npm pkg set type=module # Make sure we're using ESM modules
+npm add @llamaindex/workflow-core@^1.3.1 express@^5.1.0 openai@^5.7.0 uuid@^11.1.0
+npm add -D @types/express@^5.0.0 tsx@^4.20.4
+```
+
+As we're adding `tsx` to the project, you can run any example file just by typing: `npm run tsx <filename>`.
