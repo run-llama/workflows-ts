@@ -1,26 +1,18 @@
-import {
-  createWorkflow,
-  workflowEvent,
-  getContext,
-} from "@llamaindex/workflow-core";
+import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";
 import { OpenAI } from "openai";
 import {
-  ChatCompletionMessage,
-  ChatCompletionMessageParam,
-  ChatCompletionMessageToolCall,
-  ChatCompletionTool,
+  ChatCompletionMessage as Message,
+  ChatCompletionMessageParam as InputMessage,
+  ChatCompletionMessageFunctionToolCall as ToolCall,
+  ChatCompletionTool as Tool,
+  ChatCompletionToolMessageParam as ToolResponseMessage,
 } from "openai/resources/chat/completions";
 import { createStatefulMiddleware } from "@llamaindex/workflow-core/middleware/state";
 
-type ToolResponseEventData = {
-  toolResponse: string;
-  toolId: string;
-};
-
 type AgentWorkflowState = {
   expectedToolCount: number;
-  messages: ChatCompletionMessageParam[];
-  toolResponses: Array<ToolResponseEventData>;
+  messages: InputMessage[];
+  toolResponses: Array<ToolResponseMessage>;
 };
 
 const stateful = createStatefulMiddleware((state: AgentWorkflowState) => state);
@@ -28,13 +20,12 @@ const workflow = stateful.withState(createWorkflow());
 
 // Define our events
 const userInputEvent = workflowEvent<{
-  messages: ChatCompletionMessageParam[];
+  messages: InputMessage[];
 }>();
 const toolCallEvent = workflowEvent<{
-  toolCall: ChatCompletionMessageToolCall;
+  toolCall: ToolCall;
 }>();
-
-const toolResponseEvent = workflowEvent<ToolResponseEventData>();
+const toolResponseEvent = workflowEvent<ToolResponseMessage>();
 const finalResponseEvent = workflowEvent<string>();
 
 // Initialize OpenAI client (same as before)
@@ -43,7 +34,7 @@ const openai = new OpenAI({
 });
 
 // Define available tools
-const tools: ChatCompletionTool[] = [
+const tools: Tool[] = [
   {
     type: "function" as const,
     function: {
@@ -64,10 +55,7 @@ const tools: ChatCompletionTool[] = [
 ];
 
 // LLM function - handles the AI reasoning
-async function llm(
-  messages: ChatCompletionMessageParam[],
-  tools: ChatCompletionTool[],
-): Promise<ChatCompletionMessage> {
+async function llm(messages: InputMessage[], tools: Tool[]): Promise<Message> {
   const completion = await openai.chat.completions.create({
     model: "gpt-4.1-mini",
     messages,
@@ -84,9 +72,7 @@ async function llm(
 }
 
 // Tool calling function - executes the requested tools
-async function callTool(
-  toolCall: ChatCompletionMessageToolCall,
-): Promise<string> {
+async function callTool(toolCall: ToolCall): Promise<string> {
   const toolName = toolCall.function.name;
   const toolInput = JSON.parse(toolCall.function.arguments);
 
@@ -118,6 +104,9 @@ workflow.handle([userInputEvent], async (context, { data }) => {
       state.expectedToolCount = response.tool_calls.length;
       // Send tool call events for each requested tool
       for (const toolCall of response.tool_calls) {
+        if (toolCall.type !== "function") {
+          throw new Error("Unsupported tool call type");
+        }
         sendEvent(
           toolCallEvent.with({
             toolCall,
@@ -144,15 +133,7 @@ workflow.handle([toolResponseEvent], async (context, { data }) => {
   // Once we have all responses, continue the conversation
   if (state.toolResponses.length === state.expectedToolCount) {
     // Add tool response messages
-    const finalMessages = [
-      ...state.messages,
-      // TODO: simplify this using openai type
-      ...state.toolResponses.map((response) => ({
-        role: "tool" as const,
-        content: response.toolResponse,
-        tool_call_id: response.toolId,
-      })),
-    ];
+    const finalMessages = [...state.messages, ...state.toolResponses];
 
     // Continue the loop with the updated conversation
     sendEvent(userInputEvent.with({ messages: finalMessages }));
@@ -171,16 +152,18 @@ workflow.handle([toolCallEvent], async (context, { data }) => {
     // Send the tool response back
     sendEvent(
       toolResponseEvent.with({
-        toolResponse,
-        toolId: toolCall.id,
+        role: "tool",
+        content: toolResponse,
+        tool_call_id: toolCall.id,
       }),
     );
   } catch (error) {
     console.error(`Error executing tool ${toolCall.function.name}:`, error);
     sendEvent(
       toolResponseEvent.with({
-        toolResponse: `Error executing ${toolCall.function.name}: ${error}`,
-        toolId: toolCall.id,
+        role: "tool",
+        content: `Error executing ${toolCall.function.name}: ${error}`,
+        tool_call_id: toolCall.id,
       }),
     );
   }

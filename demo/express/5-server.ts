@@ -9,19 +9,15 @@ import {
   ChatCompletionMessage as Message,
   ChatCompletionMessageParam as InputMessage,
   ChatCompletionMessageFunctionToolCall as ToolCall,
-  ChatCompletionTool,
+  ChatCompletionTool as Tool,
+  ChatCompletionToolMessageParam as ToolResponseMessage,
 } from "openai/resources/chat/completions";
 import { v4 as uuid } from "uuid";
-
-type ToolResponseEventData = {
-  toolResponse: string;
-  toolId: string;
-};
 
 type AgentWorkflowState = {
   expectedToolCount: number;
   messages: InputMessage[];
-  toolResponses: Array<ToolResponseEventData>;
+  toolResponses: Array<ToolResponseMessage>;
   humanToolId: string | null;
 };
 
@@ -40,7 +36,7 @@ const userInputEvent = workflowEvent<{ messages: InputMessage[] }>({
 const toolCallEvent = workflowEvent<{ toolCall: ToolCall }>({
   debugLabel: "toolCallEvent",
 });
-const toolResponseEvent = workflowEvent<ToolResponseEventData>({
+const toolResponseEvent = workflowEvent<ToolResponseMessage>({
   debugLabel: "toolResponseEvent",
 });
 const finalResponseEvent = workflowEvent<string>({
@@ -57,7 +53,7 @@ const humanResponseEvent = workflowEvent<string>({
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 // Define available tools
-const tools: ChatCompletionTool[] = [
+const tools: Tool[] = [
   {
     type: "function" as const,
     function: {
@@ -85,10 +81,7 @@ const tools: ChatCompletionTool[] = [
 ];
 
 // LLM function
-async function llm(
-  messages: InputMessage[],
-  tools: ChatCompletionTool[],
-): Promise<Message> {
+async function llm(messages: InputMessage[], tools: Tool[]): Promise<Message> {
   const completion = await openai.chat.completions.create({
     model: "gpt-4.1-mini",
     messages,
@@ -130,9 +123,12 @@ workflow.handle([userInputEvent], async (context, event) => {
     if (response.tool_calls && response.tool_calls.length > 0) {
       state.expectedToolCount = response.tool_calls.length;
       for (const toolCall of response.tool_calls) {
+        if (toolCall.type !== "function") {
+          throw new Error("Unsupported tool call type");
+        }
         sendEvent(
           toolCallEvent.with({
-            toolCall: toolCall as ToolCall,
+            toolCall: toolCall,
           }),
         );
       }
@@ -150,14 +146,7 @@ workflow.handle([toolResponseEvent], async (context, event) => {
   state.toolResponses.push(event.data);
 
   if (state.toolResponses.length === state.expectedToolCount) {
-    const finalMessages = [
-      ...state.messages,
-      ...state.toolResponses.map((response) => ({
-        role: "tool" as const,
-        content: response.toolResponse,
-        tool_call_id: response.toolId,
-      })),
-    ];
+    const finalMessages = [...state.messages, ...state.toolResponses];
 
     sendEvent(userInputEvent.with({ messages: finalMessages }));
   }
@@ -175,8 +164,9 @@ workflow.handle([toolCallEvent], async (context, event) => {
       const toolResponse = await callTool(toolCall);
       sendEvent(
         toolResponseEvent.with({
-          toolResponse,
-          toolId: toolCall.id,
+          role: "tool",
+          content: toolResponse,
+          tool_call_id: toolCall.id,
         }),
       );
     }
@@ -184,8 +174,9 @@ workflow.handle([toolCallEvent], async (context, event) => {
     console.error(`Error executing tool ${toolCall.function.name}:`, error);
     sendEvent(
       toolResponseEvent.with({
-        toolResponse: `Error executing ${toolCall.function.name}: ${error}`,
-        toolId: toolCall.id,
+        role: "tool",
+        content: `Error executing ${toolCall.function.name}: ${error}`,
+        tool_call_id: toolCall.id,
       }),
     );
   }
@@ -195,8 +186,9 @@ workflow.handle([humanResponseEvent], async (context, event) => {
   const { sendEvent, state } = context;
   sendEvent(
     toolResponseEvent.with({
-      toolResponse: "My name is " + event.data,
-      toolId: state.humanToolId!,
+      role: "tool",
+      content: "My name is " + event.data,
+      tool_call_id: state.humanToolId!,
     }),
   );
 });

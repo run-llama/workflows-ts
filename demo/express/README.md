@@ -7,6 +7,15 @@ This example demonstrates how to use the workflow engine in a client-server arch
 - `5-server.ts` - Express server that handles workflow execution and snapshot storage
 - `5-client.ts` - Client that communicates with the server via HTTP requests
 
+### Progression of examples
+
+This Express client-server example is built on the following examples, in order:
+
+1. `2a-agent-loop.ts` – basic agent loop with tool calls
+2. `2b-agent-loop-workflow.ts` – agent loop implemented using workflows
+3. `3-adding-state.ts` – adds workflow state management
+4. `4-adding-hitl.ts` – adds human-in-the-loop (HITL) with snapshot/resume
+
 ## How it works
 
 1. **Client sends initial request**: The client sends a POST request to `/workflow/start` with the initial messages

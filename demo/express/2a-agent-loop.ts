@@ -1,9 +1,9 @@
 import { OpenAI } from "openai";
 import {
-  ChatCompletionMessage,
-  ChatCompletionMessageParam,
-  ChatCompletionMessageToolCall,
-  ChatCompletionTool,
+  ChatCompletionMessage as Message,
+  ChatCompletionMessageParam as InputMessage,
+  ChatCompletionMessageFunctionToolCall as ToolCall,
+  ChatCompletionTool as Tool,
 } from "openai/resources/chat/completions";
 
 // Initialize OpenAI client
@@ -12,7 +12,7 @@ const openai = new OpenAI({
 });
 
 // Define available tools
-const tools: ChatCompletionTool[] = [
+const tools: Tool[] = [
   {
     type: "function" as const,
     function: {
@@ -33,10 +33,7 @@ const tools: ChatCompletionTool[] = [
 ];
 
 // LLM function - handles the AI reasoning
-async function llm(
-  messages: ChatCompletionMessageParam[],
-  tools: ChatCompletionTool[],
-): Promise<ChatCompletionMessage> {
+async function llm(messages: InputMessage[], tools: Tool[]): Promise<Message> {
   const completion = await openai.chat.completions.create({
     model: "gpt-4.1-mini",
     messages,
@@ -53,9 +50,7 @@ async function llm(
 }
 
 // Tool calling function - executes the requested tools
-async function callTool(
-  toolCall: ChatCompletionMessageToolCall,
-): Promise<string> {
+async function callTool(toolCall: ToolCall): Promise<string> {
   const toolName = toolCall.function.name;
   const toolInput = JSON.parse(toolCall.function.arguments);
 
@@ -72,9 +67,7 @@ async function callTool(
 
 // Now implement our agent loop
 async function runAgentLoop(userInput: string) {
-  let messages: ChatCompletionMessageParam[] = [
-    { role: "user", content: userInput },
-  ];
+  let messages: InputMessage[] = [{ role: "user", content: userInput }];
 
   while (true) {
     const response = await llm(messages, tools);
@@ -85,6 +78,9 @@ async function runAgentLoop(userInput: string) {
     if (response.tool_calls) {
       // Process each tool call
       for (const toolCall of response.tool_calls) {
+        if (toolCall.type !== "function") {
+          throw new Error("Unsupported tool call type");
+        }
         const toolResponse = await callTool(toolCall);
         messages.push({
           role: "tool",
