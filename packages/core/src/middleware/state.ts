@@ -1,7 +1,6 @@
 import {
   eventSource,
   getContext,
-  WorkflowStream,
   type Workflow,
   type WorkflowContext,
   type Workflow as WorkflowCore,
@@ -119,6 +118,7 @@ export function createStatefulMiddleware<
        *
        * It happens when you modify the workflow, all old snapshots should be invalidated
        */
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
       const versionObj: [number[], Function][] = [];
       const getVersion = () => stableHash(versionObj);
 
@@ -295,6 +295,7 @@ export function createStatefulMiddleware<
           const context = createStatefulContext(resumedState);
 
           // triggers the lazy initialization of the stream wrapper
+          // eslint-disable-next-line @typescript-eslint/no-unused-expressions
           context.stream;
 
           context.sendEvent(

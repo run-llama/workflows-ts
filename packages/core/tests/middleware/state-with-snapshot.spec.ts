@@ -1,9 +1,5 @@
 import { describe, expect, test } from "vitest";
-import {
-  createWorkflow,
-  workflowEvent,
-  type WorkflowEventData,
-} from "@llamaindex/workflow-core";
+import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";
 import {
   createStatefulMiddleware,
   type SnapshotData,

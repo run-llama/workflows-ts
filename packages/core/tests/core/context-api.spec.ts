@@ -151,6 +151,7 @@ describe("workflow context api", () => {
       context.sendEvent(aEvent.with());
       return stopEvent.with();
     });
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const fn2 = vi.fn(async (context) => {
       return aResultEvent.with();
     });

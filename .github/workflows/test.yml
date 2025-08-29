@@ -70,6 +70,8 @@ jobs:
         run: pnpm install
       - name: Run format
         run: pnpm run format
+      - name: Run lint
+        run: pnpm run lint
   type:
     name: Type Check
     runs-on: ubuntu-latest

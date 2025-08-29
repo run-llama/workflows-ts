@@ -46,8 +46,9 @@ describe("full workflow middleware", () => {
       [[[startEvent], [stopEvent]]],
       () => ({}),
     );
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     workflow.strictHandle([startEvent], (sendEvent, events) => {
-      // @ts-expect-error
+      // @ts-expect-error - expecting error ts(2345) (argument of type X is not assignable to type Y)
       sendEvent(messageEvent.with());
       sendEvent(stopEvent.with(""));
     });

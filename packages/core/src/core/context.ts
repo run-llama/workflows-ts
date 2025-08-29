@@ -218,6 +218,7 @@ export const createContext = ({
   listeners,
 }: ExecutorParams): WorkflowContext => {
   const queue: WorkflowEventData<any>[] = [];
+  // eslint-disable-next-line prefer-const
   let rootWorkflowContext: WorkflowContext;
   const runHandler = (
     handler: Handler<WorkflowEvent<any>[], any>,

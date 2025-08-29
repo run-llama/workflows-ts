@@ -158,7 +158,7 @@ export function withTraceEvents<
         const handlerWeakMap = handlersWeakMap.get(inputEvents)!;
 
         const originalHandler = handlerContext.handler;
-        let finalHandler = originalHandler;
+        const finalHandler = originalHandler;
         let handlerMiddleware: Handler<
           WorkflowEvent<any>[],
           WorkflowEventData<any> | void
@@ -181,6 +181,7 @@ export function withTraceEvents<
             WorkflowEventData<any> | void
           >,
         ) => Handler<WorkflowEvent<any>[], WorkflowEventData<any> | void>)[];
+        // eslint-disable-next-line prefer-const
         handlerMiddleware = (...args) => {
           const context = getContext();
           contextTraceWeakMap.set(handlerContext, context);
