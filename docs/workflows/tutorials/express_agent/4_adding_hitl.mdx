@@ -67,7 +67,7 @@ workflow.handle([toolCallEvent], async (context, event) => {
           role: "tool",
           content: toolResponse,
           tool_call_id: toolCall.id,
-        })
+        }),
       );
     }
   } catch (error) {
@@ -88,7 +88,7 @@ workflow.handle([humanResponseEvent], async (context, event) => {
       role: "tool",
       content: "My name is " + event.data,
       tool_call_id: state.humanToolId!,
-    })
+    }),
   );
 });
 ```
@@ -124,7 +124,7 @@ context.sendEvent(
           "What's the weather in San Francisco and what is the user's name?",
       },
     ],
-  })
+  }),
 );
 ```
 
