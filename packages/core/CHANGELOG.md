@@ -1,5 +1,11 @@
 # @llamaindex/workflow-core
 
+## 1.3.2
+
+### Patch Changes
+
+- 9e6793c: Add typedoc and updated docs
+
 ## 1.3.1
 
 ### Patch Changes
