@@ -251,7 +251,7 @@ workflow.handle([userInputEvent], async (context, { data }) => {
         sendEvent(
           toolCallEvent.with({
             toolCall,
-          })
+          }),
         );
       }
       // TODO: Here we'll collect tool responses. Copy here the code from the 4. step.
@@ -287,7 +287,7 @@ workflow.handle([toolCallEvent], async (context, { data }) => {
         role: "tool",
         content: toolResponse,
         tool_call_id: toolCall.id,
-      })
+      }),
     );
   } catch (error) {
     console.error(`Error executing tool ${toolCall.function.name}:`, error);
@@ -296,7 +296,7 @@ workflow.handle([toolCallEvent], async (context, { data }) => {
         role: "tool",
         content: `Error executing ${toolCall.function.name}: ${error}`,
         tool_call_id: toolCall.id,
-      })
+      }),
     );
   }
 });
@@ -344,7 +344,7 @@ sendEvent(
     messages: [
       { role: "user", content: "What's the weather in San Francisco?" },
     ],
-  })
+  }),
 );
 
 const result = await stream.until(finalResponseEvent).toArray();
