@@ -1,5 +1,5 @@
 ---
-title: "Agent Loop"
+title: "2. Agent Loop"
 description: "Building an agent loop with Workflows"
 ---
 
@@ -47,6 +47,8 @@ Let's explore this in more detail, first with a basic implementation, then using
 Let's start by implementing the agent loop using the same structure as our pseudo-code, but with real functions. This will help us understand the core logic before we structure it with workflows.
 
 Note that we're using type aliases for the OpenAI API types to increase readability.
+
+As filename, we're using `2a-agent-loop.ts`.
 
 ```typescript
 import { OpenAI } from "openai";
@@ -169,6 +171,8 @@ Now let's see how workflows can help us structure this same logic. Workflows pro
 ### Scaffolding our workflow
 
 Let's convert our agent loop to use workflows. We'll keep the same `llm()` and `callTool()` functions, but structure the flow using events and handlers:
+
+As filename, we're using `2b-agent-loop-workflow.ts`.
 
 ```typescript
 import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";

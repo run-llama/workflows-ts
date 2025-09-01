@@ -1,11 +1,13 @@
 ---
-title: "Adding HITL"
+title: "4. Adding HITL"
 description: "Adding human in the loop to the Express Agent"
 ---
 
-This guide assumes you’ve completed the stateful ([`3_adding_state.mdx`](./3_adding_state.mdx)) version.
+This guide assumes you’ve completed the stateful version in the [previous step](./3_adding_state.mdx) version.
 
 Here we show the changes needed to add Human-In-The-Loop (HITL) support. We will treat a human interaction as a tool call that is requested by the LLM and which needs to be handled by a human.
+
+For the changes, we're using a new file named `4-adding-hitl.ts`.
 
 ### 1) Extend state and middleware
 
@@ -45,6 +47,8 @@ const tools: Tool[] = [
   },
 ];
 ```
+
+Naming the tool with a `human_` prefix is just a convention for this tutorial - it's not a restriction by `@llamaindex/workflow-core`. We will use this pattern in the next step to identify that the LLM is requesting a human response.
 
 ### 4) Branch in the tool-call handler for human tools
 
