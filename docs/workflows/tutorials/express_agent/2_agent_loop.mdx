@@ -170,9 +170,12 @@ Now let's see how workflows can help us structure this same logic. Workflows pro
 
 ### Scaffolding our workflow
 
-Let's convert our agent loop to use workflows. We'll keep the same `llm()` and `callTool()` functions, but structure the flow using events and handlers:
+Let's convert our agent loop to use workflows. As filename, we're going to use `2b-agent-loop-workflow.ts`.
 
-As filename, we're using `2b-agent-loop-workflow.ts`.
+#### 1. Introducing events
+
+We'll keep the same imports, tools and helper functions (`llm()` and `callTool()`).
+Additionally, we define the events that represent key points in the loop: user input, tool calls, tool responses, and the final response:
 
 ```typescript
 import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";
@@ -219,7 +222,13 @@ async function callTool(
 ): Promise<string> {
   ...
 }
+```
 
+#### 2. Add a handler for user input
+
+We're adding a handler for the `userInputEvent` that emits tool call events if there are any tools to call, or a final response:
+
+```typescript
 // Handler for processing user input and LLM responses
 workflow.handle([userInputEvent], async (context, { data }) => {
   const { sendEvent, stream } = context;
@@ -245,27 +254,8 @@ workflow.handle([userInputEvent], async (context, { data }) => {
           })
         );
       }
-
-      // Collect ALL tool responses before continuing
-      const expectedToolCount = response.tool_calls.length;
-      const toolResponses: Array<ToolResponseMessage> = [];
-
-      // Listen for tool responses until we have all of them
-      await stream.filter(toolResponseEvent).forEach((responseEvent) => {
-        toolResponses.push(responseEvent.data);
-
-        // Once we have all responses, continue the conversation
-        if (toolResponses.length === expectedToolCount) {
-          // Add tool response messages
-          const finalMessages = [...updatedMessages, ...toolResponses];
-
-          // Continue the loop with the updated conversation
-          sendEvent(userInputEvent.with({ messages: finalMessages }));
-          return; // Exit the forEach to stop listening
-        }
-      });
+      // TODO: Here we'll collect tool responses. Copy here the code from the 4. step.
     } else {
-      // No tools requested, send final response
       sendEvent(finalResponseEvent.with(response.content || ""));
     }
   } catch (error) {
@@ -273,7 +263,15 @@ workflow.handle([userInputEvent], async (context, { data }) => {
     sendEvent(finalResponseEvent.with("Error processing request"));
   }
 });
+```
 
+Note that we're missing the code to collect tool responses. We'll add that in the 4. step.
+
+#### 3. Adding a handler for tool calls
+
+We're adding a handler for the `toolCallEvent` events sent in the previous step. The handler executes each tool and emits a tool response event for each result:
+
+```typescript
 // Handler for executing tool calls
 workflow.handle([toolCallEvent], async (context, { data }) => {
   const { sendEvent } = context;
@@ -302,8 +300,43 @@ workflow.handle([toolCallEvent], async (context, { data }) => {
     );
   }
 });
+```
 
-// Run the workflow
+#### 4. Collecting tool response events
+
+In step 2, we've been missing the code to collect tool responses.
+We'll add that now, by adding the code below to the `userInputEvent` handler (after sending out the `toolCallEvent` events):
+
+```typescript
+// Collect ALL tool responses before continuing
+const expectedToolCount = response.tool_calls.length;
+const toolResponses: Array<ToolResponseMessage> = [];
+
+// Listen for tool responses until we have all of them
+await stream.filter(toolResponseEvent).forEach((responseEvent) => {
+  toolResponses.push(responseEvent.data);
+
+  // Once we have all responses, continue the conversation
+  if (toolResponses.length === expectedToolCount) {
+    // Add tool response messages
+    const finalMessages = [...updatedMessages, ...toolResponses];
+
+    // Continue the loop with the updated conversation
+    sendEvent(userInputEvent.with({ messages: finalMessages }));
+    return; // Exit the forEach to stop listening
+  }
+});
+```
+
+The code is watching the event stream for `toolResponseEvent` events.
+If it receives an event, it adds the response to the `toolResponses` array.
+Once all tool responses have arrived, it sends a new `userInputEvent` with the updated conversation history.
+
+#### 4. Running the workflow
+
+Finally, to run the workflow, we create a context, seed the first `userInputEvent`, and await the `finalResponseEvent`.
+
+```typescript
 const { stream, sendEvent } = workflow.createContext();
 
 sendEvent(
