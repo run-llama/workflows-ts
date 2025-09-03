@@ -13,7 +13,6 @@ import {
   type HandlerDecorator,
 } from "./trace-events/create-handler-decorator";
 import { runOnce } from "./trace-events/run-once";
-import { otelTrace } from "./trace-events/otel-trace";
 import type { HandlerContext } from "../core/context";
 
 type TracingContext = Record<string, unknown>;
@@ -256,4 +255,4 @@ export function withTraceEvents<
   };
 }
 
-export { createHandlerDecorator, runOnce, otelTrace };
+export { createHandlerDecorator, runOnce };

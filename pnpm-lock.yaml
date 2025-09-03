@@ -74,15 +74,6 @@ importers:
       '@modelcontextprotocol/sdk':
         specifier: ^1.13.1
         version: 1.13.1
-      '@opentelemetry/api':
-        specifier: ^1.9.0
-        version: 1.9.0
-      '@opentelemetry/sdk-node':
-        specifier: ^0.203.0
-        version: 0.203.0(@opentelemetry/api@1.9.0)
-      '@opentelemetry/sdk-trace-base':
-        specifier: ^2.0.1
-        version: 2.0.1(@opentelemetry/api@1.9.0)
       hono:
         specifier: ^4.8.3
         version: 4.8.3
@@ -179,6 +170,34 @@ importers:
         version: 5.0.3
       tsx:
         specifier: ^4.20.4
+        version: 4.20.4
+
+  demo/trace-events:
+    dependencies:
+      '@llamaindex/workflow-core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@llamaindex/workflow-otel':
+        specifier: workspace:*
+        version: link:../../packages/otel
+      '@opentelemetry/api':
+        specifier: ^1.9.0
+        version: 1.9.0
+      '@opentelemetry/sdk-node':
+        specifier: ^0.203.0
+        version: 0.203.0(@opentelemetry/api@1.9.0)
+      '@opentelemetry/sdk-trace-base':
+        specifier: ^2.0.1
+        version: 2.0.1(@opentelemetry/api@1.9.0)
+      openai:
+        specifier: ^5.7.0
+        version: 5.13.1(ws@8.18.0)(zod@3.25.67)
+    devDependencies:
+      '@types/node':
+        specifier: ^24.0.4
+        version: 24.0.4
+      tsx:
+        specifier: ^4.20.3
         version: 4.20.4
 
   demo/visualization:
@@ -289,9 +308,6 @@ importers:
       '@modelcontextprotocol/sdk':
         specifier: ^1.13.1
         version: 1.13.1
-      '@opentelemetry/api':
-        specifier: ^1.9.0
-        version: 1.9.0
       '@types/node':
         specifier: ^24.0.4
         version: 24.0.4
@@ -340,6 +356,25 @@ importers:
       bunchee:
         specifier: ^6.5.4
         version: 6.5.4(typescript@5.9.2)
+
+  packages/otel:
+    dependencies:
+      '@opentelemetry/api':
+        specifier: ^1.9.0
+        version: 1.9.0
+    devDependencies:
+      '@llamaindex/workflow-core':
+        specifier: workspace:*
+        version: link:../core
+      '@types/node':
+        specifier: ^22.15.19
+        version: 22.15.33
+      bunchee:
+        specifier: ^6.5.1
+        version: 6.5.4(typescript@5.9.2)
+      vitest:
+        specifier: ^2.0.0
+        version: 2.1.9(@edge-runtime/vm@5.0.0)(@types/node@22.15.33)(@vitest/ui@2.1.9)(happy-dom@18.0.1)(lightningcss@1.30.1)(terser@5.43.1)
 
   packages/viz:
     dependencies:

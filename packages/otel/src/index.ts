@@ -1,15 +1,8 @@
-import { createHandlerDecorator } from "./create-handler-decorator";
+import { createHandlerDecorator } from "@llamaindex/workflow-core/middleware/trace-events";
+import * as otelApi from "@opentelemetry/api";
+import type { Exception } from "@opentelemetry/api";
 
-let otelApi: typeof import("@opentelemetry/api") | undefined;
-
-try {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  otelApi = require("@opentelemetry/api");
-} catch {
-  /* empty */
-}
-
-export const otelTrace = createHandlerDecorator({
+export const openTelemetry = createHandlerDecorator({
   debugLabel: "otelTrace",
   getInitialValue: () => null,
   onBeforeHandler: (handler, handlerContext) => {
@@ -34,8 +27,8 @@ export const otelTrace = createHandlerDecorator({
             }
             span.end();
             return result;
-          } catch (err: any) {
-            span.recordException(err);
+          } catch (err) {
+            span.recordException(err as Exception);
             span.setStatus({ code: SpanStatusCode.ERROR }); // ERROR
             span.end();
             throw err;

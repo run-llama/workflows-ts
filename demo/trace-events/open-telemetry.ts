@@ -1,13 +1,11 @@
 import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";
-import {
-  otelTrace,
-  withTraceEvents,
-} from "@llamaindex/workflow-core/middleware/trace-events";
+import { withTraceEvents } from "@llamaindex/workflow-core/middleware/trace-events";
 import { NodeSDK } from "@opentelemetry/sdk-node";
 import {
   ConsoleSpanExporter,
   SimpleSpanProcessor,
 } from "@opentelemetry/sdk-trace-base";
+import { openTelemetry } from "@llamaindex/workflow-otel";
 
 // Initialize OpenTelemetry
 const sdk = new NodeSDK({
@@ -23,7 +21,7 @@ const stepEvent = workflowEvent<{ value: string }>();
 
 // Create workflow with trace events support
 const workflow = withTraceEvents(createWorkflow(), {
-  plugins: [otelTrace],
+  plugins: [openTelemetry],
 });
 
 // Add workflow handlers with tracing capabilities
