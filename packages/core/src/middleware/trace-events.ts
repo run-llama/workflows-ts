@@ -10,6 +10,7 @@ import { isPromiseLike } from "../core/utils";
 import {
   createHandlerDecorator,
   decoratorRegistry,
+  type HandlerDecorator,
 } from "./trace-events/create-handler-decorator";
 import { runOnce } from "./trace-events/run-once";
 import { otelTrace } from "./trace-events/otel-trace";
@@ -69,6 +70,13 @@ export type HandlerRef<
   get handler(): Fn;
 };
 
+export type WithTraceEventsOptions = {
+  /**
+   * Config decorators to apply to all handlers
+   */
+  plugins?: HandlerDecorator[];
+};
+
 export function withTraceEvents<
   WorkflowLike extends {
     handle<
@@ -82,6 +90,7 @@ export function withTraceEvents<
   },
 >(
   workflow: WorkflowLike,
+  options?: WithTraceEventsOptions,
 ): Omit<WorkflowLike, "handle"> & {
   handle<
     const AcceptEvents extends WorkflowEvent<any>[],
@@ -131,10 +140,22 @@ export function withTraceEvents<
       accept: AcceptEvents,
       handler: Fn,
     ): HandlerRef<AcceptEvents, Result, Fn> => {
-      workflow.handle(accept, handler);
+      let handlerFn = handler as Handler<WorkflowEvent<any>[], Result>;
+
+      if (options?.plugins?.length) {
+        // apply plugins to handler one by one
+        options.plugins.forEach((plugin) => {
+          handlerFn = plugin(handlerFn) as Handler<
+            WorkflowEvent<any>[],
+            Result
+          >;
+        });
+      }
+
+      workflow.handle(accept, handlerFn);
       return {
         get handler(): Fn {
-          return handler;
+          return handlerFn as Fn;
         },
       };
     },

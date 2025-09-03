@@ -26,6 +26,12 @@ export const decoratorRegistry = new Map<
   }
 >();
 
+export type HandlerDecorator<
+  AcceptEvents extends WorkflowEvent<any>[] = WorkflowEvent<any>[],
+> = (
+  handler: Handler<AcceptEvents, WorkflowEventData<any> | void>,
+) => Handler<AcceptEvents, WorkflowEventData<any> | void>;
+
 export function createHandlerDecorator<Metadata>(config: {
   debugLabel?: string;
   getInitialValue: () => Metadata;
@@ -35,7 +41,7 @@ export function createHandlerDecorator<Metadata>(config: {
     metadata: Metadata,
   ) => Handler<WorkflowEvent<any>[], WorkflowEventData<any> | void>;
   onAfterHandler: (metadata: Metadata) => Metadata;
-}) {
+}): HandlerDecorator<WorkflowEvent<any>[]> {
   const uid = `${namespace}:${counter++}`;
   decoratorRegistry.set(uid, {
     handlers: new WeakSet(),

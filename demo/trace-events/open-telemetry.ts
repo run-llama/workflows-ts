@@ -22,7 +22,9 @@ const startEvent = workflowEvent();
 const stepEvent = workflowEvent<{ value: string }>();
 
 // Create workflow with trace events support
-const workflow = withTraceEvents(createWorkflow());
+const workflow = withTraceEvents(createWorkflow(), {
+  plugins: [otelTrace],
+});
 
 // Add workflow handlers with tracing capabilities
 workflow.handle([startEvent], (context) => {
@@ -30,18 +32,13 @@ workflow.handle([startEvent], (context) => {
   context.sendEvent(stepEvent.with({ value: "crash!" })); // will trigger error span
 });
 
-workflow.handle(
-  [stepEvent],
-  otelTrace((context, event) => {
-    console.log("[Workflow] Handling stepEvent with value:", event.data.value);
+workflow.handle([stepEvent], (_, event) => {
+  console.log("[Workflow] Handling stepEvent with value:", event.data.value);
 
-    if (event.data.value === "crash!") {
-      throw new Error("The ultimate error happened!");
-    }
-
-    return event.data.value;
-  }),
-);
+  if (event.data.value === "crash!") {
+    throw new Error("The ultimate error happened!");
+  }
+});
 
 // Start the workflow and check the console output
 // You can view OpenTelemetry console output such as information about your host, process, traceId, events, status, exceptions,...

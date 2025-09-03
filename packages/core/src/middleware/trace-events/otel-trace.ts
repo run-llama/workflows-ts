@@ -1,16 +1,18 @@
 import { createHandlerDecorator } from "./create-handler-decorator";
-import type { WorkflowEvent } from "@llamaindex/workflow-core";
 
 let otelApi: typeof import("@opentelemetry/api") | undefined;
 
 try {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   otelApi = require("@opentelemetry/api");
-} catch {}
+} catch {
+  /* empty */
+}
 
 export const otelTrace = createHandlerDecorator({
   debugLabel: "otelTrace",
   getInitialValue: () => null,
-  onBeforeHandler: (handler, handlerContext, _) => {
+  onBeforeHandler: (handler, handlerContext) => {
     // If OpenTelemetry is not installed, return original handler
     if (!otelApi) {
       console.warn(
