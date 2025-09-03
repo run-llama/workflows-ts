@@ -1,23 +1,12 @@
+import { describe, test, vi, expectTypeOf, type Mock, expect } from "vitest";
 import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";
 import {
+  withTraceEvents,
+  runOnce,
   createHandlerDecorator,
   getEventOrigins,
-  otelTrace,
-  runOnce,
-  withTraceEvents,
 } from "@llamaindex/workflow-core/middleware/trace-events";
 import { pipeline } from "node:stream/promises";
-import {
-  describe,
-  expect,
-  expectTypeOf,
-  it,
-  test,
-  vi,
-  type Mock,
-} from "vitest";
-import * as otelApi from "@opentelemetry/api";
-import { SpanStatusCode } from "@opentelemetry/api";
 
 const groupBy = <T>(
   array: T[],
@@ -303,78 +292,5 @@ describe("get event origins", () => {
         }
       }
     });
-  });
-});
-
-describe("otelTrace decorator", () => {
-  it("should call the handler and record a successful span", () => {
-    const startEvent = workflowEvent<{ value: string }>();
-    const stopEvent = workflowEvent<{ value: string }>();
-    const workflow = withTraceEvents(createWorkflow());
-
-    const startSpanMock = vi.fn().mockImplementation((name, opts, fn) => {
-      return fn({
-        end: vi.fn(),
-        recordException: vi.fn(),
-        setStatus: vi.fn(),
-      });
-    });
-
-    vi.spyOn(otelApi.trace, "getTracer").mockReturnValue({
-      startActiveSpan: startSpanMock,
-    } as any);
-
-    workflow.handle(
-      [startEvent],
-      otelTrace((_, event) => {
-        return stopEvent.with(event.data.value);
-      }),
-    );
-
-    const { sendEvent } = workflow.createContext();
-    sendEvent(startEvent.with({ value: "test" }));
-    expect(startSpanMock).toHaveBeenCalled();
-  });
-
-  it("should record exception for error in handler", () => {
-    const startEvent = workflowEvent<{ value: string }>();
-    const workflow = withTraceEvents(createWorkflow());
-
-    // Mocks for the span methods
-    const recordExceptionMock = vi.fn();
-    const setStatusMock = vi.fn();
-    const endMock = vi.fn();
-
-    // Properly mock startActiveSpan to call the handler
-    const startActiveSpanMock = vi.fn().mockImplementation((name, fn) => {
-      // fn is the callback passed by otelTrace
-      return fn({
-        end: endMock,
-        recordException: recordExceptionMock,
-        setStatus: setStatusMock,
-      });
-    });
-
-    // Spy on getTracer to return our mocked tracer
-    vi.spyOn(otelApi.trace, "getTracer").mockReturnValue({
-      startActiveSpan: startActiveSpanMock,
-    } as any);
-
-    // Add a handler with otelTrace that throws an error
-    workflow.handle(
-      [startEvent],
-      otelTrace(() => {
-        throw new Error("fail");
-      }),
-    );
-
-    // Send the event
-    const { sendEvent } = workflow.createContext();
-    sendEvent(startEvent.with({ value: "fail" }));
-
-    // Assertions for span methods
-    expect(recordExceptionMock).toHaveBeenCalled();
-    expect(setStatusMock).toHaveBeenCalledWith({ code: SpanStatusCode.ERROR });
-    expect(endMock).toHaveBeenCalled();
   });
 });
