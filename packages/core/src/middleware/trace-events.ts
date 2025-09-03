@@ -10,7 +10,6 @@ import { isPromiseLike } from "../core/utils";
 import {
   createHandlerDecorator,
   decoratorRegistry,
-  type HandlerDecorator,
 } from "./trace-events/create-handler-decorator";
 import { runOnce } from "./trace-events/run-once";
 import type { HandlerContext } from "../core/context";
@@ -69,11 +68,17 @@ export type HandlerRef<
   get handler(): Fn;
 };
 
+export type TracePlugin<
+  AcceptEvents extends WorkflowEvent<any>[] = WorkflowEvent<any>[],
+> = (
+  handler: Handler<AcceptEvents, WorkflowEventData<any> | void>,
+) => Handler<AcceptEvents, WorkflowEventData<any> | void>;
+
 export type WithTraceEventsOptions = {
   /**
    * Config decorators to apply to all handlers
    */
-  plugins?: HandlerDecorator[];
+  plugins?: TracePlugin[];
 };
 
 export function withTraceEvents<
