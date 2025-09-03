@@ -87,7 +87,7 @@ importers:
         specifier: ^7.8.2
         version: 7.8.2
       zod:
-        specifier: ^3.25.0 || ^4.0.0
+        specifier: ^3.25.67
         version: 3.25.67
     devDependencies:
       '@types/node':
