@@ -6,7 +6,6 @@ import {
 } from "@llamaindex/workflow-core";
 import { describe, expect, test } from "vitest";
 import * as events from "./shared/events";
-import { haltEvent } from "./shared/events";
 
 describe("stream api", () => {
   test("should able to create stream", async () => {

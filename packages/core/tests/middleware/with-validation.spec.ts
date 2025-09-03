@@ -34,7 +34,7 @@ describe("with directed graph", () => {
     workflow.strictHandle([startEvent], (sendEvent) => {
       fn();
       sendEvent(
-        // @ts-expect-error
+        // @ts-expect-error - expecting error ts(2345) (argument of type X is not assignable to type Y)
         nonEvent.with(1),
       );
       sendEvent(parseEvent.with(""));

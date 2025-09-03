@@ -6,8 +6,6 @@ import {
   runOnce,
   withTraceEvents,
 } from "@llamaindex/workflow-core/middleware/trace-events";
-import * as otelApi from "@opentelemetry/api";
-import { SpanStatusCode } from "@opentelemetry/api";
 import { pipeline } from "node:stream/promises";
 import {
   describe,
@@ -18,6 +16,8 @@ import {
   vi,
   type Mock,
 } from "vitest";
+import * as otelApi from "@opentelemetry/api";
+import { SpanStatusCode } from "@opentelemetry/api";
 
 const groupBy = <T>(
   array: T[],
@@ -170,7 +170,7 @@ describe("with trace events", () => {
     let p = new Promise<void>((_resolve) => {
       resolveNext = _resolve;
     });
-    let result: number[] = [];
+    const result: number[] = [];
     const ref = workflow.handle(
       [startEvent],
       noParallel(

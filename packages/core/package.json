@@ -142,7 +142,9 @@
     "dev": "tsdown --watch",
     "test": "vitest run",
     "test:ui": "vitest --ui",
-    "prepublishOnly": "cp ../../README.md ./README.md"
+    "prepublishOnly": "cp ../../README.md ./README.md",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
   },
   "devDependencies": {
     "@modelcontextprotocol/sdk": "^1.13.1",

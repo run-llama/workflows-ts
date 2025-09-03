@@ -1,4 +1,4 @@
-import { describe, expect, test, vi } from "vitest";
+import { describe, expect, test } from "vitest";
 import {
   createWorkflow,
   eventSource,
@@ -70,6 +70,7 @@ describe("workflow helper functions", () => {
       return stopEvent.with("completed");
     });
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     workflow.handle([messageEvent], (context) => {
       return stopEvent.with("processed");
     });
@@ -105,6 +106,7 @@ describe("workflow helper functions", () => {
 
     const workflow = createWorkflow();
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     workflow.handle([startEvent], async (context, start) => {
       const { sendEvent } = context;
 
@@ -115,6 +117,7 @@ describe("workflow helper functions", () => {
       return stopEvent.with("completed");
     });
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     workflow.handle([intermediateEvent], async (context, intermediate) => {
       // fake some work
       await new Promise((resolve) => setTimeout(resolve, 1));
@@ -122,7 +125,7 @@ describe("workflow helper functions", () => {
 
     const stream = runStream(workflow, startEvent.with("run"), stopEvent);
 
-    let collectedEvents: WorkflowEventData<any>[] = [];
+    const collectedEvents: WorkflowEventData<any>[] = [];
     for await (const event of stream) {
       collectedEvents.push(event);
     }
