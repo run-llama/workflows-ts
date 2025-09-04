@@ -7,7 +7,7 @@ This demo shows how to integrate **OpenTelemetry (OTel)** with LlamaIndex Workfl
 Make sure you have the required dependencies installed:
 
 ```bash
-npm install @opentelemetry/api @opentelemetry/sdk-node @opentelemetry/sdk-trace-base
+npm install
 ```
 
 ## Running the OpenTelemetry Example
@@ -16,13 +16,13 @@ The `open-telemetry.ts` file demonstrates how to:
 
 - Initialize OpenTelemetry with console span exporter
 - Create a workflow with trace events support
-- Handle workflow events with automatic tracing
+- Handle workflow events with automatic tracing (using the `openTelemetry` plugin)
 - Capture errors and exceptions in spans
 
 ### Run the example:
 
 ```bash
-npx tsx open-telemetry.ts
+npm run tsx open-telemetry.ts
 ```
 
 ### What to expect:
