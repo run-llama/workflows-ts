@@ -46,7 +46,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/run-llama/llama-flow.git",
+    "url": "https://github.com/run-llama/workflow-ts.git",
     "directory": "packages/otel"
   },
   "publishConfig": {

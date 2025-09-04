@@ -1,2 +1,1 @@
-export * from "./graph";
-export * from "./sigma";
+export { withDrawing } from "./drawing";
