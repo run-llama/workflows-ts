@@ -1,6 +1,6 @@
 {
   "name": "@llamaindex/workflow-viz",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Visualization components for LlamaFlow",
   "type": "module",
   "main": "dist/index.cjs",
