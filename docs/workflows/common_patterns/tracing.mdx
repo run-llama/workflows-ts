@@ -1,0 +1,166 @@
+---
+title: Tracing Workflows
+description: Trace workflow events using the trace-events middleware and OpenTelemetry
+---
+
+LlamaIndex Workflows can emit rich trace data for each handler execution. This page shows how to:
+
+- Use the `withTraceEvents` middleware to add tracing hooks to any workflow
+- Enrich traces with the OpenTelemetry plugin to export spans to your chosen backend
+
+### When to use tracing
+
+Here are some use cases for tracing:
+
+- Debug complex workflows and concurrency issues
+- Measure latency and surface errors across handlers
+- Monitor workflow performance and identify bottlenecks
+
+## How to use withTraceEvents with a plugin
+
+The `withTraceEvents` middleware wraps a workflow and lets you attach one or more trace plugins that decorate every handler. This is the simplest way to enable tracing behavior across your workflow.
+
+```ts
+import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";
+import { withTraceEvents } from "@llamaindex/workflow-core/middleware/trace-events";
+
+// Define events
+const startEvent = workflowEvent();
+
+// Assume you have a plugin (see sections below for real examples)
+const myPlugin = (handler) => handler; // no-op for illustration
+
+// Enable trace events and attach your plugin(s)
+const workflow = withTraceEvents(createWorkflow(), {
+  plugins: [myPlugin],
+});
+
+workflow.handle([startEvent], () => {
+  // business logic
+});
+
+const { sendEvent } = workflow.createContext();
+sendEvent(startEvent.with());
+```
+
+## Using the OpenTelemetry plugin
+
+To export spans and errors to a backend (or to the console during development), add the `openTelemetry` plugin from `@llamaindex/workflow-otel` and initialize the OpenTelemetry SDK.
+
+Make sure to install the `@llamaindex/workflow-otel` package before using it:
+
+```bash
+npm install @llamaindex/workflow-otel
+```
+
+### Example
+
+This example runs on Node.js and also uses the OpenTelemetry SDK, so make sure to install the used dependencies too:
+
+```bash
+npm install @opentelemetry/sdk-node @opentelemetry/sdk-trace-base @opentelemetry/api
+```
+
+```ts
+import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";
+import { withTraceEvents } from "@llamaindex/workflow-core/middleware/trace-events";
+import { openTelemetry } from "@llamaindex/workflow-otel";
+
+import { NodeSDK } from "@opentelemetry/sdk-node";
+import {
+  ConsoleSpanExporter,
+  SimpleSpanProcessor,
+} from "@opentelemetry/sdk-trace-base";
+
+// Initialize OpenTelemetry SDK (use your preferred exporter in real deployments)
+const sdk = new NodeSDK({
+  traceExporter: new ConsoleSpanExporter(),
+  spanProcessor: new SimpleSpanProcessor(new ConsoleSpanExporter()),
+});
+sdk.start();
+
+// Define events
+const startEvent = workflowEvent();
+const stepEvent = workflowEvent<{ value: string }>();
+
+// Create workflow and attach the OpenTelemetry plugin
+const workflow = withTraceEvents(createWorkflow(), {
+  plugins: [openTelemetry],
+});
+
+// Handlers automatically produce spans (including errors)
+workflow.handle([startEvent], (context) => {
+  context.sendEvent(stepEvent.with({ value: "hello!" }));
+  context.sendEvent(stepEvent.with({ value: "crash!" })); // demonstrates error spans
+});
+
+workflow.handle([stepEvent], (_context, event) => {
+  if (event.data.value === "crash!") {
+    throw new Error("The ultimate error happened!");
+  }
+});
+
+// Run
+const { sendEvent } = workflow.createContext();
+sendEvent(startEvent.with());
+```
+
+Running this example, using the console exporter, you will see JSON span output including:
+
+- Trace and span IDs for correlating handler executions
+- Attributes and events (e.g., host/process metadata)
+- Error status and exceptions for thrown errors
+- Duration metrics per handler
+
+### Sending spans to a backend
+
+Swap the exporter to send spans to systems like Jaeger, Honeycomb, or any OpenTelemetry-compatible backend by configuring the `NodeSDK` accordingly (for example, using OTLP exporters).
+
+See the runnable demo source for a complete setup: [`open-telemetry.ts`](../../../demo/trace-events/open-telemetry.ts).
+
+## Write your own plugin
+
+You can build your own plugin using `createHandlerDecorator`. A plugin produced this way can be passed directly to `withTraceEvents({ plugins: [...] })`.
+
+Below is a minimal timing plugin that measures handler duration and logs it.
+
+```ts
+import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";
+import {
+  withTraceEvents,
+  createHandlerDecorator,
+} from "@llamaindex/workflow-core/middleware/trace-events";
+
+const startEvent = workflowEvent();
+
+// Create a decorator-based plugin
+type Timing = { startedAt: number | null };
+const timingPlugin = createHandlerDecorator<Timing>({
+  debugLabel: "timing",
+  getInitialValue: () => ({ startedAt: null }),
+  onBeforeHandler:
+    (h, _ctx, metadata) =>
+    async (...args) => {
+      metadata.startedAt = Date.now();
+      try {
+        return await h(...(args as any));
+      } finally {
+        const durationMs = Date.now() - (metadata.startedAt ?? Date.now());
+        console.log("[trace] handler duration (ms):", durationMs);
+      }
+    },
+  onAfterHandler: () => ({ startedAt: null }),
+});
+
+// Attach your plugin to the workflow
+const workflow = withTraceEvents(createWorkflow(), {
+  plugins: [timingPlugin],
+});
+
+workflow.handle([startEvent], async () => {
+  await new Promise((r) => setTimeout(r, 50));
+});
+
+const { sendEvent } = workflow.createContext();
+sendEvent(startEvent.with());
+```
