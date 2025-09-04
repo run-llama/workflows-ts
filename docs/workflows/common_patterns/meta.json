@@ -3,5 +3,12 @@
   "description": "Common patterns for building workflows",
   "root": false,
   "defaultOpen": false,
-  "pages": ["state", "branching", "loops", "map_reduce", "human_in_the_loop"]
+  "pages": [
+    "state",
+    "branching",
+    "loops",
+    "map_reduce",
+    "human_in_the_loop",
+    "tracing"
+  ]
 }

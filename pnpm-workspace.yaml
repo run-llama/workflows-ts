@@ -5,6 +5,7 @@ packages:
   - ./demo/waku
   - ./demo/express
   - ./demo/visualization
+  - ./demo/trace-events
   - ./docs
   - ./packages/*
   - ./tests/*

@@ -68,6 +68,19 @@ export type HandlerRef<
   get handler(): Fn;
 };
 
+export type TracePlugin<
+  AcceptEvents extends WorkflowEvent<any>[] = WorkflowEvent<any>[],
+> = (
+  handler: Handler<AcceptEvents, WorkflowEventData<any> | void>,
+) => Handler<AcceptEvents, WorkflowEventData<any> | void>;
+
+export type WithTraceEventsOptions = {
+  /**
+   * Config decorators to apply to all handlers
+   */
+  plugins?: TracePlugin[];
+};
+
 export function withTraceEvents<
   WorkflowLike extends {
     handle<
@@ -81,6 +94,7 @@ export function withTraceEvents<
   },
 >(
   workflow: WorkflowLike,
+  options?: WithTraceEventsOptions,
 ): Omit<WorkflowLike, "handle"> & {
   handle<
     const AcceptEvents extends WorkflowEvent<any>[],
@@ -130,10 +144,22 @@ export function withTraceEvents<
       accept: AcceptEvents,
       handler: Fn,
     ): HandlerRef<AcceptEvents, Result, Fn> => {
-      workflow.handle(accept, handler);
+      let handlerFn = handler as Handler<WorkflowEvent<any>[], Result>;
+
+      if (options?.plugins?.length) {
+        // apply plugins to handler one by one
+        options.plugins.forEach((plugin) => {
+          handlerFn = plugin(handlerFn) as Handler<
+            WorkflowEvent<any>[],
+            Result
+          >;
+        });
+      }
+
+      workflow.handle(accept, handlerFn);
       return {
         get handler(): Fn {
-          return handler;
+          return handlerFn as Fn;
         },
       };
     },
