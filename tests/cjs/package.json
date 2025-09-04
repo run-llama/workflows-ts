@@ -1,6 +1,6 @@
 {
   "name": "workflows-ts-cjs-test",
-  "version": "1.0.9",
+  "version": "1.0.10",
   "private": true,
   "description": "CommonJS test for workflows-ts functionality",
   "type": "commonjs",

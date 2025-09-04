@@ -1,6 +1,6 @@
 {
   "name": "@llamaindex/workflow-http",
-  "version": "4.0.1",
+  "version": "4.0.2",
   "type": "module",
   "description": "HTTP protocol for Llama Flow",
   "exports": {

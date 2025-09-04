@@ -1,5 +1,13 @@
 # @llamaindex/workflow-viz
 
+## 1.0.2
+
+### Patch Changes
+
+- Updated dependencies [9e6793c]
+- Updated dependencies [b133273]
+  - @llamaindex/workflow-core@1.3.2
+
 ## 1.0.1
 
 ### Patch Changes

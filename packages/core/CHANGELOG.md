@@ -1,5 +1,12 @@
 # @llamaindex/workflow-core
 
+## 1.3.2
+
+### Patch Changes
+
+- 9e6793c: Add typedoc and updated docs
+- b133273: feat: add OpenTelemetry tracing for workflow handlers
+
 ## 1.3.1
 
 ### Patch Changes
