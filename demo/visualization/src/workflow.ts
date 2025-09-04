@@ -1,5 +1,5 @@
 import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";
-import { withGraph } from "@llamaindex/workflow-viz";
+import { withDrawing } from "@llamaindex/workflow-viz";
 
 //#region define workflow events
 const startEvent = workflowEvent<string>({
@@ -26,7 +26,7 @@ const stopEvent = workflowEvent<string>({
 //#endregion
 
 //#region defines workflow
-const workflow = withGraph(createWorkflow());
+const workflow = withDrawing(createWorkflow());
 
 workflow.handle([startEvent], async (ctx) => {
   const { sendEvent, stream } = ctx;
