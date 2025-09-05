@@ -9,7 +9,7 @@ Here we show the changes needed to add Human-In-The-Loop (HITL) support. We will
 
 For the changes, we're using a new file named `4-adding-hitl.ts`.
 
-### 1) Extend state and middleware
+### 1. Extend state and middleware
 
 As we treat the human interaction as a tool call, we need to extend the `AgentWorkflowState` to include the id of this tool call:
 
@@ -22,7 +22,7 @@ type AgentWorkflowState = {
 
 That way we can later generate a tool response for the LLM based on the human response.
 
-### 2) Add HITL events
+### 2. Add HITL events
 
 Add two new events to the workflow to request human input and to receive it:
 
@@ -31,7 +31,7 @@ const humanRequestEvent = workflowEvent();
 const humanResponseEvent = workflowEvent<string>();
 ```
 
-### 3) Add a human tool
+### 3. Add a human tool
 
 Include at least one tool whose name starts with `human_` to signal that a human must provide the response.
 
@@ -50,7 +50,7 @@ const tools: Tool[] = [
 
 Naming the tool with a `human_` prefix is just a convention for this tutorial - it's not a restriction by `@llamaindex/workflow-core`. We will use this pattern in the next step to identify that the LLM is requesting a human response.
 
-### 4) Branch in the tool-call handler for human tools
+### 4. Branch in the tool-call handler for human tools
 
 When the LLM requests a `human_*` tool, record the `tool_call_id`, emit a human request, and pause the workflow with a provisional final response.
 
@@ -80,7 +80,7 @@ workflow.handle([toolCallEvent], async (context, event) => {
 });
 ```
 
-### 5) Handle the human response
+### 5. Handle the human response
 
 We need a new handler that turns the human’s answer into a normal tool response (using the id of the human tool call stored in the state):
 
@@ -97,7 +97,7 @@ workflow.handle([humanResponseEvent], async (context, event) => {
 });
 ```
 
-### 6) Snapshot and resume the workflow
+### 6. Snapshot and resume the workflow
 
 When a human interaction is requested, take a snapshot (by calling `snapshot()` provided by the stateful middleware), so that we can resume the workflow with the human response afterwards:
 

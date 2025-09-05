@@ -12,7 +12,7 @@ We want to add now a state object that persists across handlers to:
 
 Below are the changes needed to do these changes. For the changes, we're using a new file named `3-adding-state.ts`.
 
-### 1) Add state middleware and a state type
+### 1. Add state middleware and a state type
 
 Add the import of the stateful middleware and define a state object to track conversation and tool progress:
 
@@ -33,7 +33,7 @@ const stateful = createStatefulMiddleware((state: AgentWorkflowState) => state);
 const workflow = stateful.withState(createWorkflow());
 ```
 
-### 2) Use state inside the user input handler
+### 2. Use state inside the user input handler
 
 Now we can simplify the initial `userInputEvent` handler by storing the messages in the state and removing the logic of collecting tool responses (since later we will put the tool responses into the context state):
 
@@ -59,7 +59,7 @@ workflow.handle([userInputEvent], async (context, { data }) => {
 });
 ```
 
-### 3) Add a handler to deal with tool responses
+### 3. Add a handler to deal with tool responses
 
 Instead of collecting all tool responses locally, we add a new handler dealing with tool responses and storing them in the state:
 
@@ -78,7 +78,7 @@ workflow.handle([toolResponseEvent], async (context, { data }) => {
 
 Once all tool responses have arrived, we continue with a `userInputEvent` containing all the tool response messages to resume the LLM interaction.
 
-### 4) Initialize the context with default state
+### 4. Initialize the context with default state
 
 As we're adding a state object, we need to provide initial values when creating the workflow context:
 
