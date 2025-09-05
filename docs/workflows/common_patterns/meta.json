@@ -9,6 +9,7 @@
     "loops",
     "map_reduce",
     "human_in_the_loop",
-    "tracing"
+    "tracing",
+    "visualization"
   ]
 }
