@@ -1,8 +1,175 @@
 ---
-title: "Adding HITL"
+title: "4. Adding HITL"
 description: "Adding human in the loop to the Express Agent"
 ---
 
-# Adding HITL
+This guide assumes you’ve completed the stateful version in the [previous step](./3_adding_state.mdx) version.
 
-TODO
+Here we show the changes needed to add Human-In-The-Loop (HITL) support. We will treat a human interaction as a tool call that is requested by the LLM and which needs to be handled by a human.
+
+For the changes, we're using a new file named `4-adding-hitl.ts`.
+
+### 1. Extend state and middleware
+
+As we treat the human interaction as a tool call, we need to extend the `AgentWorkflowState` to include the id of this tool call:
+
+```typescript
+type AgentWorkflowState = {
+  ...
+  humanToolId: string | null;
+};
+```
+
+That way we can later generate a tool response for the LLM based on the human response.
+
+### 2. Add HITL events
+
+Add two new events to the workflow to request human input and to receive it:
+
+```typescript
+const humanRequestEvent = workflowEvent();
+const humanResponseEvent = workflowEvent<string>();
+```
+
+### 3. Add a human tool
+
+Include at least one tool whose name starts with `human_` to signal that a human must provide the response.
+
+```typescript
+const tools: Tool[] = [
+  // ...existing tools
+  {
+    type: "function" as const,
+    function: {
+      name: "human_ask_name",
+      description: "Ask the user for his/her name",
+    },
+  },
+];
+```
+
+Naming the tool with a `human_` prefix is just a convention for this tutorial - it's not a restriction by `@llamaindex/workflow-core`. We will use this pattern in the next step to identify that the LLM is requesting a human response.
+
+### 4. Branch in the tool-call handler for human tools
+
+When the LLM requests a `human_*` tool, record the `tool_call_id`, emit a human request, and pause the workflow with a provisional final response.
+
+```typescript
+workflow.handle([toolCallEvent], async (context, event) => {
+  const { toolCall } = event.data;
+  const { sendEvent, state } = context;
+
+  try {
+    if (toolCall.function.name.startsWith("human_")) {
+      state.humanToolId = toolCall.id;
+      sendEvent(humanRequestEvent.with());
+      sendEvent(finalResponseEvent.with("Waiting for human response"));
+    } else {
+      const toolResponse = await callTool(toolCall);
+      sendEvent(
+        toolResponseEvent.with({
+          role: "tool",
+          content: toolResponse,
+          tool_call_id: toolCall.id,
+        }),
+      );
+    }
+  } catch (error) {
+    // unchanged error path
+  }
+});
+```
+
+### 5. Handle the human response
+
+We need a new handler that turns the human’s answer into a normal tool response (using the id of the human tool call stored in the state):
+
+```typescript
+workflow.handle([humanResponseEvent], async (context, event) => {
+  const { sendEvent, state } = context;
+  sendEvent(
+    toolResponseEvent.with({
+      role: "tool",
+      content: "My name is " + event.data,
+      tool_call_id: state.humanToolId!,
+    }),
+  );
+});
+```
+
+### 6. Snapshot and resume the workflow
+
+When a human interaction is requested, take a snapshot (by calling `snapshot()` provided by the stateful middleware), so that we can resume the workflow with the human response afterwards:
+
+```typescript
+let snapshotData: SnapshotData | null = null;
+
+const context = workflow.createContext({
+  expectedToolCount: 0,
+  messages: [],
+  toolResponses: [],
+  humanToolId: null,
+});
+
+context.stream.on(humanRequestEvent, async () => {
+  snapshotData = await context.snapshot();
+});
+```
+
+To start the workflow, send an `userInputEvent` with the initial message to the LLM as before:
+
+```typescript
+context.sendEvent(
+  userInputEvent.with({
+    messages: [
+      {
+        role: "user",
+        content:
+          "What's the weather in San Francisco and what is the user's name?",
+      },
+    ],
+  }),
+);
+```
+
+Then we wait for the workflow to complete the first time. Note that this works as we send a `finalResponseEvent` after requesting a human interaction.
+
+```typescript
+await context.stream.until(finalResponseEvent).toArray();
+```
+
+Afterwards, we ensure a human interaction has been requested (by checking the snapshot data) and ask for the user's name:
+
+```typescript
+if (!snapshotData) {
+  throw new Error("No snapshot data");
+}
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout,
+});
+const userName = await rl.question("Name? ");
+rl.close();
+```
+
+Then we reconstruct the workflow from the snapshot data using `resume()` and continue the workflow with the `humanResponseEvent` containing the human response:
+
+```typescript
+const resumedContext = workflow.resume(snapshotData);
+resumedContext.sendEvent(humanResponseEvent.with(userName));
+```
+
+Finally, we wait for the workflow to complete again and log the result:
+
+```typescript
+const result = await resumedContext.stream.until(finalResponseEvent).toArray();
+console.log(result[result.length - 1].data);
+```
+
+### Why this helps
+
+- **Safe interruption**: We can pause long-running workflows at human decision points.
+- **Seamless resumption**: Human answers are injected as regular tool responses.
+- **Composable**: Multiple human steps can be added without changing prior handlers.
+
+For the complete working example, see [`demo/express/4-adding-hitl.ts`](https://github.com/run-llama/workflows-ts/blob/main/demo/express/4-adding-hitl.ts).
