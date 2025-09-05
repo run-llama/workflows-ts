@@ -40,12 +40,11 @@ Open the preview server at [http://localhost:4173](http://localhost:4173) (or th
 
 ### What this demo does
 
-- Defines a small workflow in `src/workflow.ts` using `createWorkflow` and wraps it with `withGraph` to expose its graph.
-- Converts the workflow graph to a Sigma-compatible graph via `toSigma` and renders it in `src/main.ts`.
-- Applies a force-directed layout (`graphology-layout-force`) so the graph auto-arranges on load.
+- Defines a small workflow in `src/workflow.ts` using `createWorkflow` and wraps it with `withDrawing` to add drawing capabilities.
+- Use `draw` method of the workflow to render it in a HTML container in `src/main.ts` using force-directed layout.
 
 ### Key files
 
-- `src/workflow.ts`: Example workflow (events, handlers, and graph wiring)
-- `src/main.ts`: Bootstraps Sigma, layout, and renders the graph
+- `src/workflow.ts`: Example workflow (events, handlers) - adding drawing capabilities
+- `src/main.ts`: Renders the workflow in a HTML container using force-directed layout
 - `vite.config.ts`: Vite config with React SWC plugin

@@ -1,0 +1,66 @@
+---
+title: Visualizing Workflows
+description: Draw workflow graphs in the browser with the workflow-viz package
+---
+
+LlamaIndex Workflows can be visualized as interactive graphs in the browser. This helps you understand event flow and handler connections at a glance.
+
+### When to use visualization
+
+- Debug complex routing between events and handlers
+- Explain workflow behavior to teammates and users
+- Build interactive demos and documentation pages
+
+## How to use withDrawing
+
+The `withDrawing` middleware decorates a workflow with drawing capabilities exposing a `draw` method that renders the workflow in a HTML container.
+
+To install the visualization package, run:
+
+```bash
+npm install @llamaindex/workflow-viz
+```
+
+Wrap your workflow with `withDrawing` and write handlers as usual. Make sure to add `debugLabel` to your events to use them as node names in the graph:
+
+```ts
+import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";
+import { withDrawing } from "@llamaindex/workflow-viz";
+
+// Define events (debug labels are used for node names in the graph)
+const startEvent = workflowEvent<string>({ debugLabel: "start" });
+const doneEvent = workflowEvent<string>({ debugLabel: "done" });
+
+// Decorate your workflow to enable drawing
+const workflow = withDrawing(createWorkflow());
+
+workflow.handle([startEvent], (_ctx, start) => {
+  return doneEvent.with(`Hello ${start.data}`);
+});
+```
+
+See a complete example of a branching workflow using `withDrawing` in the [`visualization`](../../../demo/visualization) demo.
+
+## Render in the browser with draw
+
+Workflows decorated by `withDrawing` gain a `.draw(container, options)` method for rendering the graph to the page. Rendering uses [Sigma](https://github.com/jacomyal/sigma.js) under the hood and supports [its settings](https://github.com/jacomyal/sigma.js/blob/13062dc5be4f876d7c188411b120bb5a3a0be6f4/packages/sigma/src/settings.ts#L30).
+
+```ts
+import { workflow } from "./workflow";
+
+const container = document.getElementById("app") as HTMLElement;
+
+// Optional settings:
+// - layout: "force" | "none" (defaults to "force")
+// - Any Sigma renderer setting can be passed as well, e.g. `defaultEdgeColor`
+workflow.draw(container, {
+  layout: "force",
+  defaultEdgeColor: "#999",
+});
+```
+
+Notes:
+
+- `layout: "force"` applies a force-directed layout automatically (default). Set `layout: "none"` to disable it.
+- You can pass any Sigma renderer settings in the options object to customize appearance and interactions.
+- The `draw` method is rendering the workflow as defined by the handlers you registered. If you call `handle` after `draw`, the graph won't be automatically updated.
