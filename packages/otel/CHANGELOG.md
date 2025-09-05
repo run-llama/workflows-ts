@@ -1,5 +1,11 @@
 # @llamaindex/workflow-otel
 
+## 1.0.3
+
+### Patch Changes
+
+- e3f4717: Simplify visualization by exporting .draw function
+
 ## 1.0.2
 
 ### Patch Changes
