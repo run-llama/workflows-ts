@@ -35,7 +35,7 @@ const workflow = stateful.withState(createWorkflow());
 
 ### 2) Use state inside the user input handler
 
-Simplify the initial `userInputEvent` handler a lot by storing the messages in the state and removing the complete logic of collecting tool responses:
+Now we can simplify the initial `userInputEvent` handler by storing the messages in the state and removing the logic of collecting tool responses (since later we will put the tool responses into the context state):
 
 ```typescript
 workflow.handle([userInputEvent], async (context, { data }) => {
