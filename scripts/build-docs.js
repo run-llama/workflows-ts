@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
-import { execSync } from "child_process";
-import { promises as fs } from "fs";
-import path from "path";
+import { execSync } from "node:child_process";
+import { promises as fs } from "node:fs";
+import path from "node:path";
 import { addFrontmatter } from "./add-frontmatter.js";
 
 const DOCS_DIR = "./docs/workflows/api-reference";
@@ -15,7 +15,7 @@ async function buildApiDocs() {
     console.log("🧹 Cleaning existing API docs...");
     try {
       await fs.rm(DOCS_DIR, { recursive: true, force: true });
-    } catch (e) {
+    } catch (_e) {
       // Directory might not exist, that's ok
     }
 

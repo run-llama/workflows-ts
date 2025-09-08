@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
-import { promises as fs } from "fs";
-import path from "path";
+import { promises as fs } from "node:fs";
+import path from "node:path";
 
 const DOCS_DIR = "./docs/workflows/api-reference";
 
@@ -30,7 +30,6 @@ function extractDescription(content) {
   // Look for the first meaningful paragraph after the title
   const lines = content.split("\n");
   let foundTitle = false;
-  const skipNext = false;
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
@@ -82,8 +81,7 @@ function extractDescription(content) {
             !nextLine.startsWith("@") &&
             nextLine.length > 10
           ) {
-            fullDesc +=
-              " " + nextLine.replace(/\*\*/g, "").replace(/`([^`]+)`/g, "$1");
+            fullDesc += ` ${nextLine.replace(/\*\*/g, "").replace(/`([^`]+)`/g, "$1")}`;
           } else {
             break;
           }
@@ -91,7 +89,7 @@ function extractDescription(content) {
 
         // Limit description length
         if (fullDesc.length > 180) {
-          fullDesc = fullDesc.substring(0, 180).trim() + "...";
+          fullDesc = `${fullDesc.substring(0, 180).trim()}...`;
         }
 
         return fullDesc;
@@ -250,7 +248,7 @@ async function addFrontmatter() {
   try {
     // Check if docs directory exists
     await fs.access(DOCS_DIR);
-  } catch (error) {
+  } catch (_error) {
     console.error(`❌ Documentation directory not found: ${DOCS_DIR}`);
     console.error(
       '💡 Run "pnpm run build:docs:core" first to generate the documentation.',

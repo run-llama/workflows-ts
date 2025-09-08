@@ -18,8 +18,7 @@
     "enabled": true,
     "rules": {
       "recommended": true
-    },
-    "includes": ["packages/**"]
+    }
   },
   "javascript": {
     "formatter": {
