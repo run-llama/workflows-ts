@@ -1,5 +1,5 @@
 import type { Configuration } from "lint-staged";
 
 export default {
-  "*": ["biome format"],
+  "*": ["biome check"],
 } satisfies Configuration;

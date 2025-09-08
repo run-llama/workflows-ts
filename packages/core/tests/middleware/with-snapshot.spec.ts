@@ -1,10 +1,10 @@
-import { describe, expect, test, vi } from "vitest";
-import { createStatefulMiddleware } from "@llamaindex/workflow-core/middleware/state";
 import {
   createWorkflow,
   eventSource,
   workflowEvent,
 } from "@llamaindex/workflow-core";
+import { createStatefulMiddleware } from "@llamaindex/workflow-core/middleware/state";
+import { describe, expect, test, vi } from "vitest";
 
 const startEvent = workflowEvent({
   debugLabel: "start",

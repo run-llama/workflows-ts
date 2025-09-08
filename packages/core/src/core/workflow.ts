@@ -1,5 +1,5 @@
-import { type WorkflowEvent, type WorkflowEventData } from "./event";
 import { createContext, type Handler, type WorkflowContext } from "./context";
+import type { WorkflowEvent, WorkflowEventData } from "./event";
 
 /**
  * Represents a workflow that processes events through registered handlers.

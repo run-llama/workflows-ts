@@ -1,11 +1,11 @@
-import { describe, expect, test } from "vitest";
 import { pipeline } from "node:stream/promises";
-import { chain } from "stream-chain";
 import {
-  workflowEvent,
   createWorkflow,
   type WorkflowEventData,
+  workflowEvent,
 } from "@llamaindex/workflow-core";
+import { chain } from "stream-chain";
+import { describe, expect, test } from "vitest";
 
 describe("node:stream", () => {
   test("basic usage", async () => {
@@ -20,7 +20,7 @@ describe("node:stream", () => {
     const context = workflow.createContext();
     const { stream, sendEvent } = context;
     sendEvent(startEvent.with());
-    const result = await pipeline(stream, async function (source) {
+    const result = await pipeline(stream, async (source) => {
       for await (const event of source) {
         if (stopEvent.include(event)) {
           return "stop";

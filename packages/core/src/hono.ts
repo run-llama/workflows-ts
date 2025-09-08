@@ -1,9 +1,9 @@
-import type { Context, Handler } from "hono";
 import type {
   Workflow,
   WorkflowEvent,
   WorkflowEventData,
 } from "@llamaindex/workflow-core";
+import type { Context, Handler } from "hono";
 import { run } from "./stream/run";
 
 export const createHonoHandler = <Start, Stop>(

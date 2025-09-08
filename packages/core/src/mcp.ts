@@ -1,8 +1,8 @@
+import type { Workflow, WorkflowEvent } from "@llamaindex/workflow-core";
 import { AsyncContext } from "@llamaindex/workflow-core/async-context";
-import { type Workflow, type WorkflowEvent } from "@llamaindex/workflow-core";
-import { runWorkflow } from "./stream/run";
 import type { RequestHandlerExtra } from "@modelcontextprotocol/sdk/shared/protocol.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
+import { runWorkflow } from "./stream/run";
 
 const requestHandlerExtraAsyncLocalStorage = new AsyncContext.Variable<
   RequestHandlerExtra<any, any>

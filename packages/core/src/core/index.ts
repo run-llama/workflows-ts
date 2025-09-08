@@ -1,25 +1,26 @@
 // workflow
-export { createWorkflow, type Workflow } from "./workflow";
+
 // context
 export {
-  getContext,
   extendContext,
-  type WorkflowContext,
+  getContext,
   type Handler,
   type InheritanceTransformer,
+  type WorkflowContext,
 } from "./context";
 // event system
 export {
+  eventSource,
+  type InferWorkflowEventData,
   isWorkflowEvent,
   isWorkflowEventData,
-  eventSource,
-  workflowEvent,
+  type OrEvent,
   or,
   type WorkflowEvent,
-  type WorkflowEventData,
   type WorkflowEventConfig,
-  type InferWorkflowEventData,
-  type OrEvent,
+  type WorkflowEventData,
+  workflowEvent,
 } from "./event";
 // stream
 export { WorkflowStream } from "./stream";
+export { createWorkflow, type Workflow } from "./workflow";

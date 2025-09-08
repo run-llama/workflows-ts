@@ -4,15 +4,15 @@ import {
   type WorkflowContext,
   type WorkflowEvent,
   type WorkflowEventData,
-  WorkflowStream,
+  type WorkflowStream,
 } from "@llamaindex/workflow-core";
+import type { HandlerContext } from "../core/context";
 import { isPromiseLike } from "../core/utils";
 import {
   createHandlerDecorator,
   decoratorRegistry,
 } from "./trace-events/create-handler-decorator";
 import { runOnce } from "./trace-events/run-once";
-import type { HandlerContext } from "../core/context";
 
 type TracingContext = Record<string, unknown>;
 
@@ -179,6 +179,7 @@ export function withTraceEvents<
 
         const originalHandler = handlerContext.handler;
         const finalHandler = originalHandler;
+        // biome-ignore lint/style/useConst: .
         let handlerMiddleware: Handler<
           WorkflowEvent<any>[],
           WorkflowEventData<any> | void
@@ -201,7 +202,6 @@ export function withTraceEvents<
             WorkflowEventData<any> | void
           >,
         ) => Handler<WorkflowEvent<any>[], WorkflowEventData<any> | void>)[];
-        // eslint-disable-next-line prefer-const
         handlerMiddleware = (...args) => {
           const context = getContext();
           contextTraceWeakMap.set(handlerContext, context);

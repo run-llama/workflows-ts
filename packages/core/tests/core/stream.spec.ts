@@ -1,8 +1,8 @@
 import {
-  WorkflowStream,
   createWorkflow,
-  type WorkflowEventData,
   eventSource,
+  type WorkflowEventData,
+  WorkflowStream,
 } from "@llamaindex/workflow-core";
 import { describe, expect, test } from "vitest";
 import * as events from "./shared/events";

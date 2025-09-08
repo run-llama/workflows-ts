@@ -143,8 +143,8 @@
     "test": "vitest run",
     "test:ui": "vitest --ui",
     "prepublishOnly": "cp ../../README.md ./README.md",
-    "lint": "eslint .",
-    "lint:fix": "eslint . --fix"
+    "lint": "biome lint",
+    "lint:fix": "biome lint --write"
   },
   "devDependencies": {
     "@modelcontextprotocol/sdk": "^1.13.1",

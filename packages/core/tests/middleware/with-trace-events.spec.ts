@@ -1,12 +1,12 @@
-import { describe, test, vi, expectTypeOf, type Mock, expect } from "vitest";
+import { pipeline } from "node:stream/promises";
 import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";
 import {
-  withTraceEvents,
-  runOnce,
   createHandlerDecorator,
   getEventOrigins,
+  runOnce,
+  withTraceEvents,
 } from "@llamaindex/workflow-core/middleware/trace-events";
-import { pipeline } from "node:stream/promises";
+import { describe, expect, expectTypeOf, type Mock, test, vi } from "vitest";
 
 const groupBy = <T>(
   array: T[],
@@ -278,14 +278,14 @@ describe("get event origins", () => {
       return branchCompleteEvent.with(branchC.data);
     });
 
-    workflow.handle([allCompleteEvent], (context, allComplete) => {
+    workflow.handle([allCompleteEvent], (_context, allComplete) => {
       return stopEvent.with(allComplete.data);
     });
 
     const { stream, sendEvent } = workflow.createContext();
     sendEvent(startEvent.with("initial data"));
 
-    await pipeline(stream, async function (source) {
+    await pipeline(stream, async (source) => {
       for await (const event of source) {
         if (stopEvent.include(event)) {
           return `Result: ${event.data}`;

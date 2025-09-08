@@ -1,9 +1,9 @@
-import { describe, expect, test } from "vitest";
 import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";
 import {
   createStatefulMiddleware,
   type SnapshotData,
 } from "@llamaindex/workflow-core/middleware/state";
+import { describe, expect, test } from "vitest";
 
 const startEvent = workflowEvent({});
 

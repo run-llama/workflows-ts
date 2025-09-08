@@ -1,0 +1,34 @@
+{
+    "root": false,
+    "extends": "//",
+    "files": {
+        "includes": [
+            "src/**",
+            "tests/**"
+        ]
+    },
+    "linter": {
+        "rules": {
+            "style": {
+                "useTemplate": "off",
+                "noNonNullAssertion": "off"
+            },
+            "complexity": {
+                "noStaticOnlyClass": "off",
+                "useOptionalChain": "off",
+                "noBannedTypes": "off"
+            },
+            "correctness": {
+                "noUnreachable": "off"
+            },
+            "suspicious": {
+                "noExplicitAny": "off",
+                "noConfusingVoidType": "off",
+                "useIterableCallbackReturn": "off",
+                "noShadowRestrictedNames": "off",
+                "noDoubleEquals": "off",
+                "noAssignInExpressions": "off"
+            }
+        }
+    }
+}
