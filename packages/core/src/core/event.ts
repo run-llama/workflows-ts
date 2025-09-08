@@ -10,12 +10,11 @@ const initCallbackMap = new WeakMap<WorkflowEvent<any>, Set<Callback>>();
 let i = 0;
 let j = 0;
 
-export type InferWorkflowEventData<T> =
-  T extends WorkflowEventData<infer U>
+export type InferWorkflowEventData<T> = T extends WorkflowEventData<infer U>
+  ? U
+  : T extends WorkflowEvent<infer U>
     ? U
-    : T extends WorkflowEvent<infer U>
-      ? U
-      : never;
+    : never;
 
 /**
  * Represents event data flowing through a workflow.

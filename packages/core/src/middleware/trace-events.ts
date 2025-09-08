@@ -86,10 +86,7 @@ export function withTraceEvents<
     handle<
       const AcceptEvents extends WorkflowEvent<any>[],
       Result extends ReturnType<WorkflowEvent<any>["with"]> | void,
-    >(
-      accept: AcceptEvents,
-      handler: Handler<AcceptEvents, Result>,
-    ): void;
+    >(accept: AcceptEvents, handler: Handler<AcceptEvents, Result>): void;
     createContext(): WorkflowContext;
   },
 >(
@@ -100,10 +97,7 @@ export function withTraceEvents<
     const AcceptEvents extends WorkflowEvent<any>[],
     Result extends ReturnType<WorkflowEvent<any>["with"]> | void,
     Fn extends Handler<AcceptEvents, Result>,
-  >(
-    accept: AcceptEvents,
-    handler: Fn,
-  ): HandlerRef<AcceptEvents, Result, Fn>;
+  >(accept: AcceptEvents, handler: Fn): HandlerRef<AcceptEvents, Result, Fn>;
   substream<T extends WorkflowEventData<any>>(
     eventData: WorkflowEventData<any>,
     stream: WorkflowStream<T>,

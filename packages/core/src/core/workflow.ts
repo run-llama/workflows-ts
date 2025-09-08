@@ -55,10 +55,7 @@ export type Workflow = {
   handle<
     const AcceptEvents extends WorkflowEvent<any>[],
     Result extends ReturnType<WorkflowEvent<any>["with"]> | void,
-  >(
-    accept: AcceptEvents,
-    handler: Handler<AcceptEvents, Result>,
-  ): void;
+  >(accept: AcceptEvents, handler: Handler<AcceptEvents, Result>): void;
 
   /**
    * Creates a new workflow context for event processing.

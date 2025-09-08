@@ -7,5 +7,5 @@
   "name": "workspace-worker",
   "main": "src/index.ts",
   "compatibility_flags": ["nodejs_als"],
-  "compatibility_date": "2025-03-16",
+  "compatibility_date": "2025-03-16"
 }
