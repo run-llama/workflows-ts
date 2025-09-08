@@ -56,23 +56,19 @@ export type ResumeFunction<State> = (
 ) => StatefulContext<State>;
 
 export type WorkflowWithState<State, Input> = Input extends void | undefined
-  ? {
-      <Workflow extends WorkflowCore>(
-        workflow: Workflow,
-      ): Omit<Workflow, "createContext" | "handle"> & {
-        createContext(): StatefulContext<State>;
-        handle: StatefulHandleFn<State>;
-        resume: ResumeFunction<State>;
-      };
+  ? <Workflow extends WorkflowCore>(
+      workflow: Workflow,
+    ) => Omit<Workflow, "createContext" | "handle"> & {
+      createContext(): StatefulContext<State>;
+      handle: StatefulHandleFn<State>;
+      resume: ResumeFunction<State>;
     }
-  : {
-      <Workflow extends WorkflowCore>(
-        workflow: Workflow,
-      ): Omit<Workflow, "createContext" | "handle"> & {
-        createContext(input: Input): StatefulContext<State>;
-        handle: StatefulHandleFn<State>;
-        resume: ResumeFunction<State>;
-      };
+  : <Workflow extends WorkflowCore>(
+      workflow: Workflow,
+    ) => Omit<Workflow, "createContext" | "handle"> & {
+      createContext(input: Input): StatefulContext<State>;
+      handle: StatefulHandleFn<State>;
+      resume: ResumeFunction<State>;
     };
 
 type CreateState<State, Input, Context extends WorkflowContext> = {

@@ -1,5 +1,5 @@
-import { describe, expect, test, vi } from "vitest";
 import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";
+import { describe, expect, test, vi } from "vitest";
 
 describe("abort signal", () => {
   test("basic", () => {

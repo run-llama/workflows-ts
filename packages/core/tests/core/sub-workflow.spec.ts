@@ -1,10 +1,10 @@
-import { describe, expect, test } from "vitest";
 import {
   createWorkflow,
   eventSource,
   workflowEvent,
 } from "@llamaindex/workflow-core";
 import { run } from "@llamaindex/workflow-core/stream/run";
+import { describe, expect, test } from "vitest";
 
 describe("sub workflow", () => {
   test("basic", async () => {

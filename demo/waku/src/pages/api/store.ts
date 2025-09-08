@@ -1,7 +1,7 @@
 import { createServer } from "@llamaindex/workflow-http/server";
 import { workflow } from "../../workflow/basic";
+import { searchEvent, stopEvent, storeEvent } from "../../workflow/events";
 import { upload } from "../../workflow/llama-parse";
-import { storeEvent, stopEvent, searchEvent } from "../../workflow/events";
 
 process.on("unhandledRejection", (reason) => {
   console.error("Unhandled Rejection at:", reason);

@@ -1,0 +1,17 @@
+{
+  "root": false,
+  "extends": "//",
+  "files": {
+    "includes": ["src/**", "tests/**"]
+  },
+  "linter": {
+    "rules": {
+      "style": {
+        "noNonNullAssertion": "off"
+      },
+      "suspicious": {
+        "noExplicitAny": "off"
+      }
+    }
+  }
+}

@@ -1,4 +1,4 @@
-import { describe, test, expect, expectTypeOf } from "vitest";
+import { webcrypto } from "node:crypto";
 import {
   createWorkflow,
   eventSource,
@@ -12,8 +12,8 @@ import {
 import { withTraceEvents } from "@llamaindex/workflow-core/middleware/trace-events";
 import { withValidation } from "@llamaindex/workflow-core/middleware/validation";
 import { zodEvent } from "@llamaindex/workflow-core/util/zod";
+import { describe, expect, expectTypeOf, test } from "vitest";
 import { z } from "zod";
-import { webcrypto } from "node:crypto";
 
 describe("full workflow middleware", () => {
   const createFullWorkflow = <
@@ -47,7 +47,7 @@ describe("full workflow middleware", () => {
       () => ({}),
     );
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    workflow.strictHandle([startEvent], (sendEvent, events) => {
+    workflow.strictHandle([startEvent], (sendEvent, _events) => {
       // @ts-expect-error - expecting error ts(2345) (argument of type X is not assignable to type Y)
       sendEvent(messageEvent.with());
       sendEvent(stopEvent.with(""));

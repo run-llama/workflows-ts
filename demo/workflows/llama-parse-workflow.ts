@@ -1,8 +1,8 @@
-import { workflowEvent, createWorkflow } from "@llamaindex/workflow-core";
-import { z } from "zod";
-import { zodEvent } from "@llamaindex/workflow-core/util/zod";
+import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";
 import { createStatefulMiddleware } from "@llamaindex/workflow-core/middleware/state";
 import { pRetryHandler } from "@llamaindex/workflow-core/util/p-retry";
+import { zodEvent } from "@llamaindex/workflow-core/util/zod";
+import { z } from "zod";
 
 if (!process.env.LLAMA_CLOUD_API_KEY) {
   throw new Error("LLAMA_CLOUD_API_KEY is not set");

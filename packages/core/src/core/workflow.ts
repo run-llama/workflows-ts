@@ -1,5 +1,5 @@
-import { type WorkflowEvent, type WorkflowEventData } from "./event";
 import { createContext, type Handler, type WorkflowContext } from "./context";
+import type { WorkflowEvent, WorkflowEventData } from "./event";
 
 /**
  * Represents a workflow that processes events through registered handlers.
@@ -55,10 +55,7 @@ export type Workflow = {
   handle<
     const AcceptEvents extends WorkflowEvent<any>[],
     Result extends ReturnType<WorkflowEvent<any>["with"]> | void,
-  >(
-    accept: AcceptEvents,
-    handler: Handler<AcceptEvents, Result>,
-  ): void;
+  >(accept: AcceptEvents, handler: Handler<AcceptEvents, Result>): void;
 
   /**
    * Creates a new workflow context for event processing.

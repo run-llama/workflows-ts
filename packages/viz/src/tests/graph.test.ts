@@ -52,15 +52,15 @@ describe("withGraph", () => {
     const event3 = workflowEvent<string>({ debugLabel: "event3" });
     const stopEvent = workflowEvent<string>({ debugLabel: "stop" });
 
-    workflowWithGraph.handle([event1], async (ctx) => {
+    workflowWithGraph.handle([event1], async (_ctx) => {
       return event2.with("data 1");
     });
 
-    workflowWithGraph.handle([event2], async (ctx) => {
+    workflowWithGraph.handle([event2], async (_ctx) => {
       return event3.with("data 2");
     });
 
-    workflowWithGraph.handle([event3], async (ctx) => {
+    workflowWithGraph.handle([event3], async (_ctx) => {
       return stopEvent.with("data 3");
     });
 
@@ -97,11 +97,11 @@ describe("withGraph", () => {
       sendEvent(eventB2.with()); // sendEvent should be detected
     });
 
-    workflowWithGraph.handle([eventB1], async (ctx) => {
+    workflowWithGraph.handle([eventB1], async (_ctx) => {
       return stopEvent.with();
     });
 
-    workflowWithGraph.handle([eventB2], async (ctx) => {
+    workflowWithGraph.handle([eventB2], async (_ctx) => {
       return stopEvent.with();
     });
 
@@ -157,19 +157,19 @@ describe("withGraph", () => {
       return allCompleteEvent.with(results.map((e) => e.data).join(", "));
     });
 
-    workflow.handle([branchAEvent], (ctx, branchA) => {
+    workflow.handle([branchAEvent], (_ctx, branchA) => {
       return branchCompleteEvent.with(branchA.data);
     });
 
-    workflow.handle([branchBEvent], (ctx, branchB) => {
+    workflow.handle([branchBEvent], (_ctx, branchB) => {
       return branchCompleteEvent.with(branchB.data);
     });
 
-    workflow.handle([branchCEvent], (ctx, branchC) => {
+    workflow.handle([branchCEvent], (_ctx, branchC) => {
       return branchCompleteEvent.with(branchC.data);
     });
 
-    workflow.handle([allCompleteEvent], (ctx, allComplete) => {
+    workflow.handle([allCompleteEvent], (_ctx, allComplete) => {
       return stopEvent.with(allComplete.data);
     });
 

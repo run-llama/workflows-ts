@@ -1,10 +1,10 @@
-import * as z4 from "zod/v4/core";
-import * as z3 from "zod/v3";
 import {
-  workflowEvent,
   type WorkflowEvent,
   type WorkflowEventConfig,
+  workflowEvent,
 } from "@llamaindex/workflow-core";
+import type * as z3 from "zod/v3";
+import * as z4 from "zod/v4/core";
 
 // Union type to support both Zod 3 and Zod 4 schemas
 type ZodSchema<T> = z3.ZodType<T> | z4.$ZodType<T>;

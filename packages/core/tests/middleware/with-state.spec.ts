@@ -1,6 +1,6 @@
-import { describe, expect, test, vi } from "vitest";
 import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";
 import { createStatefulMiddleware } from "@llamaindex/workflow-core/middleware/state";
+import { describe, expect, test, vi } from "vitest";
 
 describe("with state", () => {
   test("no input", () => {

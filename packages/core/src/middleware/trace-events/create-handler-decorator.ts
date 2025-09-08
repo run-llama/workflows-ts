@@ -44,11 +44,13 @@ export function createHandlerDecorator<Metadata>(config: {
     onAfterHandler: config.onAfterHandler,
     onBeforeHandler: config.onBeforeHandler,
   });
-  return function <
+  return <
     const AcceptEvents extends WorkflowEvent<any>[],
     Result extends ReturnType<WorkflowEvent<any>["with"]> | void,
     Fn extends Handler<AcceptEvents, Result>,
-  >(handler: Fn) {
+  >(
+    handler: Fn,
+  ) => {
     decoratorRegistry
       .get(uid)!
       .handlers.add(

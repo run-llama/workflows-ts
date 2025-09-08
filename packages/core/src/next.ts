@@ -1,9 +1,9 @@
-import { NextRequest } from "next/server";
 import type {
   Workflow,
-  WorkflowEventData,
   WorkflowEvent,
+  WorkflowEventData,
 } from "@llamaindex/workflow-core";
+import type { NextRequest } from "next/server";
 import { run } from "./stream/run";
 
 type WorkflowAPI = {

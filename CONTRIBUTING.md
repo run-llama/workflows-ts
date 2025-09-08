@@ -127,13 +127,13 @@ pnpm run dev      # Watch mode with Bunchee
 
 ### Formatting
 
-- We use **Prettier** for code formatting
+- We use **Biome** for code formatting
 - Formatting is automatically applied on commit via lint-staged
 - Run `pnpm run format:write` to format files manually
 
 ### Linting
 
-- We use **Eslint** for linting
+- We use **Biome** for linting
 - Running `pnpm run lint:fix` is a way of auto-linting the code, but it might leave untracked errors
 
 ### TypeScript

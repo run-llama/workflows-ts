@@ -1,9 +1,9 @@
+import { pipeline } from "node:stream/promises";
 import {
   createWorkflow,
-  workflowEvent,
   getContext,
+  workflowEvent,
 } from "@llamaindex/workflow-core";
-import { pipeline } from "node:stream/promises";
 import { collect } from "@llamaindex/workflow-core/stream/consumer";
 
 //#region define workflow events
@@ -51,7 +51,7 @@ workflow.handle([allCompleteEvent], (context, allComplete) => {
 const { stream, sendEvent } = workflow.createContext();
 sendEvent(startEvent.with("initial data"));
 
-const result = await pipeline(stream, async function (source) {
+const result = await pipeline(stream, async (source) => {
   for await (const event of source) {
     if (stopEvent.include(event)) {
       return `Result: ${event.data}`;

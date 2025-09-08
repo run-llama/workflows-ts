@@ -1,6 +1,6 @@
 import { createHandlerDecorator } from "@llamaindex/workflow-core/middleware/trace-events";
-import * as otelApi from "@opentelemetry/api";
 import type { Exception } from "@opentelemetry/api";
+import * as otelApi from "@opentelemetry/api";
 
 export const openTelemetry = createHandlerDecorator({
   debugLabel: "otelTrace",

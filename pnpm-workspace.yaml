@@ -10,8 +10,11 @@ packages:
   - ./packages/*
   - ./tests/*
 
+ignoredBuiltDependencies:
+  - '@biomejs/biome'
+
 onlyBuiltDependencies:
-  - "@tailwindcss/oxide"
+  - '@tailwindcss/oxide'
   - esbuild
   - sharp
   - workerd

@@ -1,8 +1,8 @@
-import { neon } from "@neondatabase/serverless";
 import { createWorkflow, getContext } from "@llamaindex/workflow-core";
-import { storeEvent, stopEvent, searchEvent } from "./events";
-import { getEnv } from "waku";
+import { neon } from "@neondatabase/serverless";
 import { OpenAI } from "openai";
+import { getEnv } from "waku";
+import { searchEvent, stopEvent, storeEvent } from "./events";
 
 const openai = new OpenAI({
   apiKey: getEnv("OPENAI_API_KEY")!,

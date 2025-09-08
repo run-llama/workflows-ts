@@ -1,15 +1,15 @@
-import { describe, expect, test } from "vitest";
+import type { WorkflowEventData } from "@llamaindex/workflow-core";
 import {
   createWorkflow,
   eventSource,
   workflowEvent,
 } from "@llamaindex/workflow-core";
-import type { WorkflowEventData } from "@llamaindex/workflow-core";
 import {
-  runWorkflow,
   runAndCollect,
   runStream,
+  runWorkflow,
 } from "@llamaindex/workflow-core/stream/run";
+import { describe, expect, test } from "vitest";
 
 describe("workflow helper functions", () => {
   test("runWorkflow should execute workflow and return the final event", async () => {
@@ -25,10 +25,10 @@ describe("workflow helper functions", () => {
     });
 
     const workflow = createWorkflow();
-    workflow.handle([startEvent], (context, start) => {
+    workflow.handle([startEvent], (_context, start) => {
       return intermediateEvent.with(Number.parseInt(start.data, 10));
     });
-    workflow.handle([intermediateEvent], (context, convert) => {
+    workflow.handle([intermediateEvent], (_context, convert) => {
       return stopEvent.with(convert.data > 0 ? 1 : -1);
     });
 
@@ -62,7 +62,7 @@ describe("workflow helper functions", () => {
     });
 
     const workflow = createWorkflow();
-    workflow.handle([startEvent], (context, start) => {
+    workflow.handle([startEvent], (_context, start) => {
       const count = Number.parseInt(start.data, 10);
       for (let i = 0; i < count; i++) {
         return messageEvent.with(i);
@@ -71,7 +71,7 @@ describe("workflow helper functions", () => {
     });
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    workflow.handle([messageEvent], (context) => {
+    workflow.handle([messageEvent], (_context) => {
       return stopEvent.with("processed");
     });
 
@@ -107,7 +107,7 @@ describe("workflow helper functions", () => {
     const workflow = createWorkflow();
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    workflow.handle([startEvent], async (context, start) => {
+    workflow.handle([startEvent], async (context, _start) => {
       const { sendEvent } = context;
 
       for (let i = 0; i < 10; i++) {
@@ -118,7 +118,7 @@ describe("workflow helper functions", () => {
     });
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    workflow.handle([intermediateEvent], async (context, intermediate) => {
+    workflow.handle([intermediateEvent], async (_context, _intermediate) => {
       // fake some work
       await new Promise((resolve) => setTimeout(resolve, 1));
     });

@@ -1,12 +1,11 @@
-import { type Handler, type Workflow } from "@llamaindex/workflow-core";
+import type { Handler, Workflow } from "@llamaindex/workflow-core";
 import Graph from "graphology";
-import type { ResultType } from "./types";
-import type { AcceptEventsType } from "./types";
 import {
   getAwaitedEventNames,
   getReturnedEventName,
   getSentEventNames,
 } from "./parser";
+import type { AcceptEventsType, ResultType } from "./types";
 
 export type WithGraphWorkflow = {
   getGraph(): Graph;
@@ -54,7 +53,7 @@ export function withGraph<WorkflowLike extends Workflow>(
         graph.addEdge(nodeName, outEvent);
       }
 
-      return workflow.handle(accept, handler);
+      workflow.handle(accept, handler);
     },
     getGraph: () => graph,
   };

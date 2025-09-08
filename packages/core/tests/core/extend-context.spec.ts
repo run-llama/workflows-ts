@@ -1,11 +1,11 @@
-import { describe, expect, test, vi } from "vitest";
 import {
   createWorkflow,
   extendContext,
-  workflowEvent,
   type InheritanceTransformer,
   type WorkflowContext,
+  workflowEvent,
 } from "@llamaindex/workflow-core";
+import { describe, expect, test, vi } from "vitest";
 
 const startEvent = workflowEvent({
   debugLabel: "start",
@@ -46,7 +46,7 @@ describe("extendContext", () => {
 
     // Then add a transformer for that property
     const transformer: InheritanceTransformer = vi.fn(
-      (handlerContext, originalDescriptor) => ({
+      (_handlerContext, originalDescriptor) => ({
         ...originalDescriptor,
         value: transformedValue,
       }),
@@ -423,7 +423,7 @@ describe("extendContext", () => {
     });
 
     const transformer: InheritanceTransformer = (
-      handlerContext,
+      _handlerContext,
       originalDescriptor,
     ) => ({
       ...originalDescriptor,

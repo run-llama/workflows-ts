@@ -1,9 +1,9 @@
 import type { Workflow } from "@llamaindex/workflow-core";
+import ForceSupervisor from "graphology-layout-force/worker";
 import Sigma from "sigma";
 import type { Settings } from "sigma/settings";
 import { withGraph } from "./graph";
 import { toSigma } from "./sigma";
-import ForceSupervisor from "graphology-layout-force/worker";
 
 export type DrawingOptions = {
   layout?: "force" | "none";

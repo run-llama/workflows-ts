@@ -1,5 +1,5 @@
-import { createStatefulMiddleware } from "@llamaindex/workflow-core/middleware/state";
 import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";
+import { createStatefulMiddleware } from "@llamaindex/workflow-core/middleware/state";
 import { OpenAI } from "openai";
 
 const openai = new OpenAI();

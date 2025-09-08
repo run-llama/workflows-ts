@@ -13,7 +13,7 @@ describe("otelTrace decorator", () => {
       plugins: [openTelemetry],
     });
 
-    const startSpanMock = vi.fn().mockImplementation((name, opts, fn) => {
+    const startSpanMock = vi.fn().mockImplementation((_name, _opts, fn) => {
       return fn({
         end: vi.fn(),
         recordException: vi.fn(),
@@ -46,7 +46,7 @@ describe("otelTrace decorator", () => {
     const endMock = vi.fn();
 
     // Properly mock startActiveSpan to call the handler
-    const startActiveSpanMock = vi.fn().mockImplementation((name, fn) => {
+    const startActiveSpanMock = vi.fn().mockImplementation((_name, fn) => {
       // fn is the callback passed by otelTrace
       return fn({
         end: endMock,

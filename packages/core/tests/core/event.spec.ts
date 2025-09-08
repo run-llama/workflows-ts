@@ -1,5 +1,5 @@
-import { describe, expect, test, vi } from "vitest";
 import { workflowEvent } from "@llamaindex/workflow-core";
+import { describe, expect, test, vi } from "vitest";
 
 describe("event system api", () => {
   test("should set unique id as always", () => {

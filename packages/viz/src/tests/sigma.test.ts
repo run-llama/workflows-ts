@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest";
 import Graph from "graphology";
+import { describe, expect, it } from "vitest";
 import { toSigma } from "../sigma";
 
 describe("toSigma", () => {

@@ -1,5 +1,5 @@
-import {
-  type WorkflowEventData,
+import type {
+  WorkflowEventData,
   WorkflowStream,
 } from "@llamaindex/workflow-core";
 

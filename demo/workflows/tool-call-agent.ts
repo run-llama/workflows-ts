@@ -1,5 +1,5 @@
-import { OpenAI } from "openai";
 import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";
+import { OpenAI } from "openai";
 import type {
   ChatCompletionMessageToolCall,
   ChatCompletionTool,

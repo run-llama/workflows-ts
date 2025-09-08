@@ -20,7 +20,7 @@ export function toSigma(graph: Graph): Graph {
     }
   });
 
-  sigmaGraph.forEachEdge((edge, attributes) => {
+  sigmaGraph.forEachEdge((edge, _attributes) => {
     sigmaGraph.mergeEdgeAttributes(edge, {
       type: "arrow",
       size: 3,

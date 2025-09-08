@@ -1,12 +1,12 @@
-import { describe, expect, test, vi } from "vitest";
 import {
   createWorkflow,
   eventSource,
-  workflowEvent,
   or,
-  type WorkflowEventData,
   type WorkflowContext,
+  type WorkflowEventData,
+  workflowEvent,
 } from "@llamaindex/workflow-core";
+import { describe, expect, test, vi } from "vitest";
 
 describe("workflow context api", () => {
   const startEvent = workflowEvent({
@@ -152,7 +152,7 @@ describe("workflow context api", () => {
       return stopEvent.with();
     });
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const fn2 = vi.fn(async (context) => {
+    const fn2 = vi.fn(async (_context) => {
       return aResultEvent.with();
     });
     workflow.handle([startEvent], fn);
@@ -187,7 +187,7 @@ describe("workflow context api", () => {
 
     const handlerFn = vi.fn(
       (
-        context: WorkflowContext,
+        _context: WorkflowContext,
         eventData: WorkflowEventData<string | number>,
       ) => {
         // Should be called when either event arrives
@@ -238,7 +238,7 @@ describe("workflow context api", () => {
     const workflow = createWorkflow();
 
     const handler = vi.fn(
-      (context: WorkflowContext, eventData: WorkflowEventData<any>) => {
+      (_context: WorkflowContext, eventData: WorkflowEventData<any>) => {
         return resultEvent.with(`Got data: ${eventData.data}`);
       },
     );
