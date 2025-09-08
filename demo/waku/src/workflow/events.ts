@@ -1,7 +1,7 @@
 import { workflowEvent } from "@llamaindex/workflow-core";
 import { zodEvent } from "@llamaindex/workflow-core/util/zod";
-import { parseFormSchema } from "../schema";
 import { z } from "zod";
+import { parseFormSchema } from "../schema";
 
 export const searchEvent = workflowEvent<string>({
   debugLabel: "search",

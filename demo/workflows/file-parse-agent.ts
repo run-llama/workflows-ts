@@ -1,7 +1,7 @@
-import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";
+import { AsyncLocalStorage } from "node:async_hooks";
 import { readdir, stat } from "node:fs/promises";
 import { resolve } from "node:path";
-import { AsyncLocalStorage } from "node:async_hooks";
+import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";
 import { createStatefulMiddleware } from "@llamaindex/workflow-core/middleware/state";
 
 export const messageEvent = workflowEvent<string>({
@@ -61,7 +61,7 @@ fileParseWorkflow.handle(
           return;
         }
         const s = await stat(filePath);
-        let lock = {
+        const lock = {
           finish: false,
         };
         if (s.isFile()) {

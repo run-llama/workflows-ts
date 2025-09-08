@@ -7,7 +7,7 @@
   },
   "files": {
     "ignoreUnknown": true,
-    "includes": ["**/packages"]
+    "includes": ["**", "!**/node_modules", "!**/dist", "!**/lib"]
   },
   "formatter": {
     "enabled": true,
@@ -18,7 +18,8 @@
     "enabled": true,
     "rules": {
       "recommended": true
-    }
+    },
+    "includes": ["packages/**"]
   },
   "javascript": {
     "formatter": {

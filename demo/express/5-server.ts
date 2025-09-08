@@ -1,15 +1,15 @@
-import express from "express";
 import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";
 import {
   createStatefulMiddleware,
-  SnapshotData,
+  type SnapshotData,
 } from "@llamaindex/workflow-core/middleware/state";
+import express from "express";
 import { OpenAI } from "openai";
-import {
-  ChatCompletionMessage as Message,
+import type {
   ChatCompletionMessageParam as InputMessage,
-  ChatCompletionMessageFunctionToolCall as ToolCall,
+  ChatCompletionMessage as Message,
   ChatCompletionTool as Tool,
+  ChatCompletionMessageFunctionToolCall as ToolCall,
   ChatCompletionToolMessageParam as ToolResponseMessage,
 } from "openai/resources/chat/completions";
 import { v4 as uuid } from "uuid";
@@ -103,9 +103,10 @@ async function callTool(toolCall: ToolCall): Promise<string> {
   const toolInput = JSON.parse(toolCall.function.arguments);
 
   switch (toolName) {
-    case "get_weather":
+    case "get_weather": {
       const location = toolInput.location;
       return `The weather in ${location} is sunny and 72°F`;
+    }
     default:
       return `Unknown tool: ${toolName}`;
   }

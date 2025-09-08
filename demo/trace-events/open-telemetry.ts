@@ -1,11 +1,11 @@
 import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";
 import { withTraceEvents } from "@llamaindex/workflow-core/middleware/trace-events";
+import { openTelemetry } from "@llamaindex/workflow-otel";
 import { NodeSDK } from "@opentelemetry/sdk-node";
 import {
   ConsoleSpanExporter,
   SimpleSpanProcessor,
 } from "@opentelemetry/sdk-trace-base";
-import { openTelemetry } from "@llamaindex/workflow-otel";
 
 // Initialize OpenTelemetry
 const sdk = new NodeSDK({

@@ -142,9 +142,7 @@
     "dev": "tsdown --watch",
     "test": "vitest run",
     "test:ui": "vitest --ui",
-    "prepublishOnly": "cp ../../README.md ./README.md",
-    "lint": "biome lint",
-    "lint:fix": "biome lint --write"
+    "prepublishOnly": "cp ../../README.md ./README.md"
   },
   "devDependencies": {
     "@modelcontextprotocol/sdk": "^1.13.1",

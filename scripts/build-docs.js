@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
-import { promises as fs } from "fs";
 import { execSync } from "child_process";
+import { promises as fs } from "fs";
 import path from "path";
 import { addFrontmatter } from "./add-frontmatter.js";
 

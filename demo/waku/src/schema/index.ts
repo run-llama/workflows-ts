@@ -1,6 +1,5 @@
-import { FailPageMode, ParserLanguages, ParsingMode } from "../lib/api";
-
 import { z } from "zod";
+import { FailPageMode, ParserLanguages, ParsingMode } from "../lib/api";
 
 type Language = (typeof ParserLanguages)[keyof typeof ParserLanguages];
 const VALUES: [Language, ...Language[]] = [

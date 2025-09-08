@@ -1,10 +1,7 @@
 {
-    "root": false,
-    "extends": "//",
-    "files": {
-        "includes": [
-            "src/**",
-            "tests/**"
-        ]
-    }
+  "root": false,
+  "extends": "//",
+  "files": {
+    "includes": ["src/**", "tests/**"]
+  }
 }

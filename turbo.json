@@ -15,10 +15,6 @@
     "dev": {
       "persistent": true,
       "cache": false
-    },
-    "lint": {},
-    "lint:fix": {
-      "dependsOn": ["^build"]
     }
   }
 }

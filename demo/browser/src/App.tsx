@@ -1,5 +1,5 @@
-import reactLogo from "./assets/react.svg";
 import llamaindexLogo from "/llamaindex.svg";
+import reactLogo from "./assets/react.svg";
 import "./App.css";
 import {
   createWorkflow,
@@ -27,10 +27,10 @@ function App() {
   return (
     <>
       <div>
-        <a href="https://llamaindex.ai" target="_blank">
+        <a href="https://llamaindex.ai" target="_blank" rel="noopener">
           <img src={llamaindexLogo} className="logo" alt="Vite logo" />
         </a>
-        <a href="https://react.dev" target="_blank">
+        <a href="https://react.dev" target="_blank" rel="noopener">
           <img src={reactLogo} className="logo react" alt="React logo" />
         </a>
       </div>

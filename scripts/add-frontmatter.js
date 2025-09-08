@@ -30,7 +30,7 @@ function extractDescription(content) {
   // Look for the first meaningful paragraph after the title
   const lines = content.split("\n");
   let foundTitle = false;
-  let skipNext = false;
+  const skipNext = false;
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];

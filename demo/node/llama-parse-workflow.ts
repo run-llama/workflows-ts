@@ -1,9 +1,9 @@
+import { runWorkflow } from "@llamaindex/workflow-core/stream/run";
 import {
   llamaParseWorkflow,
   startEvent,
   stopEvent,
 } from "../workflows/llama-parse-workflow.js";
-import { runWorkflow } from "@llamaindex/workflow-core/stream/run";
 
 runWorkflow(
   llamaParseWorkflow,

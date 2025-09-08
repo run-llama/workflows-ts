@@ -1,5 +1,5 @@
 import { assertEquals } from "@std/assert";
-import { workflow, startEvent, endEvent } from "./main.ts";
+import { endEvent, startEvent, workflow } from "./main.ts";
 
 Deno.test(function workflowRun() {
   const { sendEvent, stream } = workflow.createContext();

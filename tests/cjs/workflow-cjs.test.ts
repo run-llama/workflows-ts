@@ -1,5 +1,5 @@
 // Pure CommonJS Vitest test file with TypeScript
-import type { WorkflowEvent, Workflow } from "@llamaindex/workflow-core";
+import type { Workflow, WorkflowEvent } from "@llamaindex/workflow-core";
 
 // Type the require imports properly for TypeScript
 const workflows = require("@llamaindex/workflow-core") as {

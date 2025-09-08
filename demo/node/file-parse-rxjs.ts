@@ -1,11 +1,11 @@
+import { eventSource } from "@llamaindex/workflow-core";
+import { toObservable } from "@llamaindex/workflow-core/observable";
+import { filter, map } from "rxjs";
 import {
   fileParseWorkflow,
   messageEvent,
   startEvent,
 } from "../workflows/file-parse-agent.js";
-import { filter, map } from "rxjs";
-import { eventSource } from "@llamaindex/workflow-core";
-import { toObservable } from "@llamaindex/workflow-core/observable";
 
 const directory = "..";
 

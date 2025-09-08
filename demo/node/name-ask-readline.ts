@@ -1,10 +1,10 @@
 import { input } from "@inquirer/prompts";
 import {
-  workflow,
-  stopEvent,
-  startEvent,
   humanInteractionEvent,
   humanRequestEvent,
+  startEvent,
+  stopEvent,
+  workflow,
 } from "../workflows/human-in-the-loop";
 
 const name = await input({

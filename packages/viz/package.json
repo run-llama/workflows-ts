@@ -30,9 +30,7 @@
     "dev": "bunchee --watch",
     "test": "vitest run",
     "test:ui": "vitest --ui",
-    "test:watch": "vitest",
-    "lint": "biome lint",
-    "lint:fix": "biome lint --write"
+    "test:watch": "vitest"
   },
   "devDependencies": {
     "@babel/types": "^7.27.1",

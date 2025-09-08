@@ -1,9 +1,9 @@
 import { OpenAI } from "openai";
-import {
-  ChatCompletionMessage as Message,
+import type {
   ChatCompletionMessageParam as InputMessage,
-  ChatCompletionMessageFunctionToolCall as ToolCall,
+  ChatCompletionMessage as Message,
   ChatCompletionTool as Tool,
+  ChatCompletionMessageFunctionToolCall as ToolCall,
 } from "openai/resources/chat/completions";
 
 // Initialize OpenAI client
@@ -56,10 +56,11 @@ async function callTool(toolCall: ToolCall): Promise<string> {
 
   // Execute the requested tool
   switch (toolName) {
-    case "get_weather":
+    case "get_weather": {
       // Mock weather API call
       const location = toolInput.location;
       return `The weather in ${location} is sunny and 72°F`;
+    }
     default:
       return `Unknown tool: ${toolName}`;
   }
@@ -67,7 +68,7 @@ async function callTool(toolCall: ToolCall): Promise<string> {
 
 // Now implement our agent loop
 async function runAgentLoop(userInput: string) {
-  let messages: InputMessage[] = [{ role: "user", content: userInput }];
+  const messages: InputMessage[] = [{ role: "user", content: userInput }];
 
   while (true) {
     const response = await llm(messages, tools);
