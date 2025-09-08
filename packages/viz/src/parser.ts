@@ -1,5 +1,5 @@
 import * as babelParser from "@babel/parser";
-import { type Expression, type Node } from "@babel/types";
+import type { Expression, Node } from "@babel/types";
 import type { Handler } from "@llamaindex/workflow-core";
 import type { AcceptEventsType, ResultType } from "./types";
 
@@ -33,7 +33,9 @@ function _parseAndExtractFromHandlerAst<
 
       // Recursively visit child nodes
       for (const key in node) {
+        // biome-ignore lint/suspicious/noPrototypeBuiltins: code not tested
         if (Object.prototype.hasOwnProperty.call(node, key)) {
+          // biome-ignore lint/suspicious/noExplicitAny: simplify
           const child = (node as any)[key];
           if (typeof child === "object" && child !== null) {
             if (Array.isArray(child)) {
@@ -73,6 +75,7 @@ function _parseAndExtractFromHandlerAst<
       console.log(emptyResultMessage);
       return defaultValue;
     }
+    // biome-ignore lint/suspicious/noExplicitAny: simplify
   } catch (e: any) {
     console.error("Error parsing handler code with Babel:", e.message);
     return defaultValue;
@@ -118,9 +121,9 @@ export function getReturnedEventName<
             returnArgNode.callee.type === "MemberExpression" &&
             returnArgNode.callee.object.type === "Identifier"
           ) {
-            context.returnedEventName = (
-              returnArgNode.callee.object as any
-            ).name;
+            context.returnedEventName =
+              // biome-ignore lint/suspicious/noExplicitAny: simplify
+              (returnArgNode.callee.object as any).name;
           }
         }
       }
@@ -163,6 +166,7 @@ export function getSentEventNames<
               firstArg.callee.type === "MemberExpression" &&
               firstArg.callee.object.type === "Identifier"
             ) {
+              // biome-ignore lint/suspicious/noExplicitAny: simplify
               context.sentEventNames.add((firstArg.callee.object as any).name);
             }
           }

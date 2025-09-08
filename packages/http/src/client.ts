@@ -1,7 +1,7 @@
 import {
   type WorkflowEvent,
-  WorkflowStream,
   type WorkflowEventData,
+  WorkflowStream,
 } from "@llamaindex/workflow-core";
 
 export const createClient = (
