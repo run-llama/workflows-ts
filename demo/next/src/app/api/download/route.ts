@@ -6,11 +6,11 @@ export async function POST(req: Request) {
   const result = await readFileBlob(path);
   // Convert blob to buffer for NextResponse
   const buffer = Buffer.from(await result.arrayBuffer());
-    
+
   return new NextResponse(buffer, {
     headers: {
-        'Content-Type': result.type || 'application/octet-stream',
-        'Content-Length': result.size.toString(),
+      "Content-Type": result.type || "application/octet-stream",
+      "Content-Length": result.size.toString(),
     },
   });
 }

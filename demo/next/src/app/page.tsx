@@ -1,61 +1,69 @@
-"use client"
+"use client";
 
-import type React from "react"
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Separator } from "@/components/ui/separator"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Search, BookOpen } from "lucide-react"
-import { FileDisplay } from "@/components/custom/file-display"
+import type React from "react";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Search, BookOpen } from "lucide-react";
+import { FileDisplay } from "@/components/custom/file-display";
 
 export default function HomePage() {
-  const [query, setQuery] = useState("")
-  const [outputPath, setOutputPath] = useState<string | null>(null)
-  const [isProcessing, setIsProcessing] = useState(false)
-  const [error, setError] = useState("")
+  const [query, setQuery] = useState("");
+  const [outputPath, setOutputPath] = useState<string | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState("");
 
   const handleSearch = async () => {
-    if (query.trim() === "") return
+    if (query.trim() === "") return;
 
-    setError("")
-    setIsProcessing(true)
-    setOutputPath(null)
+    setError("");
+    setIsProcessing(true);
+    setOutputPath(null);
 
     try {
       const res = await fetch("/api/report", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ query }),
-      })
-      const data = await res.json()
+      });
+      const data = await res.json();
       if (data.outputPath) {
-        setOutputPath(data.outputPath)
+        setOutputPath(data.outputPath);
       } else {
-        setError(data.refusal)
+        setError(data.refusal);
       }
-      setQuery("")
+      setQuery("");
     } catch (err) {
-      console.error("Search error:", err)
-      setError("Failed to retrieve relevant information. Please try again.")
+      console.error("Search error:", err);
+      setError("Failed to retrieve relevant information. Please try again.");
     } finally {
-      setIsProcessing(false)
+      setIsProcessing(false);
     }
-  }
+  };
 
   const handleQueryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const ques = e.target.value
+    const ques = e.target.value;
     if (ques) {
-      setQuery(ques)
+      setQuery(ques);
     }
-  }
+  };
 
   return (
     <div className="max-w min-h-screen mx-auto p-6 space-y-6 bg-gradient-to-br from-purple-300 via-white to-purple-500">
       <div className="text-center space-y-2">
         <h1 className="text-3xl font-bold">Report Generator</h1>
-        <p className="text-muted-foreground">Search the web for news, get an AI report, download the PDF</p>
+        <p className="text-muted-foreground">
+          Search the web for news, get an AI report, download the PDF
+        </p>
       </div>
 
       <Card>
@@ -70,7 +78,11 @@ export default function HomePage() {
             <div className="space-y-4">
               <Search className="w-12 h-12 mx-auto text-muted-foreground" />
               <div className="space-y-2">
-                <Input id="search-docs" value={query} onChange={handleQueryChange} />
+                <Input
+                  id="search-docs"
+                  value={query}
+                  onChange={handleQueryChange}
+                />
               </div>
             </div>
           </div>
@@ -114,5 +126,5 @@ export default function HomePage() {
         </>
       )}
     </div>
-  )
+  );
 }

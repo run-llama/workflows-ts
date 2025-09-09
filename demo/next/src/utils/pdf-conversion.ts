@@ -1,16 +1,19 @@
-'use server'
-import puppeteer from 'puppeteer';
-import { marked } from 'marked';
+"use server";
+import puppeteer from "puppeteer";
+import { marked } from "marked";
 
-export async function convertMdToPdf(mdText: string, title: string): Promise<string> {
-    const docTitle = title.replaceAll(" ", "_");
-    
-    try {
-        // Convert markdown to HTML
-        const html = marked(mdText);
-        
-        // Create full HTML document
-        const fullHtml = `
+export async function convertMdToPdf(
+  mdText: string,
+  title: string,
+): Promise<string> {
+  const docTitle = title.replaceAll(" ", "_");
+
+  try {
+    // Convert markdown to HTML
+    const html = marked(mdText);
+
+    // Create full HTML document
+    const fullHtml = `
             <!DOCTYPE html>
             <html>
             <head>
@@ -73,34 +76,33 @@ export async function convertMdToPdf(mdText: string, title: string): Promise<str
             </body>
             </html>
         `;
-        
-        // Launch Puppeteer
-        const browser = await puppeteer.launch({ headless: true });
-        const page = await browser.newPage();
-        
-        // Set content and generate PDF
-        await page.setContent(fullHtml, { waitUntil: 'networkidle0' });
-        
-        const pdfPath = `./public/outputs/pdfs/${docTitle}.pdf`;
-        await page.pdf({
-            path: pdfPath,
-            format: 'A4',
-            printBackground: true,
-            margin: {
-                top: '1cm',
-                right: '1cm',
-                bottom: '1cm',
-                left: '1cm'
-            }
-        });
-        
-        await browser.close();
-        
-        console.log("Converted markdown text to PDF:", pdfPath);
-        return pdfPath;
-        
-    } catch (err) {
-        console.error(err);
-        return "Impossible to convert your file to PDF at the moment: try again soon!";
-    }
+
+    // Launch Puppeteer
+    const browser = await puppeteer.launch({ headless: true });
+    const page = await browser.newPage();
+
+    // Set content and generate PDF
+    await page.setContent(fullHtml, { waitUntil: "networkidle0" });
+
+    const pdfPath = `./public/outputs/pdfs/${docTitle}.pdf`;
+    await page.pdf({
+      path: pdfPath,
+      format: "A4",
+      printBackground: true,
+      margin: {
+        top: "1cm",
+        right: "1cm",
+        bottom: "1cm",
+        left: "1cm",
+      },
+    });
+
+    await browser.close();
+
+    console.log("Converted markdown text to PDF:", pdfPath);
+    return pdfPath;
+  } catch (err) {
+    console.error(err);
+    return "Impossible to convert your file to PDF at the moment: try again soon!";
+  }
 }

@@ -1,72 +1,75 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Download, FileText, Eye, ExternalLink } from "lucide-react"
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Download, FileText, Eye, ExternalLink } from "lucide-react";
 
 interface FileDisplayProps {
-  outputPath: string
+  outputPath: string;
 }
 
 export function FileDisplay({ outputPath }: FileDisplayProps) {
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(false);
 
   // Extract filename from path
-  const filename = outputPath.split("/").pop() || "report.pdf"
-  const fileExtension = filename.split(".").pop()?.toLowerCase()
+  const filename = outputPath.split("/").pop() || "report.pdf";
+  const fileExtension = filename.split(".").pop()?.toLowerCase();
 
   const handleDownload = async () => {
-    setIsLoading(true)
+    setIsLoading(true);
     try {
       const response = await fetch("/api/download", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ path: outputPath }),
-      })
-      const blob = await response.blob()
+      });
+      const blob = await response.blob();
 
       // Create download link
-      const url = window.URL.createObjectURL(blob)
-      const link = document.createElement("a")
-      link.href = url
-      link.download = filename
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      window.URL.revokeObjectURL(url)
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
     } catch (error) {
-      console.error("Download failed:", error)
+      console.error("Download failed:", error);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const handleView = () => {
-    window.open(outputPath.replaceAll("./public", "").replaceAll("public/", ""), "_blank")
-  }
+    window.open(
+      outputPath.replaceAll("./public", "").replaceAll("public/", ""),
+      "_blank",
+    );
+  };
 
   const getFileIcon = () => {
     switch (fileExtension) {
       case "pdf":
-        return <FileText className="w-8 h-8 text-purple-500" />
+        return <FileText className="w-8 h-8 text-purple-500" />;
       default:
-        return <FileText className="w-8 h-8 text-gray-500" />
+        return <FileText className="w-8 h-8 text-gray-500" />;
     }
-  }
+  };
 
   const getFileType = () => {
     switch (fileExtension) {
       case "pdf":
-        return "PDF Document"
+        return "PDF Document";
       case "txt":
-        return "Text File"
+        return "Text File";
       case "docx":
-        return "Word Document"
+        return "Word Document";
       default:
-        return "Document"
+        return "Document";
     }
-  }
+  };
 
   return (
     <Card>
@@ -86,7 +89,12 @@ export function FileDisplay({ outputPath }: FileDisplayProps) {
             </div>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={handleView} className="flex items-center gap-2 bg-transparent">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleView}
+              className="flex items-center gap-2 bg-transparent"
+            >
               <Eye className="w-4 h-4" />
               View
               <ExternalLink className="w-3 h-3" />
@@ -105,10 +113,16 @@ export function FileDisplay({ outputPath }: FileDisplayProps) {
         {/* PDF Preview for PDF files */}
         {fileExtension === "pdf" && (
           <div className="border rounded-lg overflow-hidden">
-            <iframe src={outputPath.replaceAll("./public", "").replaceAll("public/", "")} className="w-full h-96" title="PDF Preview" />
+            <iframe
+              src={outputPath
+                .replaceAll("./public", "")
+                .replaceAll("public/", "")}
+              className="w-full h-96"
+              title="PDF Preview"
+            />
           </div>
         )}
       </CardContent>
     </Card>
-  )
+  );
 }
