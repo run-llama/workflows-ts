@@ -6,7 +6,7 @@ description: LlamaIndex Workflows is a simple and lightweight engine for JavaScr
 LlamaIndex Workflows are a library for event-driven programming in JavaScript and TypeScript.
 It provides a simple and lightweight orchestration solution for building complex workflows with minimal boilerplate.
 
-It combines [event-driven](./api-reference/type-aliases/WorkflowEvent) programming, [async context](./api-reference/type-aliases/WorkflowContext) and [streaming](./api-reference/classes/WorkflowStream) to create a flexible and efficient way to handle data processing tasks.
+It combines [event-driven](/workflows/api-reference/type-aliases/WorkflowEvent) programming, [async context](/workflows/api-reference/type-aliases/WorkflowContext) and [streaming](/workflows/api-reference/classes/WorkflowStream) to create a flexible and efficient way to handle data processing tasks.
 
 The essential concepts of Workflows are:
 
@@ -31,7 +31,7 @@ deno add npm:@llamaindex/workflow-core
 
 ## First Example
 
-With [workflowEvent](./api-reference/type-aliases/WorkflowEvent) and [createWorkflow](./api-reference/functions/createWorkflow), you can create a simple workflow that processes events.
+With [workflowEvent](/workflows/api-reference/type-aliases/WorkflowEvent) and [createWorkflow](/workflows/api-reference/functions/createWorkflow), you can create a simple workflow that processes events.
 
 For example, imagine you want to create a workflow that uses OpenAI to generate a response to a user's message.
 
@@ -69,11 +69,11 @@ const main = async () => {
 void main().catch(console.error);
 ```
 
-From here, the sky is the limit. You can implement [branching](./common_patterns/branching.mdx), [looping](./common_patterns/loops.mdx), [human-in-the-loop](./common_patterns/human_in_the_loop.mdx), [map-reduce](./common_patterns/map_reduce.mdx), and more!
+From here, the sky is the limit. You can implement [branching](/workflows/common_patterns/branching.mdx), [looping](/workflows/common_patterns/loops.mdx), [human-in-the-loop](/workflows/common_patterns/human_in_the_loop.mdx), [map-reduce](/workflows/common_patterns/map_reduce.mdx), and more!
 
 ## Architecture
 
-Workflows are built around components like events, steps/handlers, context, and more. Learn more about these components [here](./api-reference/).
+Workflows are built around components like events, steps/handlers, context, and more. Learn more about these components [here](/workflows/api-reference/).
 
 
 ## Deployment

@@ -11,22 +11,7 @@ In this sense, looping (i.e. creating cyclic workflows) can be a very useful pat
 
 Since workflows are event-driven, and every step is triggered by an event, you can go back to a specific step at any point - you just need to emit the corresponding trigger event!
 
-This diagram might help with the visualization of the looping process:
-
-```mermaid
-flowchart TD
-    A(Input event)
-    B[Counter+=1]
-    C{Counter >= 5}
-    D(Return Counter)
-
-    A --> B
-    B --> C
-    C-->|No| B 
-    C -->|Yes| D
-```
-
-And here is how you can do it with code:
+Here is how you can do it with code:
 
 ```ts
 type AgentWorkflowState = {
