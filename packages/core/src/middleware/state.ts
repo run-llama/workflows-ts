@@ -90,6 +90,52 @@ type CreateState<State, Input, Context extends WorkflowContext> = {
 
 type InitFunc<Input, State> = (input: Input) => State;
 
+/**
+ * Creates a stateful middleware that adds state management capabilities to workflows.
+ *
+ * The stateful middleware allows workflows to maintain persistent state across handler executions,
+ * with support for snapshots and resuming workflow execution from saved states.
+ *
+ * @typeParam State - The type of state object to maintain
+ * @typeParam Input - The type of input used to initialize the state (defaults to void)
+ * @typeParam Context - The workflow context type (defaults to WorkflowContext)
+ *
+ * @param init - Optional initialization function that creates the initial state from input
+ * @returns A middleware object with state management capabilities
+ *
+ * @example
+ * ```typescript
+ * import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";
+ * import { createStatefulMiddleware } from "@llamaindex/workflow-core/middleware/state";
+ *
+ * // Define your state type
+ * type MyState = {
+ *   counter: number;
+ *   messages: string[];
+ * };
+ *
+ * // Create the stateful middleware
+ * const stateful = createStatefulMiddleware<MyState>();
+ * const workflow = stateful.withState(createWorkflow());
+ *
+ * // Use state in handlers
+ * workflow.handle([inputEvent], async (context, event) => {
+ *   const { state, sendEvent } = context;
+ *   state.counter += 1;
+ *   state.messages.push(`Processed: ${event.data}`);
+ *   sendEvent(outputEvent.with({ count: state.counter }));
+ * });
+ *
+ * // Initialize with state
+ * const { sendEvent, snapshot } = workflow.createContext({
+ *   counter: 0,
+ *   messages: []
+ * });
+ * ```
+ *
+ * @category Middleware
+ * @public
+ */
 export function createStatefulMiddleware<
   State,
   Input = void,

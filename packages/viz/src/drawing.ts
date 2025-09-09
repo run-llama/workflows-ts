@@ -13,6 +13,51 @@ export type WithDrawingWorkflow = {
   draw(container: HTMLElement, options?: DrawingOptions): void;
 };
 
+/**
+ * Adds visualization capabilities to a workflow, enabling it to be rendered as an interactive graph.
+ *
+ * This function enhances a workflow with drawing functionality, allowing you to visualize
+ * the flow of events and handlers as an interactive graph in the browser using Sigma.js.
+ *
+ * @typeParam WorkflowLike - The workflow type to enhance with drawing capabilities
+ *
+ * @param workflow - The workflow instance to add visualization to
+ * @returns The workflow enhanced with a `draw` method for rendering graphs
+ *
+ * @example
+ * ```typescript
+ * import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";
+ * import { withDrawing } from "@llamaindex/workflow-viz";
+ *
+ * // Define events with debug labels for better visualization
+ * const startEvent = workflowEvent<string>({ debugLabel: "start" });
+ * const processEvent = workflowEvent<string>({ debugLabel: "process" });
+ * const endEvent = workflowEvent<string>({ debugLabel: "end" });
+ *
+ * // Create workflow with drawing capabilities
+ * const workflow = withDrawing(createWorkflow());
+ *
+ * // Add handlers
+ * workflow.handle([startEvent], (context, event) => {
+ *   return processEvent.with(`Processing: ${event.data}`);
+ * });
+ *
+ * workflow.handle([processEvent], (context, event) => {
+ *   return endEvent.with(`Completed: ${event.data}`);
+ * });
+ *
+ * // Render the workflow graph
+ * const container = document.getElementById("workflow-container");
+ * workflow.draw(container, {
+ *   layout: "force",
+ *   defaultEdgeColor: "#999",
+ *   defaultNodeColor: "#333"
+ * });
+ * ```
+ *
+ * @category Visualization
+ * @public
+ */
 export function withDrawing<WorkflowLike extends Workflow>(
   workflow: WorkflowLike,
 ): WorkflowLike & WithDrawingWorkflow {

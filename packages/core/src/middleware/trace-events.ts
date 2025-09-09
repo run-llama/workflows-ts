@@ -81,6 +81,50 @@ export type WithTraceEventsOptions = {
   plugins?: TracePlugin[];
 };
 
+/**
+ * Adds tracing capabilities to a workflow by wrapping handlers with trace plugins.
+ *
+ * This middleware enables comprehensive tracing and monitoring of workflow execution,
+ * allowing you to attach plugins that can observe, measure, and instrument handler execution.
+ *
+ * @typeParam WorkflowLike - The workflow type to enhance with tracing
+ *
+ * @param workflow - The workflow instance to add tracing to
+ * @param options - Configuration object containing trace plugins
+ * @returns The workflow enhanced with tracing capabilities
+ *
+ * @example
+ * ```typescript
+ * import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";
+ * import { withTraceEvents } from "@llamaindex/workflow-core/middleware/trace-events";
+ *
+ * // Define events
+ * const startEvent = workflowEvent();
+ * const processEvent = workflowEvent<string>();
+ *
+ * // Create a simple timing plugin
+ * const timingPlugin = (handler) => async (...args) => {
+ *   const start = Date.now();
+ *   try {
+ *     return await handler(...args);
+ *   } finally {
+ *     console.log(`Handler took ${Date.now() - start}ms`);
+ *   }
+ * };
+ *
+ * // Apply tracing to workflow
+ * const workflow = withTraceEvents(createWorkflow(), {
+ *   plugins: [timingPlugin]
+ * });
+ *
+ * workflow.handle([startEvent], (context) => {
+ *   context.sendEvent(processEvent.with("data"));
+ * });
+ * ```
+ *
+ * @category Middleware
+ * @public
+ */
 export function withTraceEvents<
   WorkflowLike extends {
     handle<

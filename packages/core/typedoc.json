@@ -1,6 +1,11 @@
 {
   "$schema": "https://typedoc.org/schema.json",
-  "entryPoints": ["./src/core/index.ts"],
+  "entryPoints": [
+    "./src/core/index.ts",
+    "./src/middleware/state.ts",
+    "./src/middleware/trace-events.ts",
+    "./src/middleware/trace-events/create-handler-decorator.ts"
+  ],
   "out": "../../docs/workflows/api-reference",
   "plugin": ["typedoc-plugin-markdown"],
   "outputFileStrategy": "members",
