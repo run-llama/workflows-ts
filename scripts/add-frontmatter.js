@@ -13,12 +13,18 @@ function extractTitle(content) {
   if (!match) return "API Reference";
 
   // Stop matching at <> or () characters and clean up
-  const title = match[1]
+  let title = match[1]
     .replace(/`/g, "") // Remove backticks
     .replace(/^([^<(]+)[<(].*$/, "$1") // Stop at < or ( characters
     .replace(/\\+$/, "") // Remove trailing backslashes
     .replace(/\\(.)/g, "$1") // Remove escape characters
     .trim(); // Remove trailing whitespace
+
+  // Remove TypeDoc prefixes (Class:, Type Alias:, Function:, etc.)
+  title = title.replace(
+    /^(Class|Type Alias|Function|Interface|Enum|Variable|Namespace):\s*/,
+    "",
+  );
 
   return title || "API Reference";
 }
@@ -118,26 +124,13 @@ function generateFrontmatter(filePath, content) {
     frontmatter.description = description;
   }
 
-  // Add specific metadata based on file type
-  switch (dirName) {
-    case "functions":
-      frontmatter.category = "Functions";
-      frontmatter.sidebar_label = fileName;
-      break;
-    case "classes":
-      frontmatter.category = "Classes";
-      frontmatter.sidebar_label = fileName;
-      break;
-    case "type-aliases":
-      frontmatter.category = "Types";
-      frontmatter.sidebar_label = fileName;
-      break;
-    default:
-      if (fileName === "README") {
-        frontmatter.slug = "/api-reference";
-        frontmatter.sidebar_position = 1;
-      }
-      break;
+  // Add specific metadata for special files
+  if (fileName === "README") {
+    frontmatter.slug = "/api-reference";
+    frontmatter.sidebar_position = 1;
+  } else {
+    // For all other files, just use the filename as sidebar label
+    frontmatter.sidebar_label = fileName;
   }
 
   // Generate YAML frontmatter
