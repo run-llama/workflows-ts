@@ -26,8 +26,10 @@ You can then add a state to your workflow in this way:
 ```ts
 import { createStatefulMiddleware } from "@llamaindex/workflow-core/middleware/state";
 
-const stateful = createStatefulMiddleware((state: AgentWorkflowState) => state);
-const workflow = stateful.withState(createWorkflow());
+const { withState } = createStatefulMiddleware(
+  (state: AgentWorkflowState) => state,
+);
+const workflow = withState(createWorkflow());
 ```
 
 And then, in your step handling logic, you can access and modify state properties:

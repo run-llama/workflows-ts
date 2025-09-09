@@ -19,8 +19,10 @@ type AgentWorkflowState = {
   max_counter: number = 5
 };
 
-const stateful = createStatefulMiddleware((state: AgentWorkflowState) => state);
-const workflow = stateful.withState(createWorkflow());
+const { withState } = createStatefulMiddleware(
+  (state: AgentWorkflowState) => state,
+);
+const workflow = withState(createWorkflow());
 
 const startEvent = workflowEvent<void>();
 const increaseCounterEvent = workflowEvent<void>();
@@ -31,7 +33,7 @@ workflow.handle([startEvent], async (context, { data }) => {
     if (state.counter < state.max_counter) {
         sendEvent(increaseCounterEvent.with({}))
     } else {
-        sendEvent(stopEvent.with({ state.counter }))
+        sendEvent(stopEvent.with(state.counter))
     }
 })
 

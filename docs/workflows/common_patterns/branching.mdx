@@ -11,7 +11,6 @@ In the most simple form, you might have a workflow that has different handlers f
 import {
   createWorkflow,
   workflowEvent,
-  getContext,
 } from "@llamaindex/workflow-core";
 
 const workflow = createWorkflow();
@@ -20,8 +19,8 @@ const processStringEvent = workflowEvent<string>();
 const processNumberEvent = workflowEvent<number>();
 const successEvent = workflowEvent<string>();
 
-workflow.handle([inputEvent], async (event) => {
-  const { sendEvent } = getContext();
+workflow.handle([inputEvent], async (context, event) => {
+  const { sendEvent } = context;
   if (typeof event.data === "string") {
     sendEvent(processStringEvent.with({ data: event.data }));
   } else {
@@ -29,13 +28,13 @@ workflow.handle([inputEvent], async (event) => {
   }
 });
 
-workflow.handle([processStringEvent], async (event) => {
-  const { sendEvent } = getContext();
+workflow.handle([processStringEvent], async (context, event) => {
+  const { sendEvent } = context;
   sendEvent(successEvent.with({ data: `Processed string ${event.data}` }));
 });
 
-workflow.handle([processNumberEvent], async (event) => {
-  const { sendEvent } = getContext();
+workflow.handle([processNumberEvent], async (context, event) => {
+  const { sendEvent } = context;
   sendEvent(successEvent.with({ data: `Processed number ${event.data}` }));
 });
 

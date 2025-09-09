@@ -23,7 +23,6 @@ First, we define the events that will flow through our workflow:
 import {
   createWorkflow,
   workflowEvent,
-  getContext,
 } from "@llamaindex/workflow-core";
 
 // Define the events we'll use
@@ -48,8 +47,8 @@ let itemsProcessed = 0;  // Counter for completed items
 This handler receives the start event and fans out multiple processing tasks:
 
 ```ts
-workflow.handle([startEvent], async (start) => {
-  const { sendEvent, stream } = getContext();
+workflow.handle([startEvent], async (context, start) => {
+  const { sendEvent, stream } = context;
   itemsProcessed = 0; // Reset counter for this execution
   
   // Fan out: emit multiple events to be processed in parallel
