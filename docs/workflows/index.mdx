@@ -6,7 +6,7 @@ description: LlamaIndex Workflows is a simple and lightweight engine for JavaScr
 LlamaIndex Workflows are a library for event-driven programming in JavaScript and TypeScript.
 It provides a simple and lightweight orchestration solution for building complex workflows with minimal boilerplate.
 
-It combines [event-driven](#) programming, [async context](#) and [streaming](#) to create a flexible and efficient way to handle data processing tasks.
+It combines [event-driven](./api-reference/type-aliases/WorkflowEvent) programming, [async context](./api-reference/type-aliases/WorkflowContext) and [streaming](./api-reference/classes/WorkflowStream) to create a flexible and efficient way to handle data processing tasks.
 
 The essential concepts of Workflows are:
 
@@ -31,7 +31,7 @@ deno add npm:@llamaindex/workflow-core
 
 ## First Example
 
-With [workflowEvent](#) and [createWorkflow](#), you can create a simple workflow that processes events.
+With [workflowEvent](./api-reference/type-aliases/WorkflowEvent) and [createWorkflow](./api-reference/functions/createWorkflow), you can create a simple workflow that processes events.
 
 For example, imagine you want to create a workflow that uses OpenAI to generate a response to a user's message.
 
@@ -69,27 +69,22 @@ const main = async () => {
 void main().catch(console.error);
 ```
 
-From here, the sky is the limit. You can implement [branching](), [looping](), [human-in-the-loop](), [map-reduce](), and more!
+From here, the sky is the limit. You can implement [branching](./common_patterns/branching.mdx), [looping](./common_patterns/loops.mdx), [human-in-the-loop](./common_patterns/human_in_the_loop.mdx), [map-reduce](./common_patterns/map_reduce.mdx), and more!
 
 ## Architecture
 
-Workflows are built around components like events, steps/handlers, context, and more. Learn more about individual components:
+Workflows are built around components like events, steps/handlers, context, and more. Learn more about these components [here](./api-reference/).
 
-- [Events]()
-- [Handlers]()
-- [Context]()
-- [Workflow]()
 
 ## Deployment
 
 Workflows are designed to be run anywhere. Deploy in a server, a lambda function, an edge runtime, or a cloudflare function!
 
-- [server]()
-- [lambda]()
-- [edge runtime]()
-- [cloudflare function]()
+- [Hono Server](https://github.com/run-llama/workflows-ts/tree/main/demo/hono)
+- [Express (Client + Server)](tutorials/express_agent/)
+- [CloudFlare Function](https://github.com/run-llama/workflows-ts/tree/main/demo/cloudflare)
 
 ## Community
 
-- [Discord]()
-- [Twitter]()
+- [Discord](https://discord.gg/dGcwcsnxhU)
+- [X (formerly Twitter)](https://x.com/llama_index)
