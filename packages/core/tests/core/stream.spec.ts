@@ -88,4 +88,40 @@ describe("stream api", () => {
       events.messageEvent,
     ]);
   });
+
+  test("stream.untilEvent", async () => {
+    const workflow = createWorkflow();
+    const { sendEvent, stream } = workflow.createContext();
+    sendEvent(events.messageEvent.with());
+    sendEvent(events.messageEvent.with());
+    sendEvent(events.haltEvent.with());
+    const result = await stream.untilEvent(events.haltEvent);
+    expect(eventSource(result)).toBe(events.haltEvent);
+  });
+
+  test("stream.untilEvent with function predicate", async () => {
+    const workflow = createWorkflow();
+    const { sendEvent, stream } = workflow.createContext();
+    sendEvent(events.messageEvent.with());
+    sendEvent(events.messageEvent.with());
+    sendEvent(events.haltEvent.with());
+    const result = await stream.untilEvent(
+      (event) => eventSource(event) === events.haltEvent,
+    );
+    expect(eventSource(result)).toBe(events.haltEvent);
+  });
+
+  test("stream.untilEvent should throw when stream ends without match", async () => {
+    const workflow = createWorkflow();
+    const { sendEvent, stream } = workflow.createContext();
+    sendEvent(events.messageEvent.with());
+    sendEvent(events.messageEvent.with());
+
+    // Create a stream that will end without finding the halt event
+    const limitedStream = stream.take(2);
+
+    await expect(limitedStream.untilEvent(events.haltEvent)).rejects.toThrow(
+      "Stream ended without matching event",
+    );
+  });
 });

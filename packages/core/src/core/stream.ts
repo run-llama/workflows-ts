@@ -481,6 +481,56 @@ export class WorkflowStream<R = any>
   }
 
   /**
+   * Continue the stream until a matching event is found, then return that event.
+   *
+   * @param predicate - Event type, function, or value to wait for
+   * @returns Promise resolving to the matching event
+   *
+   * @example
+   * ```typescript
+   * // Wait for completion event and return it directly
+   * const result = await stream.untilEvent(CompletionEvent);
+   * console.log('Final result:', result.data);
+   *
+   * // Wait for condition and return matching event
+   * const errorEvent = await stream.untilEvent(event => event.type === 'error');
+   * ```
+   */
+  async untilEvent(
+    predicate: R extends WorkflowEventData<any>
+      ? WorkflowEvent<InferWorkflowEventData<R>>
+      : never,
+  ): Promise<R>;
+  async untilEvent(predicate: (item: R) => boolean): Promise<R>;
+  async untilEvent(item: R): Promise<R>;
+  async untilEvent(
+    predicate:
+      | WorkflowEvent<InferWorkflowEventData<R>>
+      | R
+      | ((item: R) => boolean),
+  ): Promise<R> {
+    const events = await this.until(predicate as any).toArray();
+    const lastEvent = events[events.length - 1];
+    if (!lastEvent) {
+      throw new Error("Stream ended without matching event");
+    }
+
+    // Check if the last event actually matches the predicate
+    const matches =
+      typeof predicate === "function"
+        ? (predicate as (event: R) => boolean)(lastEvent)
+        : isWorkflowEvent(predicate)
+          ? predicate.include(lastEvent)
+          : predicate === lastEvent;
+
+    if (!matches) {
+      throw new Error("Stream ended without matching event");
+    }
+
+    return lastEvent;
+  }
+
+  /**
    * Collect all items from the stream into an array.
    *
    * @returns Promise resolving to an array of all stream items
