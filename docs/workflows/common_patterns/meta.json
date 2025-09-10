@@ -4,10 +4,10 @@
   "root": false,
   "defaultOpen": false,
   "pages": [
-    "state",
     "branching",
+    "state",
     "loops",
-    "map_reduce",
+    "fan_in_fan_out",
     "human_in_the_loop",
     "tracing",
     "visualization"

@@ -4,3 +4,61 @@ description: "How to use state in workflows"
 ---
 
 # State in Workflows
+
+LlamaIndex workflows, beyond being event-driven, can also be stateful.
+
+More specifically, the state can be defined as an _internal representation_ of the current workflow execution.
+
+The workflow state is _typed_, meaning that it can be defined as a `type` and can be accessed and modified following that type's property.
+
+Here is an example:
+
+```ts
+type MyWorkflowState = {
+  previous_message: string,
+};
+```
+
+You can then add a state to your workflow in this way:
+
+```ts
+import { createWorkflow } from "@llamaindex/workflow-core";
+import { createStatefulMiddleware } from "@llamaindex/workflow-core/middleware/state";
+
+const { withState } = createStatefulMiddleware(
+  (state: MyWorkflowState) => state,
+);
+const workflow = withState(createWorkflow());
+```
+
+And then, in your step handling logic, you can access and modify state properties:
+
+```ts 
+import { workflowEvent } from "@llamaindex/workflow-core";
+
+const startEvent = workflowEvent<{ userInput: string }>();
+const stopEvent = workflowEvent<{ result: string }>();
+
+workflow.handle([startEvent], async (context, { data }) => {
+  const { sendEvent, state } = context;
+  const { userInput } = data;
+  
+  const previous_message = state.previous_message;
+  state.previous_message = userInput;
+
+  return stopEvent.with({ result: "Processed message: " + userInput + " previous message: " + previous_message });
+});
+```
+
+Before running the workflow, remember to initialize the context object with the state:
+
+```typescript
+const { stream, sendEvent } = workflow.createContext({
+  previous_message: "my initial previous message",
+});
+
+sendEvent(startEvent.with({ userInput: "Hello, how are you?" }));
+
+const result = await stream.until(stopEvent).toArray();
+console.log(result[result.length - 1].data);
+```

@@ -11,7 +11,6 @@ In the most simple form, you might have a workflow that has different handlers f
 import {
   createWorkflow,
   workflowEvent,
-  getContext,
 } from "@llamaindex/workflow-core";
 
 const workflow = createWorkflow();
@@ -20,28 +19,32 @@ const processStringEvent = workflowEvent<string>();
 const processNumberEvent = workflowEvent<number>();
 const successEvent = workflowEvent<string>();
 
-workflow.handle([inputEvent], async (event) => {
-  const { sendEvent } = getContext();
+workflow.handle([inputEvent], async (context, event) => {
   if (typeof event.data === "string") {
-    sendEvent(processStringEvent.with({ data: event.data }));
+    return processStringEvent.with(event.data);
   } else {
-    sendEvent(processNumberEvent.with({ data: event.data }));
+    return processNumberEvent.with(event.data);
   }
 });
 
-workflow.handle([processStringEvent], async (event) => {
-  const { sendEvent } = getContext();
-  sendEvent(successEvent.with({ data: `Processed string ${event.data}` }));
+workflow.handle([processStringEvent], async (context, event) => {
+  return successEvent.with(`Processed string ${event.data}`);
 });
 
-workflow.handle([processNumberEvent], async (event) => {
-  const { sendEvent } = getContext();
-  sendEvent(successEvent.with({ data: `Processed number ${event.data}` }));
+workflow.handle([processNumberEvent], async (context, event) => {
+  return successEvent.with(`Processed number ${event.data}`);
 });
 
-const { stream } = workflow.createContext();
-sendEvent(inputEvent.with("I am some data"));
 
-const result = await stream.until(successEvent).take(1).toArray();
-console.log(result);
+let context1 = workflow.createContext();
+context1.sendEvent(inputEvent.with("I am some data"));
+
+const result = await context1.stream.until(successEvent).toArray();
+console.log(result.at(-1)!.data);
+
+let context2 = workflow.createContext();
+context2.sendEvent(inputEvent.with(1));
+
+const result2 = await context2.stream.until(successEvent).toArray();
+console.log(result2.at(-1)!.data);
 ```

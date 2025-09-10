@@ -5,8 +5,8 @@
   "defaultOpen": false,
   "pages": [
     "index",
-    "tutorials/express_agent",
     "common_patterns",
+    "tutorials/express_agent",
     "api-reference"
   ]
 }
