@@ -85,9 +85,9 @@ workflow.handle([processItemEvent], async (context, event) => {
 
 Each item is processed independently and can perform asynchronous operations, such as API calls or database queries. Because a random delay is introduced for each item, they complete at different times, demonstrating true parallelism. After processing, the shared counter `itemsProcessed` is incremented to track progress, and a `resultEvent` is emitted with the processed data. This ensures that results are collected as soon as each item finishes, enabling efficient aggregation and real-time monitoring of workflow progress.
 
-**4. Adding a Fan-In Handler**
+**4. Add a Fan-In Handler**
 
-In the last step of our workflow, we need to collect the results from the collecting steps and store them, so that we will be able to return them once all the events have been consumed (`completeEvent`):
+In the last step of our workflow, we need to collect the results from the processing steps and store them, so that we will be able to return them once all the events have been consumed (sending a `completeEvent`):
 
 ```ts
 workflow.handle([resultEvent], async (context, event) => {
