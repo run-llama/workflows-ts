@@ -9,7 +9,7 @@ import {
 import { convertMdToPdf } from "./pdf-conversion";
 
 type WorkflowOutput = {
-  output_path: string | null;
+  outputPath: string | null;
   refusal: string | null;
 };
 
@@ -23,7 +23,7 @@ const createReportEvent = workflowEvent<{
   content: string;
 }>();
 const finalResponseEvent = workflowEvent<{
-  output_path: string | null;
+  outputPath: string | null;
   refusal: string | null;
 }>();
 
@@ -42,7 +42,7 @@ workflow.handle([userInputEvent], async (context, { data }) => {
     )
   ) {
     sendEvent(
-      finalResponseEvent.with({ output_path: null, refusal: enhancedQuery }),
+      finalResponseEvent.with({ outputPath: null, refusal: enhancedQuery }),
     );
   } else {
     sendEvent(webSearchEvent.with({ query: enhancedQuery }));
@@ -58,25 +58,25 @@ workflow.handle([createReportEvent], async (context, { data }) => {
   const { sendEvent } = context;
   const { content } = data;
   const reportContent = await createReport(content);
-  if (reportContent.report_title) {
+  if (reportContent.reportTitle) {
     const out_path = await convertMdToPdf(
-      reportContent.report_content,
-      reportContent.report_title,
+      reportContent.reportContent,
+      reportContent.reportTitle,
     );
     if (out_path.startsWith("Impossible to convert ")) {
       sendEvent(
-        finalResponseEvent.with({ output_path: null, refusal: out_path }),
+        finalResponseEvent.with({ outputPath: null, refusal: out_path }),
       );
     } else {
       sendEvent(
-        finalResponseEvent.with({ output_path: out_path, refusal: null }),
+        finalResponseEvent.with({ outputPath: out_path, refusal: null }),
       );
     }
   } else {
     sendEvent(
       finalResponseEvent.with({
-        output_path: null,
-        refusal: reportContent.report_content,
+        outputPath: null,
+        refusal: reportContent.reportContent,
       }),
     );
   }

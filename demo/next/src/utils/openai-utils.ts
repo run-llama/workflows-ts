@@ -1,10 +1,10 @@
 import OpenAI from "openai";
-import { zodResponseFormat } from "openai/helpers/zod";
+import { zodTextFormat } from "openai/helpers/zod";
 import { z } from "zod";
 
 type ReportContent = {
-  report_content: string;
-  report_title: string | null;
+  reportContent: string;
+  reportTitle: string | null;
 };
 
 const client = new OpenAI({
@@ -12,13 +12,13 @@ const client = new OpenAI({
 });
 
 const QueryApprove = z.object({
-  is_news_related_query: z.boolean(),
-  enhanched_query: z.string(),
+  isNewsRelatedQuery: z.boolean(),
+  enhancedQuery: z.string(),
 });
 
 const Report = z.object({
-  report_title: z.string(),
-  report_content: z.string(),
+  reportTitle: z.string(),
+  reportContent: z.string(),
 });
 
 export async function webSearch(textInput: string): Promise<string> {
@@ -32,9 +32,9 @@ export async function webSearch(textInput: string): Promise<string> {
 }
 
 export async function evaluateQueryAndEnhance(text: string): Promise<string> {
-  const completion = await client.chat.completions.parse({
+  const response = await client.responses.parse({
     model: "gpt-4.1",
-    messages: [
+    input: [
       {
         role: "system",
         content:
@@ -42,13 +42,15 @@ export async function evaluateQueryAndEnhance(text: string): Promise<string> {
       },
       { role: "user", content: "Evaluate the following query: '" + text + "'" },
     ],
-    response_format: zodResponseFormat(QueryApprove, "query_approve"),
+    text: {
+      format: zodTextFormat(QueryApprove, "query_approve")
+    }
   });
 
-  const approvedQuery = completion.choices[0].message.parsed;
+  const approvedQuery = response.output_parsed;
   if (approvedQuery) {
-    if (approvedQuery.is_news_related_query) {
-      return approvedQuery.enhanched_query;
+    if (approvedQuery.isNewsRelatedQuery) {
+      return approvedQuery.enhancedQuery;
     } else {
       return "Sorry, what you are asking is not news-related, so I cannot produce a report for you.";
     }
@@ -60,9 +62,9 @@ export async function evaluateQueryAndEnhance(text: string): Promise<string> {
 export async function createReport(
   webSearchText: string,
 ): Promise<ReportContent> {
-  const completion = await client.chat.completions.parse({
+  const response = await client.responses.parse({
     model: "gpt-4.1",
-    messages: [
+    input: [
       {
         role: "system",
         content:
@@ -73,24 +75,26 @@ export async function createReport(
         content: "Evaluate the following query: '" + webSearchText + "'",
       },
     ],
-    response_format: zodResponseFormat(Report, "report"),
+    text: {
+      format: zodTextFormat(Report, "report")
+    }
   });
 
-  const generatedReport = completion.choices[0].message.parsed;
+  const generatedReport = response.output_parsed;
   if (generatedReport) {
     return {
-      report_content:
+      reportContent:
         "# " +
-        generatedReport.report_title +
+        generatedReport.reportTitle +
         "\n\n" +
-        generatedReport.report_content,
-      report_title: generatedReport.report_title,
+        generatedReport.reportContent,
+      reportTitle: generatedReport.reportTitle,
     } as ReportContent;
   } else {
     return {
-      report_content:
+      reportContent:
         "Sorry, it was not possible to generate a report for you at this time, try again later!",
-      report_title: null,
+      reportTitle: null,
     } as ReportContent;
   }
 }
