@@ -7,7 +7,14 @@
   },
   "files": {
     "ignoreUnknown": true,
-    "includes": ["**", "!**/node_modules", "!**/dist", "!**/lib"]
+    "includes": [
+      "**/*.{ts,tsx,json,jsonc,css,html,md,mdx}",
+      "!**/.turbo",
+      "!**/node_modules",
+      "!**/dist",
+      "!**/lib",
+      "!**/*.{d.ts}"
+    ]
   },
   "formatter": {
     "enabled": true,
