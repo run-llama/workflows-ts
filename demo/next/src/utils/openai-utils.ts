@@ -43,8 +43,8 @@ export async function evaluateQueryAndEnhance(text: string): Promise<string> {
       { role: "user", content: "Evaluate the following query: '" + text + "'" },
     ],
     text: {
-      format: zodTextFormat(QueryApprove, "query_approve")
-    }
+      format: zodTextFormat(QueryApprove, "query_approve"),
+    },
   });
 
   const approvedQuery = response.output_parsed;
@@ -76,8 +76,8 @@ export async function createReport(
       },
     ],
     text: {
-      format: zodTextFormat(Report, "report")
-    }
+      format: zodTextFormat(Report, "report"),
+    },
   });
 
   const generatedReport = response.output_parsed;
