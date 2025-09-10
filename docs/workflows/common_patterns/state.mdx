@@ -14,20 +14,19 @@ The workflow state is _typed_, meaning that it can be defined as a `type` and ca
 Here is an example:
 
 ```ts
-type AgentWorkflowState = {
-  user_message: string,
-  retrieved_information: string[],
-  num_iterations: number,
+type MyWorkflowState = {
+  previous_message: string,
 };
 ```
 
 You can then add a state to your workflow in this way:
 
 ```ts
+import { createWorkflow } from "@llamaindex/workflow-core";
 import { createStatefulMiddleware } from "@llamaindex/workflow-core/middleware/state";
 
 const { withState } = createStatefulMiddleware(
-  (state: AgentWorkflowState) => state,
+  (state: MyWorkflowState) => state,
 );
 const workflow = withState(createWorkflow());
 ```
@@ -35,27 +34,19 @@ const workflow = withState(createWorkflow());
 And then, in your step handling logic, you can access and modify state properties:
 
 ```ts 
-workflow.handle([userInputEvent], async (context, { data }) => {
+import { workflowEvent } from "@llamaindex/workflow-core";
+
+const startEvent = workflowEvent<{ userInput: string }>();
+const stopEvent = workflowEvent<{ result: string }>();
+
+workflow.handle([startEvent], async (context, { data }) => {
   const { sendEvent, state } = context;
   const { userInput } = data;
+  
+  const previous_message = state.previous_message;
+  state.previous_message = userInput;
 
-  state.user_message = userInput;
-
-  retrievedInfo = await retriever.retrieve({query: userInput, top_k: 5})
-
-  if (retrievedInfo && retrievedInfo.length > 0) {
-    state.retrieved_information.push(...retrievedInfo)
-    response = await llm.complete(`Please reply to this message: ${userInput} based on this information: ${retrievedInfo.join('\n\n---\n\n')}.`)
-    sendEvent(finalResponseEvent.with({result: response}))
-  } else {
-    if (state.num_iterations < 5) {
-        state.num_iterations += 1
-        newQuery = await llm.complete(`Please rewrite this message: ${userInput} so that it can retrieve more relevant contextual information.`)
-        sendEvent(userInputEvent.with({userInput: newQuery}))
-    } else {
-        sendEvent(finalResponseEvent.with({result: "Unable to find a response to your query based on the information in our database"}));
-    }
-  }
+  return stopEvent.with({ result: "Processed message: " + userInput + " previous message: " + previous_message });
 });
 ```
 
@@ -63,8 +54,11 @@ Before running the workflow, remember to initialize the context object with the 
 
 ```typescript
 const { stream, sendEvent } = workflow.createContext({
-  user_message: "What is the number I need to call for customer support?",
-  retrieved_information: [],
-  num_iterations: 0,
+  previous_message: "my initial previous message",
 });
+
+sendEvent(startEvent.with({ userInput: "Hello, how are you?" }));
+
+const result = await stream.until(stopEvent).toArray();
+console.log(result[result.length - 1].data);
 ```

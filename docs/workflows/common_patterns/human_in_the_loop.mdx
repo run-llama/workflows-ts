@@ -16,6 +16,7 @@ Here's how to implement a workflow that pauses for human input:
 
 ```ts
 import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";
+import { createStatefulMiddleware } from "@llamaindex/workflow-core/middleware/state";
 
 // Define events
 const startEvent = workflowEvent<string>();
@@ -23,15 +24,16 @@ const humanRequestEvent = workflowEvent<void>();
 const humanResponseEvent = workflowEvent<string>();
 const stopEvent = workflowEvent<string>();
 
-const workflow = createWorkflow();
+const { withState } = createStatefulMiddleware(() => ({}));
+const workflow = withState(createWorkflow());
 
 // Workflow that needs human input
 workflow.handle([startEvent], () => {
   return humanRequestEvent.with();
 });
 
-workflow.handle([humanResponseEvent], (context, { data }) => {
-  return stopEvent.with(`Human said: ${data}`);
+workflow.handle([humanResponseEvent], (context, event) => {
+  return stopEvent.with(`Human said: ${event.data}`);
 });
 
 // Usage with snapshot/resume

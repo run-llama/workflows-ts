@@ -24,6 +24,7 @@ import {
   createWorkflow,
   workflowEvent,
 } from "@llamaindex/workflow-core";
+import { createStatefulMiddleware } from "@llamaindex/workflow-core/middleware/state";
 
 // Define the events we'll use
 const startEvent = workflowEvent<string>();      // Triggers the fan-out process
@@ -32,15 +33,15 @@ const resultEvent = workflowEvent<string>();     // Results from processed items
 const completeEvent = workflowEvent<string[]>(); // Final aggregated results
 ```
 
-Next, we create our workflow and set up tracking variables:
+Next, we create our workflow and set up tracking variables in the state:
 
 ```javascript
-const workflow = createWorkflow();
-
-// Shared variables to track progress
-let itemsToProcess = 10; // Total number of items to process
-let itemsProcessed = 0;  // Counter for completed items
-let processResults: string[] = []
+const { withState } = createStatefulMiddleware(() => ({
+  itemsToProcess: 10,
+  itemsProcessed: 0,
+  processResults: [] as string[],
+}));
+const workflow = withState(createWorkflow());
 ```
 
 **2. Create the fan-out handler**
@@ -49,11 +50,11 @@ This handler receives the start event and fans out multiple processing tasks:
 
 ```ts
 workflow.handle([startEvent], async (context, start) => {
-  const { sendEvent, stream } = context;
-  itemsProcessed = 0; // Reset counter for this execution
+  const { sendEvent, state} = context;
+  state.itemsProcessed = 0; // Reset counter for this execution
   
   // Fan out: emit multiple events to be processed in parallel
-  for (let i = 0; i < itemsToProcess; i++) {
+  for (let i = 0; i < state.itemsToProcess; i++) {
     sendEvent(processItemEvent.with(i));
   }
 });
@@ -67,7 +68,7 @@ This handler processes each individual item:
 
 ```ts
 workflow.handle([processItemEvent], async (context, event) => {
-  const { sendEvent } = context;
+  const { sendEvent, state } = context;
   
   // Simulate some async work (like API calls, database operations, etc.)
   await new Promise((resolve) => setTimeout(resolve, Math.random() * 100));
@@ -76,7 +77,7 @@ workflow.handle([processItemEvent], async (context, event) => {
   const processedValue = `Processed: ${event.data}`;
   
   // Update the shared counter after processing completes
-  itemsProcessed++;
+  state.itemsProcessed++;
   
   // Return the result event
   sendEvent(resultEvent.with(processedValue));
@@ -91,14 +92,14 @@ In the last step of our workflow, we need to collect the results from the proces
 
 ```ts
 workflow.handle([resultEvent], async (context, event) => {
-  const { sendEvent } = context;
+  const { sendEvent, state } = context;
   
   // store the processed message
-  processResults.push(event.data)
+  state.processResults.push(event.data)
   
   // return completeEvent if the processing is completed
-  if (itemsProcessed === itemsToProcess) {
-    sendEvent(completeEvent.with(processResults))
+  if (state.itemsProcessed === state.itemsToProcess) {
+    sendEvent(completeEvent.with(state.processResults))
   }
 });
 ```
@@ -130,5 +131,5 @@ async function runFanOut() {
   }
 }
 
-runFanOut();
+runFanOut().catch(console.error);
 ```

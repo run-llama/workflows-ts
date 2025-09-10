@@ -14,9 +14,12 @@ Since workflows are event-driven, and every step is triggered by an event, you c
 Here is how you can do it with code:
 
 ```ts
+import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";
+import { createStatefulMiddleware } from "@llamaindex/workflow-core/middleware/state";
+
 type AgentWorkflowState = {
-  counter: number = 0
-  max_counter: number = 5
+  counter: number,
+  max_counter: number
 };
 
 const { withState } = createStatefulMiddleware(
@@ -31,7 +34,7 @@ const stopEvent = workflowEvent<number>();
 workflow.handle([startEvent], async (context, { data }) => {
     const { sendEvent, state } = context;
     if (state.counter < state.max_counter) {
-        sendEvent(increaseCounterEvent.with({}))
+        sendEvent(increaseCounterEvent.with())
     } else {
         sendEvent(stopEvent.with(state.counter))
     }
@@ -40,7 +43,7 @@ workflow.handle([startEvent], async (context, { data }) => {
 workflow.handle([increaseCounterEvent], async (context, { data }) => {
     const { sendEvent, state } = context;
     state.counter += 1
-    sendEvent(startEvent.with({}))
+    sendEvent(startEvent.with())
 })
 
 const { stream, sendEvent } = workflow.createContext({
@@ -48,11 +51,11 @@ const { stream, sendEvent } = workflow.createContext({
   max_counter: 5,
 });
 
-sendEvent(
-    startEvent.with({}),
-);
+sendEvent(startEvent.with(),);
 
 const result = await stream.until(stopEvent).toArray();
+
+// should print 5 since the workflow is looping
 console.log(result[result.length - 1].data)
 ```
 
