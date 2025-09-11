@@ -279,6 +279,24 @@ importers:
 
   docs: {}
 
+  examples:
+    devDependencies:
+      '@llamaindex/workflow-core':
+        specifier: workspace:*
+        version: link:../packages/core
+      '@llamaindex/workflow-otel':
+        specifier: workspace:^
+        version: link:../packages/otel
+      '@llamaindex/workflow-viz':
+        specifier: workspace:^
+        version: link:../packages/viz
+      '@opentelemetry/sdk-node':
+        specifier: ^0.203.0
+        version: 0.203.0(@opentelemetry/api@1.9.0)
+      '@opentelemetry/sdk-trace-base':
+        specifier: ^2.0.1
+        version: 2.0.1(@opentelemetry/api@1.9.0)
+
   packages/core:
     devDependencies:
       '@modelcontextprotocol/sdk':

@@ -35,7 +35,7 @@ const completeEvent = workflowEvent<string[]>(); // Final aggregated results
 
 Next, we create our workflow and set up tracking variables in the state:
 
-```javascript
+```ts
 const { withState } = createStatefulMiddleware(() => ({
   itemsToProcess: 10,
   itemsProcessed: 0,
