@@ -91,6 +91,6 @@ export async function runWorkflow(text: string): Promise<WorkflowOutput> {
     }),
   );
 
-  const result = await stream.until(finalResponseEvent).toArray();
-  return result[result.length - 1].data as WorkflowOutput;
+  const result = await stream.untilEvent(finalResponseEvent);
+  return result.data as WorkflowOutput;
 }

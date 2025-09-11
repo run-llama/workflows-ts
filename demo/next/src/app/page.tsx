@@ -60,7 +60,7 @@ export default function HomePage() {
   return (
     <div className="max-w min-h-screen mx-auto p-6 space-y-6 bg-gradient-to-br from-purple-300 via-white to-purple-500">
       <div className="text-center space-y-2">
-        <h1 className="text-3xl font-bold">Report Generator</h1>
+        <h1 className="text-3xl font-bold">News Report Generator</h1>
         <p className="text-muted-foreground">
           Search the web for news, get an AI report, download the PDF
         </p>
