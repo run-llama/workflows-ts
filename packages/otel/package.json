@@ -1,6 +1,6 @@
 {
   "name": "@llamaindex/workflow-otel",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "OpenTelemetry plugin for LlamaFlow",
   "type": "module",
   "main": "dist/index.cjs",

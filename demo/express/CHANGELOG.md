@@ -1,5 +1,12 @@
 # @llamaindex/express-demo
 
+## 1.0.4
+
+### Patch Changes
+
+- Updated dependencies [4c19190]
+  - @llamaindex/workflow-core@1.3.3
+
 ## 1.0.3
 
 ### Patch Changes
