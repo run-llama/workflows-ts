@@ -1,6 +1,6 @@
-# CLAUDE.md
+# AGENTS.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to coding agents when working with this repository.
 
 ## Commands
 
@@ -8,8 +8,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - **Build all packages**: `pnpm run build` (uses Turbo for monorepo builds)
 - **Type check**: `pnpm run typecheck` (TypeScript build check across all packages)
-- **Format check**: `pnpm run format` (Prettier formatting check)
-- **Fix formatting**: `pnpm run format:write` (Auto-format with Prettier)
+- **Format check**: `pnpm run format` (Biome formatting check)
+- **Fix formatting**: `pnpm run biome format --write` (Auto-format with Biome)
+- **Lint check**: `pnpm run biome lint` (Biome linting check)
 
 ### Package-specific commands
 
@@ -89,4 +90,4 @@ sendEvent(startEvent.with("42"));
 - **Core package**: Uses `tsdown` for building with multiple output formats (ESM, CJS, browser)
 - **HTTP package**: Uses `bunchee` for lightweight bundling
 - **Turbo**: Orchestrates builds across monorepo with dependency-aware caching
-- **Lint-staged**: Automatically formats files on commit with Prettier
+- **Lint-staged**: Automatically formats files on commit with Biome

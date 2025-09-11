@@ -1,0 +1,24 @@
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cp AGENTS.md CLAUDE.md 2>/dev/null || true"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cp CLAUDE.md AGENTS.md 2>/dev/null || true"
+          }
+        ]
+      }
+    ]
+  }
+}
