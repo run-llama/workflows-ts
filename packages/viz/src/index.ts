@@ -1,1 +1,1 @@
-export { withDrawing } from "./drawing";
+export { withDrawing, type WithDrawingWorkflow } from "./drawing";
