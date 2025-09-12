@@ -277,9 +277,7 @@ importers:
         specifier: 5.8.3
         version: 5.8.3
 
-  docs: {}
-
-  examples:
+  docs:
     devDependencies:
       '@llamaindex/workflow-core':
         specifier: workspace:*

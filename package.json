@@ -7,7 +7,6 @@
   "scripts": {
     "build": "turbo build --filter=\"./packages/*\"",
     "test": "turbo test --filter=\"./packages/*\"",
-    "test:examples": "turbo test --filter=\"@llamaindex/workflow-docs-examples\"",
     "typecheck": "tsc -b --diagnostics",
     "format": "biome format .",
     "format:write": "biome format --write .",

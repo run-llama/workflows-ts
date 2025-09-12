@@ -9,7 +9,6 @@ packages:
   - ./docs
   - ./packages/*
   - ./tests/*
-  - ./examples
 
 ignoredBuiltDependencies:
   - '@biomejs/biome'
