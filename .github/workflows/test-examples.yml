@@ -33,6 +33,8 @@ jobs:
       - name: Install dependencies
         working-directory: docs
         run: pnpm install
+      - name: Build packages
+        run: pnpm run build
       - name: Run tests
         working-directory: docs
         run: pnpm run test

@@ -48,7 +48,7 @@ workflow.handle([resultEvent], async (context, event) => {
   }
 });
 async function runFanOut() {
-  console.log("Running fan-out");
+  console.log("Running fan-out workflow");
   const { stream, sendEvent } = workflow.createContext();
 
   // Start the fan-out process
