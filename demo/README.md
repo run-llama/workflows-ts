@@ -58,8 +58,3 @@ This directory contains various demo applications showcasing different aspects o
 - **Features**: Workflow graph visualization, interactive UI
 - **Run**: `npm install && npm run dev`
 
-### 🌊 **Waku** - React Server Components
-- **Location**: `./waku/`
-- **Tech**: Waku + React + Neon DB + OpenAI
-- **Features**: RAG application, vector search, document parsing
-- **Run**: `npm install && npm run dev`
