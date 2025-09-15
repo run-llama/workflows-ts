@@ -136,6 +136,7 @@ packages/core/stream
 packages/core/README.md
 
 lib
+!demo/next/src/lib
 .turbo
 
 # Claude code
