@@ -1,12 +1,13 @@
 {
-  "name": "browser",
-  "private": true,
-  "version": "0.0.0",
+  "name": "demo-browser",
+  "version": "0.0.1",
   "type": "module",
+  "private": true,
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "start": "vite preview"
   },
   "dependencies": {
     "@llamaindex/workflow-core": "latest",
