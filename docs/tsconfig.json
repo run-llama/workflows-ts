@@ -1,0 +1,11 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./lib",
+    "tsBuildInfoFile": "./lib/.tsbuildinfo",
+    "paths": {
+      "@llamaindex/workflow-docs": ["./src/index.ts"]
+    }
+  },
+  "include": ["./src", "./workflows"]
+}
