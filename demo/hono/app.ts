@@ -1,11 +1,7 @@
 import { serve } from "@hono/node-server";
 import { createHonoHandler } from "@llamaindex/workflow-core/hono";
 import { Hono } from "hono";
-import {
-  startEvent,
-  stopEvent,
-  toolCallWorkflow,
-} from "./tool-call-agent.js";
+import { startEvent, stopEvent, toolCallWorkflow } from "./tool-call-agent.js";
 
 const app = new Hono();
 
