@@ -5,7 +5,7 @@ import {
   startEvent,
   stopEvent,
   toolCallWorkflow,
-} from "../workflows/tool-call-agent.js";
+} from "./tool-call-agent.js";
 
 const app = new Hono();
 
@@ -27,7 +27,7 @@ app.post("/human-in-the-loop", async (ctx) => {
     startEvent,
     humanRequestEvent,
     humanInteractionEvent,
-  } = await import("../workflows/human-in-the-loop");
+  } = await import("../node/workflows/human-in-the-loop.js");
   const json = await ctx.req.json();
   let context: ReturnType<typeof workflow.createContext>;
   if (json.requestId) {

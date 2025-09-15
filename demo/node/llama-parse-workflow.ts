@@ -3,7 +3,7 @@ import {
   llamaParseWorkflow,
   startEvent,
   stopEvent,
-} from "../workflows/llama-parse-workflow.js";
+} from "./workflows/llama-parse-workflow.js";
 
 runWorkflow(
   llamaParseWorkflow,

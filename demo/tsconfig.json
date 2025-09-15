@@ -11,7 +11,7 @@
     "strict": true,
     "skipLibCheck": true
   },
-  "include": ["hono", "node", "workflows", "express/4-adding-hitl.ts"],
+  "include": ["hono", "node", "node/workflows", "express/4-adding-hitl.ts"],
   "references": [
     {
       "path": "./browser/tsconfig.json"
