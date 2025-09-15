@@ -4,8 +4,7 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "tsx app.ts",
-    "start": "tsx app.ts"
+    "dev": "tsx app.ts"
   },
   "dependencies": {
     "@hono/node-server": "^1.14.4",

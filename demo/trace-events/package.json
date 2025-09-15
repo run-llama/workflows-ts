@@ -4,8 +4,7 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "tsx open-telemetry.ts",
-    "start": "tsx open-telemetry.ts"
+    "dev": "tsx open-telemetry.ts"
   },
   "dependencies": {
     "@llamaindex/workflow-core": "latest",
