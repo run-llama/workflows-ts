@@ -33,7 +33,7 @@ const workflow = withState(createWorkflow());
 
 And then, in your step handling logic, you can access and modify state properties:
 
-```ts 
+```ts
 import { workflowEvent } from "@llamaindex/workflow-core";
 
 const startEvent = workflowEvent<{ userInput: string }>();
@@ -52,7 +52,7 @@ workflow.handle([startEvent], async (context, { data }) => {
 
 Before running the workflow, remember to initialize the context object with the state:
 
-```typescript
+```ts
 const { stream, sendEvent } = workflow.createContext({
   previous_message: "my initial previous message",
 });
