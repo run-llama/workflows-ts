@@ -9,6 +9,7 @@
     "strict": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
+    "noUncheckedIndexedAccess": false,
     "outDir": "./dist",
     "rootDir": ".",
     "declaration": true,
