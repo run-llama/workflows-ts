@@ -9,8 +9,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@llamaindex/workflow-core": "latest",
-    "@llamaindex/workflow-viz": "latest",
+    "@llamaindex/workflow-core": "^1.3.3",
+    "@llamaindex/workflow-viz": "^1.0.4",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
   },

@@ -13,7 +13,7 @@
     "mcp-server": "tsx mcp-file-parse-tool.ts"
   },
   "dependencies": {
-    "@llamaindex/workflow-core": "latest",
+    "@llamaindex/workflow-core": "^1.3.3",
     "@inquirer/prompts": "^7.8.6",
     "@modelcontextprotocol/sdk": "^1.18.0",
     "openai": "^4.0.0",
