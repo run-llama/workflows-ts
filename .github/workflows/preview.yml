@@ -30,11 +30,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Build all workspace packages
-        run: pnpm turbo run build --cache-dir=.turbo
-
-      - name: Debug built packages
-        run: ls -R packages/core/dist || echo "core dist missing"
+      - name: Run build
+        run: pnpm run build --force
 
       - name: Pre Release
         run: pnpx pkg-pr-new publish --pnpm ./packages/*
