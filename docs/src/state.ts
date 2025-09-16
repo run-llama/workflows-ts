@@ -14,7 +14,7 @@ export const workflow = withState(createWorkflow());
 export const startEvent = workflowEvent<{ userInput: string }>();
 export const stopEvent = workflowEvent<{ result: string }>();
 
-workflow.handle([startEvent], async (context) => {
+workflow.handle([startEvent], async (context, { data }) => {
   const { state } = context;
   const { userInput } = data;
 
