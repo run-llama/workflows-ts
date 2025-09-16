@@ -7,10 +7,6 @@ type ReportContent = {
   reportTitle: string | null;
 };
 
-const client = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY!,
-});
-
 const QueryApprove = z.object({
   isNewsRelatedQuery: z.boolean(),
   enhancedQuery: z.string(),
@@ -22,6 +18,9 @@ const Report = z.object({
 });
 
 export async function webSearch(textInput: string): Promise<string> {
+  const client = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY!,
+  });
   const response = await client.responses.create({
     model: "gpt-4.1",
     tools: [{ type: "web_search" }],
@@ -32,6 +31,9 @@ export async function webSearch(textInput: string): Promise<string> {
 }
 
 export async function evaluateQueryAndEnhance(text: string): Promise<string> {
+  const client = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY!,
+  });
   const response = await client.responses.parse({
     model: "gpt-4.1",
     input: [
@@ -62,6 +64,9 @@ export async function evaluateQueryAndEnhance(text: string): Promise<string> {
 export async function createReport(
   webSearchText: string,
 ): Promise<ReportContent> {
+  const client = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY!,
+  });
   const response = await client.responses.parse({
     model: "gpt-4.1",
     input: [
