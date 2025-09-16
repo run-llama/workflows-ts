@@ -21,7 +21,7 @@ const wrappedWorkflow = createWorkflow();
 
 wrappedWorkflow.handle(
   [startEvent],
-  async (context, { data: { filePath } }) => {
+  async (_context, { data: { filePath } }) => {
     const { stream, sendEvent, state } = fileParseWorkflow.createContext();
     sendEvent(startEvent.with({ filePath }));
     await stream.until(stopEvent).toArray();

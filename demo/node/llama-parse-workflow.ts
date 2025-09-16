@@ -9,7 +9,7 @@ runWorkflow(
   llamaParseWorkflow,
   startEvent.with({
     inputFile: process.argv[2],
-    apiKey: process.env.LLAMA_CLOUD_API!,
+    apiKey: process.env.LLAMA_CLOUD_API,
   }),
   stopEvent,
 ).then(({ data }) => {

@@ -70,13 +70,14 @@ toolCallWorkflow.handle([chatEvent], async (context, { data }) => {
         }),
       )
     )
-      .map((list) => list.at(-1)!)
+      .map((list) => list.at(-1))
+      .filter((event) => event !== undefined)
       .map(({ data }) => data)
       .join("\n");
     console.log("toolcall result", result);
     sendEvent(chatEvent.with(result));
   } else {
     console.log("no choices");
-    return stopEvent.with(choices[0]!.message.content!);
+    return stopEvent.with(choices[0]?.message.content ?? "");
   }
 });

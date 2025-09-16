@@ -1,8 +1,4 @@
-import {
-  createWorkflow,
-  workflowEvent,
-  type Workflow,
-} from "@llamaindex/workflow-core";
+import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";
 import { withDrawing } from "@llamaindex/workflow-viz";
 
 // Define events (debug labels are used for node names in the graph)

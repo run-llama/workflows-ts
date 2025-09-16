@@ -14,8 +14,8 @@ export const workflow = withState(createWorkflow());
 export const startEvent = workflowEvent<{ userInput: string }>();
 export const stopEvent = workflowEvent<{ result: string }>();
 
-workflow.handle([startEvent], async (context, { data }) => {
-  const { sendEvent, state } = context;
+workflow.handle([startEvent], async (context) => {
+  const { state } = context;
   const { userInput } = data;
 
   const previous_message = state.previous_message;

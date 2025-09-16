@@ -95,7 +95,7 @@ const context = llamaParseWorkflow.createContext();
 context.sendEvent(
   startEvent.with({
     inputFile: "sample.pdf",
-    apiKey: process.env.LLAMA_CLOUD_API_KEY!,
+    apiKey: process.env.LLAMA_CLOUD_API_KEY,
   }),
 );
 

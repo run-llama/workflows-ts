@@ -2,6 +2,7 @@ import { serve } from "@hono/node-server";
 import { createHonoHandler } from "@llamaindex/workflow-core/hono";
 import { Hono } from "hono";
 import { startEvent, stopEvent, toolCallWorkflow } from "./tool-call-agent.js";
+import type { SnapshotData } from "@llamaindex/workflow-core/middleware/state";
 
 const app = new Hono();
 
@@ -14,7 +15,10 @@ app.post(
   ),
 );
 
-const serializableMemoryMap = new Map<string, any>();
+const serializableMemoryMap = new Map<
+  string,
+  Omit<SnapshotData, "unrecoverableQueue">
+>();
 
 app.post("/human-in-the-loop", async (ctx) => {
   const {
@@ -29,6 +33,9 @@ app.post("/human-in-the-loop", async (ctx) => {
   if (json.requestId) {
     const data = json.data;
     const serializable = serializableMemoryMap.get(json.requestId);
+    if (!serializable) {
+      throw new Error("Snapshot data not found");
+    }
     context = workflow.resume(serializable);
     context.sendEvent(humanInteractionEvent.with(data));
   } else {
@@ -58,7 +65,10 @@ app.post("/human-in-the-loop", async (ctx) => {
       .until(stopEvent)
       .toArray()
       .then((events) => {
-        const stopEvent = events.at(-1)!;
+        const stopEvent = events.at(-1);
+        if (!stopEvent) {
+          throw new Error("No stop event");
+        }
         resolve(Response.json(stopEvent.data));
       });
   });
