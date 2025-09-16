@@ -4,7 +4,6 @@ import {
   getContext,
   workflowEvent,
 } from "@llamaindex/workflow-core";
-import { collect } from "@llamaindex/workflow-core/stream/consumer";
 
 //#region define workflow events
 const startEvent = workflowEvent<string>();
