@@ -24,6 +24,14 @@ npm run dev
 
 Then open the dev server at [http://localhost:5173](http://localhost:5173) (Vite will print the exact URL/port; it may choose a different port if 5173 is taken).
 
+### Generate Graph as PNG image in Node.js
+
+```bash
+npm run generate
+```
+
+This will generate a `graph.png` file in the `dist` directory.
+
 ### Build for production
 
 ```bash
