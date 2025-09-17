@@ -1,54 +1,55 @@
-# React + TypeScript + Vite
+# Browser Workflow Demo
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Run LlamaIndex workflows directly in the browser with React and Vite.
+This demo renders workflow output and showcases the streaming APIs without any server component.
 
-Currently, two official plugins are available:
+## Highlights
+- Fully client-side workflow execution with the `WorkflowContext` stream API
+- Event chaining example using `startEvent` and `stopEvent` to emit UI updates
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Prerequisites
+- Node.js 20+
+- npm, pnpm, or yarn (examples below use npm)
 
-## Expanding the ESLint configuration
+## Getting Started
+```bash
+npm install
+npm run dev
+```
+The dev server starts on http://localhost:5173 by default.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ["./tsconfig.node.json", "./tsconfig.app.json"],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-});
+To create a production build, run:
+```bash
+npm run build
+npm run preview
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## How It Works
+The demo defines two events and a simple workflow in `src/App.tsx`:
+```ts
+const startEvent = workflowEvent();
+const stopEvent = workflowEvent<string>();
 
-```js
-// eslint.config.js
-import reactX from "eslint-plugin-react-x";
-import reactDom from "eslint-plugin-react-dom";
-
-export default tseslint.config({
-  plugins: {
-    // Add the react-x and react-dom plugins
-    "react-x": reactX,
-    "react-dom": reactDom,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended typescript rules
-    ...reactX.configs["recommended-typescript"].rules,
-    ...reactDom.configs.recommended.rules,
-  },
+workflow.handle([startEvent], (context) => {
+  setTimeout(() => {
+    context.sendEvent(stopEvent.with("Hello, World!"));
+  }, 1000);
 });
+
+const context = workflow.createContext();
+context.sendEvent(startEvent.with());
+const events = await context.stream.until(stopEvent).toArray();
 ```
+- `startEvent` triggers when the component loads.
+- The handler fires an async side effect, then emits `stopEvent`.
+- `context.stream.until(stopEvent)` collects the events and the component renders the payload.
+
+## Customize the Workflow
+- Edit `src/App.tsx` to add additional events, stateful middleware, or validation.
+- Import React hooks to stream multiple updates or feed results into components.
+
+## Project Structure
+- `src/` – React components and workflow definition
+- `public/` – Static assets served by Vite
+- `vite.config.ts` – Vite configuration with the React SWC plugin
+
