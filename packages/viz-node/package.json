@@ -1,7 +1,7 @@
 {
   "name": "@llamaindex/workflow-viz-node",
   "version": "1.0.0",
-  "description": "Visualization components for drawing LlamaIndex Workflows in the node",
+  "description": "Visualization components for drawing LlamaIndex Workflows in Node.js",
   "type": "module",
   "main": "dist/index.cjs",
   "types": "dist/index.d.ts",
