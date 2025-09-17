@@ -15,6 +15,7 @@ ignoredBuiltDependencies:
 
 onlyBuiltDependencies:
   - '@tailwindcss/oxide'
+  - canvas
   - esbuild
   - sharp
   - workerd
