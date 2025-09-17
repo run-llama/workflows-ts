@@ -15,7 +15,7 @@ export function toNodeCanvasGraph(graph: Graph): Graph {
 	});
 
 	g.forEachEdge((edge) => {
-		g.mergeEdgeAttributes(edge, { size: 3 });
+		g.mergeEdgeAttributes(edge, { size: 3, color: "#999" });
 	});
 
 	return g;
