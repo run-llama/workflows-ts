@@ -24,13 +24,11 @@ npm run dev
 
 Then open the dev server at [http://localhost:5173](http://localhost:5173) (Vite will print the exact URL/port; it may choose a different port if 5173 is taken).
 
-Here’s a shorter version for your README:
-
 ### Generate Graph as PNG image in Node.js
 
 ```bash
 npm run generate
-````
+```
 
 This will create `graph.png` in the `dist` directory.
 
@@ -38,7 +36,6 @@ This will create `graph.png` in the `dist` directory.
 > On macOS: `brew install pkg-config cairo pango libpng jpeg giflib librsvg`
 > On Ubuntu/Debian: `sudo apt-get install build-essential libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev librsvg2-dev`
 > For pnpm v10+, run `pnpm approve-builds` or add `enable-pnpm-unsafe-build-scripts=true` to `.npmrc`.
-
 
 ### Build for production
 
