@@ -4,7 +4,6 @@ import {
   getContext,
   workflowEvent,
 } from "@llamaindex/workflow-core";
-import { collect } from "@llamaindex/workflow-core/stream/consumer";
 
 //#region define workflow events
 const startEvent = workflowEvent<string>();
@@ -30,19 +29,19 @@ workflow.handle([startEvent], async () => {
   return allCompleteEvent.with(results.map((e) => e.data).join(", "));
 });
 
-workflow.handle([branchAEvent], (context, branchA) => {
+workflow.handle([branchAEvent], (_context, branchA) => {
   return branchCompleteEvent.with(branchA.data);
 });
 
-workflow.handle([branchBEvent], (context, branchB) => {
+workflow.handle([branchBEvent], (_context, branchB) => {
   return branchCompleteEvent.with(branchB.data);
 });
 
-workflow.handle([branchCEvent], (context, branchC) => {
+workflow.handle([branchCEvent], (_context, branchC) => {
   return branchCompleteEvent.with(branchC.data);
 });
 
-workflow.handle([allCompleteEvent], (context, allComplete) => {
+workflow.handle([allCompleteEvent], (_context, allComplete) => {
   return stopEvent.with(allComplete.data);
 });
 

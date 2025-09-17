@@ -25,6 +25,10 @@ bun add @llamaindex/workflow-core
 deno add npm:@llamaindex/workflow-core
 ```
 
+### Demos
+
+For examples, check out the [demo folder](./demo).
+
 ### First, define events
 
 ```ts

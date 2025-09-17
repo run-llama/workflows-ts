@@ -3,7 +3,7 @@ import {
   startEvent,
   stopEvent,
   toolCallWorkflow,
-} from "../workflows/tool-call-agent.js";
+} from "./workflows/tool-call-agent.js";
 
 runWorkflow(
   toolCallWorkflow,

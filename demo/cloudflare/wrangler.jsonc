@@ -1,6 +1,7 @@
 /**
  * For more details on how to configure Wrangler, refer to:
  * https://developers.cloudflare.com/workers/wrangler/configuration/
+ * For testing locally, add "nodejs_compat" to the compatibility_flags.
  */
 {
   "$schema": "node_modules/wrangler/config-schema.json",

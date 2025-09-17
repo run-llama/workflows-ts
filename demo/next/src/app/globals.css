@@ -1,3 +1,5 @@
+/* biome-ignore-all lint/suspicious/noUnknownAtRules: needed for Tailwind v4 custom rules */
+
 @import "tailwindcss";
 @import "tw-animate-css";
 

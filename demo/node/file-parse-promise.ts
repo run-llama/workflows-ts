@@ -2,7 +2,7 @@ import {
   fileParseWorkflow,
   startEvent,
   stopEvent,
-} from "../workflows/file-parse-agent.js";
+} from "./workflows/file-parse-agent.js";
 
 const directory = "..";
 

@@ -1,6 +1,6 @@
 "use server";
 
-import fs from "fs/promises";
+import fs from "node:fs/promises";
 
 export async function readFileBlob(path: string): Promise<Blob> {
   const content = await fs.readFile(path);

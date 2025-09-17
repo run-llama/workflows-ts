@@ -1,8 +1,8 @@
-import * as readline from "readline/promises";
+import * as readline from "node:readline/promises";
 
 const SERVER_URL = "http://localhost:3000";
 
-async function makeRequest(endpoint: string, data: any) {
+async function makeRequest(endpoint: string, data: object) {
   const response = await fetch(`${SERVER_URL}${endpoint}`, {
     method: "POST",
     headers: {

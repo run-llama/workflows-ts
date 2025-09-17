@@ -5,7 +5,7 @@ import {
   startEvent,
   stopEvent,
   workflow,
-} from "../workflows/human-in-the-loop";
+} from "./workflows/human-in-the-loop";
 
 const name = await input({
   message: "What is your name?",

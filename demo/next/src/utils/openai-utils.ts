@@ -7,10 +7,6 @@ type ReportContent = {
   reportTitle: string | null;
 };
 
-const client = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY!,
-});
-
 const QueryApprove = z.object({
   isNewsRelatedQuery: z.boolean(),
   enhancedQuery: z.string(),
@@ -21,7 +17,17 @@ const Report = z.object({
   reportContent: z.string(),
 });
 
+function getLLM() {
+  if (!process.env.OPENAI_API_KEY) {
+    throw new Error("OPENAI_API_KEY is not set in the environment variables");
+  }
+  return new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+  });
+}
+
 export async function webSearch(textInput: string): Promise<string> {
+  const client = getLLM();
   const response = await client.responses.create({
     model: "gpt-4.1",
     tools: [{ type: "web_search" }],
@@ -32,6 +38,7 @@ export async function webSearch(textInput: string): Promise<string> {
 }
 
 export async function evaluateQueryAndEnhance(text: string): Promise<string> {
+  const client = getLLM();
   const response = await client.responses.parse({
     model: "gpt-4.1",
     input: [
@@ -40,7 +47,7 @@ export async function evaluateQueryAndEnhance(text: string): Promise<string> {
         content:
           "Please evaluate the query by the user, identifying whether or not it is related to searching the news, and, if so, produce an enhanced query. If the user's query is not related to news, leave the enhanced query simply as an empty string.",
       },
-      { role: "user", content: "Evaluate the following query: '" + text + "'" },
+      { role: "user", content: `Evaluate the following query: '${text}'` },
     ],
     text: {
       format: zodTextFormat(QueryApprove, "query_approve"),
@@ -62,6 +69,7 @@ export async function evaluateQueryAndEnhance(text: string): Promise<string> {
 export async function createReport(
   webSearchText: string,
 ): Promise<ReportContent> {
+  const client = getLLM();
   const response = await client.responses.parse({
     model: "gpt-4.1",
     input: [
@@ -72,7 +80,7 @@ export async function createReport(
       },
       {
         role: "user",
-        content: "Evaluate the following query: '" + webSearchText + "'",
+        content: `Evaluate the following query: '${webSearchText}'`,
       },
     ],
     text: {
@@ -83,11 +91,7 @@ export async function createReport(
   const generatedReport = response.output_parsed;
   if (generatedReport) {
     return {
-      reportContent:
-        "# " +
-        generatedReport.reportTitle +
-        "\n\n" +
-        generatedReport.reportContent,
+      reportContent: `# ${generatedReport.reportTitle}\n\n${generatedReport.reportContent}`,
       reportTitle: generatedReport.reportTitle,
     } as ReportContent;
   } else {

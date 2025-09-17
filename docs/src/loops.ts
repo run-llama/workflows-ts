@@ -15,7 +15,7 @@ export const startEvent = workflowEvent<void>();
 const increaseCounterEvent = workflowEvent<void>();
 export const stopEvent = workflowEvent<number>();
 
-workflow.handle([startEvent], async (context, { data }) => {
+workflow.handle([startEvent], async (context) => {
   const { sendEvent, state } = context;
   if (state.counter < state.max_counter) {
     sendEvent(increaseCounterEvent.with());
@@ -24,7 +24,7 @@ workflow.handle([startEvent], async (context, { data }) => {
   }
 });
 
-workflow.handle([increaseCounterEvent], async (context, { data }) => {
+workflow.handle([increaseCounterEvent], async (context) => {
   const { sendEvent, state } = context;
   state.counter += 1;
   sendEvent(startEvent.with());

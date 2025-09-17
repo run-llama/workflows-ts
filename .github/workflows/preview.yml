@@ -31,7 +31,7 @@ jobs:
         run: pnpm install
 
       - name: Run build
-        run: pnpm run build
+        run: pnpm run build --force
 
       - name: Pre Release
         run: pnpx pkg-pr-new publish --pnpm ./packages/*

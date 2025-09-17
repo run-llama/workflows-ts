@@ -20,10 +20,19 @@
   "include": [],
   "references": [
     {
-      "path": "./demo/tsconfig.json"
+      "path": "./demo/browser/tsconfig.json"
     },
     {
       "path": "./demo/cloudflare/tsconfig.json"
+    },
+    {
+      "path": "./demo/express/tsconfig.json"
+    },
+    {
+      "path": "./demo/next/tsconfig.json"
+    },
+    {
+      "path": "./demo/trace-events/tsconfig.json"
     },
     {
       "path": "./demo/visualization/tsconfig.json"
