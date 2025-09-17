@@ -1,0 +1,27 @@
+{
+  "name": "demo-node",
+  "version": "0.0.1",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "basic": "tsx basic.ts",
+    "tool-call": "tsx tool-call-agent.ts",
+    "llama-parse": "tsx llama-parse-workflow.ts",
+    "name-ask": "tsx name-ask-readline.ts",
+    "file-parse-promise": "tsx file-parse-promise.ts",
+    "file-parse-rxjs": "tsx file-parse-rxjs.ts",
+    "mcp-server": "tsx mcp-file-parse-tool.ts"
+  },
+  "dependencies": {
+    "@llamaindex/workflow-core": "^1.3.3",
+    "@inquirer/prompts": "^7.8.6",
+    "@modelcontextprotocol/sdk": "^1.18.0",
+    "openai": "^4.0.0",
+    "rxjs": "^7.8.0",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.4",
+    "tsx": "^4.20.3"
+  }
+}

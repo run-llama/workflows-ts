@@ -24,7 +24,7 @@ export const stopEvent = workflowEvent({
   debugLabel: "stop",
 });
 
-const { withState, getContext } = createStatefulMiddleware(() => ({
+const { withState } = createStatefulMiddleware(() => ({
   output: "",
   apiKey: "",
 }));
@@ -53,7 +53,7 @@ fileParseWorkflow.handle(
     context.sendEvent(messageEvent.with(dir));
     const { sendEvent } = context;
     const items = await readdir(dir);
-    context.state.output += " ".repeat(tab) + dir + "\n";
+    context.state.output += `${" ".repeat(tab)}${dir}\n`;
     await Promise.all(
       items.map(async (item) => {
         const filePath = resolve(dir, item);
@@ -93,7 +93,7 @@ fileParseWorkflow.handle(
       lock.finish = true;
     }
     context.sendEvent(messageEvent.with(filePath));
-    context.state.output += " ".repeat(tab) + filePath + "\n";
+    context.state.output += `${" ".repeat(tab)}${filePath}\n`;
     return readResultEvent.with();
   },
 );

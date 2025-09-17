@@ -67,7 +67,7 @@ For example, alex is from "Alexander the Great", who was a king of the ancient G
       );
     }
   }
-  return stopEvent.with(response.choices[0].message.content!);
+  return stopEvent.with(response.choices[0].message.content ?? "");
 });
 
 workflow.handle([humanInteractionEvent], async (context, { data }) => {

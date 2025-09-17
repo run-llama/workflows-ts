@@ -12,7 +12,7 @@ const { withState } = createStatefulMiddleware(() => ({
   processResults: [] as string[],
 }));
 export const workflow = withState(createWorkflow());
-workflow.handle([startEvent], async (context, start) => {
+workflow.handle([startEvent], async (context) => {
   const { sendEvent, state } = context;
   state.itemsProcessed = 0; // Reset counter for this execution
 

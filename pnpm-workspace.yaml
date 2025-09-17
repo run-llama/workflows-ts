@@ -1,11 +1,5 @@
 packages:
-  - ./demo
-  - ./demo/cloudflare
-  - ./demo/browser
-  - ./demo/waku
-  - ./demo/express
-  - ./demo/visualization
-  - ./demo/trace-events
+  - ./demo/*
   - ./docs
   - ./packages/*
   - ./tests/*

@@ -5,8 +5,8 @@
   "type": "module",
   "packageManager": "pnpm@10.15.0",
   "scripts": {
-    "build": "turbo build --filter=\"./packages/*\" --filter=\"./docs\"",
-    "test": "turbo test --filter=\"./packages/*\" --filter=\"./docs\"",
+    "build": "turbo build",
+    "test": "turbo test",
     "typecheck": "tsc -b --diagnostics",
     "format": "biome format .",
     "format:write": "biome format --write .",

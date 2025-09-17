@@ -37,5 +37,5 @@ workflow.handle([stepEvent], (_context, event) => {
 });
 
 // Run
-const { sendEvent, stream } = workflow.createContext();
+const { sendEvent } = workflow.createContext();
 sendEvent(startEvent.with());

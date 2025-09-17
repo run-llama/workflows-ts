@@ -78,6 +78,7 @@ export default function HomePage() {
             <div className="space-y-4">
               <Search className="w-12 h-12 mx-auto text-muted-foreground" />
               <div className="space-y-2">
+                {/* biome-ignore lint/correctness/useUniqueElementIds: used for search */}
                 <Input
                   id="search-docs"
                   value={query}

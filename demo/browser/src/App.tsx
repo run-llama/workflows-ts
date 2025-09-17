@@ -1,12 +1,7 @@
 import llamaindexLogo from "/llamaindex.svg";
 import reactLogo from "./assets/react.svg";
 import "./App.css";
-import {
-  createWorkflow,
-  getContext,
-  workflowEvent,
-} from "@llamaindex/workflow-core";
-import { runWorkflow } from "@llamaindex/workflow-core/stream/run";
+import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";
 import { Suspense } from "react";
 
 const startEvent = workflowEvent();
@@ -14,14 +9,16 @@ const stopEvent = workflowEvent<string>();
 
 const workflow = createWorkflow();
 
-workflow.handle([startEvent], () => {
+workflow.handle([startEvent], (context) => {
   setTimeout(() => {
-    const context = getContext();
     context.sendEvent(stopEvent.with("Hello, World!"));
   }, 1000);
 });
 
-const promise = runWorkflow(workflow, startEvent.with(), stopEvent);
+const context = workflow.createContext();
+context.sendEvent(startEvent.with());
+
+const events = await context.stream.until(stopEvent).toArray();
 
 function App() {
   return (
@@ -38,7 +35,7 @@ function App() {
       <div className="card">
         <p>
           <Suspense fallback="Loading...">
-            {promise.then(({ data }) => data)}
+            {events.map(({ data }) => data)}
           </Suspense>
         </p>
         <p>

@@ -56,7 +56,7 @@ describe("Llama Flow Pure CJS Tests", () => {
       jokeFlow = withState(createWorkflow());
 
       // Define handlers for each step
-      jokeFlow.handle([startEvent], async (event: any) => {
+      jokeFlow.handle([startEvent], async (_context, event) => {
         // Increment our manual state counter
         numIterations++;
 

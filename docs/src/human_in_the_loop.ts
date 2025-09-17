@@ -15,7 +15,7 @@ workflow.handle([startEvent], () => {
   return humanRequestEvent.with();
 });
 
-workflow.handle([humanResponseEvent], (context, event) => {
+workflow.handle([humanResponseEvent], (_context, event) => {
   return stopEvent.with(`Human said: ${event.data}`);
 });
 

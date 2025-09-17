@@ -11,7 +11,7 @@ import type {
   ChatCompletionMessageFunctionToolCall as ToolCall,
   ChatCompletionToolMessageParam as ToolResponseMessage,
 } from "openai/resources/chat/completions";
-import * as readline from "readline/promises";
+import * as readline from "node:readline/promises";
 
 type AgentWorkflowState = {
   expectedToolCount: number;
@@ -195,11 +195,14 @@ workflow.handle([toolCallEvent], async (context, event) => {
 
 workflow.handle([humanResponseEvent], async (context, event) => {
   const { sendEvent, state } = context;
+  if (!state.humanToolId) {
+    throw new Error("No human tool id");
+  }
   sendEvent(
     toolResponseEvent.with({
       role: "tool",
-      content: "My name is " + event.data,
-      tool_call_id: state.humanToolId!,
+      content: `My name is ${event.data}`,
+      tool_call_id: state.humanToolId,
     }),
   );
 });
