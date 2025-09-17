@@ -3,25 +3,25 @@ import { withDrawingNode } from "@llamaindex/workflow-viz-node";
 
 //#region define workflow events
 const startEvent = workflowEvent<string>({
-	debugLabel: "start",
+  debugLabel: "start",
 });
 const branchAEvent = workflowEvent<string>({
-	debugLabel: "branchA",
+  debugLabel: "branchA",
 });
 const branchBEvent = workflowEvent<string>({
-	debugLabel: "branchB",
+  debugLabel: "branchB",
 });
 const branchCEvent = workflowEvent<string>({
-	debugLabel: "branchC",
+  debugLabel: "branchC",
 });
 const branchCompleteEvent = workflowEvent<string>({
-	debugLabel: "branchComplete",
+  debugLabel: "branchComplete",
 });
 const allCompleteEvent = workflowEvent<string>({
-	debugLabel: "allComplete",
+  debugLabel: "allComplete",
 });
 const stopEvent = workflowEvent<string>({
-	debugLabel: "stop",
+  debugLabel: "stop",
 });
 //#endregion
 
@@ -29,41 +29,41 @@ const stopEvent = workflowEvent<string>({
 const workflow = withDrawingNode(createWorkflow());
 
 workflow.handle([startEvent], async (ctx) => {
-	const { sendEvent, stream } = ctx;
-	// emit 3 different events, handled separately
+  const { sendEvent, stream } = ctx;
+  // emit 3 different events, handled separately
 
-	sendEvent(branchAEvent.with("Branch A"));
-	sendEvent(branchBEvent.with("Branch B"));
-	sendEvent(branchCEvent.with("Branch C"));
+  sendEvent(branchAEvent.with("Branch A"));
+  sendEvent(branchBEvent.with("Branch B"));
+  sendEvent(branchCEvent.with("Branch C"));
 
-	const results = await stream.filter(branchCompleteEvent).take(3).toArray();
+  const results = await stream.filter(branchCompleteEvent).take(3).toArray();
 
-	return allCompleteEvent.with(results.map((e) => e.data).join(", "));
+  return allCompleteEvent.with(results.map((e) => e.data).join(", "));
 });
 
 workflow.handle([branchAEvent], (_context1, branchA) => {
-	return branchCompleteEvent.with(branchA.data);
+  return branchCompleteEvent.with(branchA.data);
 });
 
 workflow.handle([branchBEvent], (_context2, branchB) => {
-	return branchCompleteEvent.with(branchB.data);
+  return branchCompleteEvent.with(branchB.data);
 });
 
 workflow.handle([branchCEvent], (_context3, branchC) => {
-	return branchCompleteEvent.with(branchC.data);
+  return branchCompleteEvent.with(branchC.data);
 });
 
 workflow.handle([allCompleteEvent], (_context4, allComplete) => {
-	return stopEvent.with(allComplete.data);
+  return stopEvent.with(allComplete.data);
 });
 
 async function main() {
-	await workflow.drawToImage({
-		layout: "force",
-		width: 800,
-		height: 600,
-		output: "workflow.png",
-	});
+  await workflow.drawToImage({
+    layout: "force",
+    width: 800,
+    height: 600,
+    output: "workflow.png",
+  });
 }
 
 main().catch(console.error);
