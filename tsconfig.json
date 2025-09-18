@@ -53,6 +53,12 @@
       "path": "./packages/viz/tsconfig.json"
     },
     {
+      "path": "./packages/viz-node/tsconfig.json"
+    },
+    {
+      "path": "./packages/graph/tsconfig.json"
+    },
+    {
       "path": "./tests/cjs/tsconfig.json"
     },
     {

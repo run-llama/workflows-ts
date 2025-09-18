@@ -2,7 +2,7 @@ import type { Workflow } from "@llamaindex/workflow-core";
 import ForceSupervisor from "graphology-layout-force/worker";
 import Sigma from "sigma";
 import type { Settings } from "sigma/settings";
-import { withGraph } from "./graph";
+import { withGraph } from "@llamaindex/workflow-graph";
 import { toSigma } from "./sigma";
 
 export type DrawingOptions = {

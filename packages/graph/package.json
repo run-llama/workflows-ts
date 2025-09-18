@@ -1,7 +1,8 @@
 {
-  "name": "@llamaindex/workflow-viz",
-  "version": "1.0.4",
-  "description": "Visualization components for drawing LlamaIndex Workflows in the browser",
+  "name": "@llamaindex/workflow-graph",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Shared graph utilities",
   "type": "module",
   "main": "dist/index.cjs",
   "types": "dist/index.d.ts",
@@ -38,8 +39,7 @@
     "@types/node": "^22.15.19",
     "bunchee": "^6.5.1",
     "vitest": "^2.0.0",
-    "@vitest/ui": "^2.0.0",
-    "graphology": "^0.26.0"
+    "@vitest/ui": "^2.0.0"
   },
   "peerDependencies": {
     "@llamaindex/workflow-core": "workspace:*"
@@ -48,15 +48,11 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/run-llama/workflow-ts.git",
-    "directory": "packages/viz"
-  },
-  "publishConfig": {
-    "access": "public"
+    "directory": "packages/graph"
   },
   "dependencies": {
-    "@llamaindex/workflow-graph": "workspace:*",
     "@babel/parser": "^7.27.2",
-    "graphology-layout-force": "^0.2.4",
-    "sigma": "^3.0.1"
+    "graphology": "^0.26.0",
+    "graphology-layout-force": "^0.2.4"
   }
 }
