@@ -1,6 +1,6 @@
 {
   "name": "@llamaindex/workflow-viz",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Visualization components for drawing LlamaIndex Workflows in the browser",
   "type": "module",
   "main": "dist/index.cjs",

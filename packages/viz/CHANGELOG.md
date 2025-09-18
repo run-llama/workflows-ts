@@ -1,5 +1,12 @@
 # @llamaindex/workflow-viz
 
+## 1.0.5
+
+### Patch Changes
+
+- 8ca1b9b: Generate workflow visualization in Node.js
+- 3cda388: Adding an export for type WorkflowWithDrawing in viz; Adding example code + tests in docs
+
 ## 1.0.4
 
 ### Patch Changes
