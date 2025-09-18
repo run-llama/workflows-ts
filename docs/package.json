@@ -1,6 +1,6 @@
 {
   "name": "@llamaindex/workflow-docs",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "type": "module",
   "main": "index.ts",
   "packageManager": "pnpm@10.15.0",
