@@ -1,7 +1,7 @@
 import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";
 import {
-  withTraceEvents,
   createHandlerDecorator,
+  withTraceEvents,
 } from "@llamaindex/workflow-core/middleware/trace-events";
 
 const startEvent = workflowEvent();

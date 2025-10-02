@@ -1,11 +1,11 @@
 import { describe, expect, test } from "vitest";
 import {
-  workflow,
-  startEvent,
   completeEvent,
   processItemEvent,
   resultEvent,
-} from "../src/fan_in_fan_out";
+  startEvent,
+  workflow,
+} from "../examples/fan_in_fan_out";
 
 describe("Fan-In/Fan-Out workflow should stream expected events", () => {
   test("Test Fan-In/Fan-Out e2e with streaming", async () => {

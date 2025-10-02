@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { workflow, startEvent, stopEvent } from "../src/loops";
+import { startEvent, stopEvent, workflow } from "../examples/loops";
 
 describe("Loops Workflow returns expected results", () => {
   test("Test Loops Workflow e2e", async () => {

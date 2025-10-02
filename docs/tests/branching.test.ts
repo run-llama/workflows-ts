@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { workflow, inputEvent, successEvent } from "../src/branching";
+import { inputEvent, successEvent, workflow } from "../examples/branching";
 
 describe("Branching workflow should return expected results", () => {
   test("Sending event with context1", async () => {
