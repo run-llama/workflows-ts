@@ -1,6 +1,5 @@
-import { createWorkflow } from "@llamaindex/workflow-core";
+import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";
 import { createStatefulMiddleware } from "@llamaindex/workflow-core/middleware/state";
-import { workflowEvent } from "@llamaindex/workflow-core";
 
 type MyWorkflowState = {
   previous_message: string;

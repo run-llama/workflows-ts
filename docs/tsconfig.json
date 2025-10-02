@@ -4,8 +4,8 @@
     "outDir": "./lib",
     "tsBuildInfoFile": "./lib/.tsbuildinfo",
     "paths": {
-      "@llamaindex/workflow-docs": ["./src/index.ts"]
+      "@llamaindex/workflow-docs": ["./examples/index.ts"]
     }
   },
-  "include": ["./src", "./workflows"]
+  "include": ["./examples", "./workflows"]
 }

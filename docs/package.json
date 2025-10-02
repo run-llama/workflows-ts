@@ -42,7 +42,7 @@
   },
   "files": [
     "workflows",
-    "src"
+    "examples"
   ],
   "publishConfig": {
     "access": "public"

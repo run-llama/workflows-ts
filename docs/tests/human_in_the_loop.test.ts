@@ -1,11 +1,11 @@
 import { describe, expect, test } from "vitest";
 import {
-  workflow,
-  startEvent,
-  stopEvent,
   humanRequestEvent,
   humanResponseEvent,
-} from "../src/human_in_the_loop";
+  startEvent,
+  stopEvent,
+  workflow,
+} from "../examples/human_in_the_loop";
 
 describe("Human in the loop returns expected results", () => {
   test("Test Human In The Loop e2e", async () => {
