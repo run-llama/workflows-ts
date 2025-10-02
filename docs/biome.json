@@ -2,7 +2,14 @@
   "root": false,
   "extends": "//",
   "files": {
-    "includes": ["src/**", "tests/**"]
+    "includes": [
+      "src/**",
+      "tests/**",
+      "!src/components",
+      "!src/content",
+      "!src/pages",
+      "!src/content.config.ts"
+    ]
   },
   "linter": {
     "rules": {

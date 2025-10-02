@@ -1,9 +1,7 @@
 ---
-title: "Loops"
-description: "Details about loops in workflows"
+title: Loops in Workflows
+description: Details about loops in workflows
 ---
-
-# Loops in Workflows
 
 For many use cases, designing linear workflows might not be enough: you might need to add some quality checking, and re-execute certain steps based on the results of that, or you might want to refine the responses coming from an LLM or a RAG pipeline (e.g.) by iterating on the generation steps. 
 
@@ -58,4 +56,3 @@ const result = await stream.until(stopEvent).toArray();
 // should print 5 since the workflow is looping
 console.log(result[result.length - 1].data)
 ```
-
