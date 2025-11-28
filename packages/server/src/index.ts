@@ -1,5 +1,6 @@
 export {
   createWorkflowServer,
+  HandlerNotFoundError,
   WorkflowNotFoundError,
   WorkflowServer,
   WorkflowTimeoutError,
