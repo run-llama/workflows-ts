@@ -1,4 +1,3 @@
-// Main server exports
 export {
   createWorkflowServer,
   WorkflowNotFoundError,
@@ -6,7 +5,6 @@ export {
   WorkflowTimeoutError,
 } from "./server";
 
-// Type exports
 export type {
   ExtractEventData,
   HandlerInfo,

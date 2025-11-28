@@ -16,9 +16,6 @@ import type {
   WorkflowServerOptions,
 } from "./types";
 
-/**
- * Error thrown when a workflow is not found.
- */
 export class WorkflowNotFoundError extends Error {
   constructor(name: string) {
     super(`Workflow "${name}" not found`);
@@ -26,9 +23,6 @@ export class WorkflowNotFoundError extends Error {
   }
 }
 
-/**
- * Error thrown when a workflow execution times out.
- */
 export class WorkflowTimeoutError extends Error {
   constructor(name: string, timeout: number) {
     super(`Workflow "${name}" timed out after ${timeout}ms`);
@@ -41,10 +35,7 @@ export class WorkflowTimeoutError extends Error {
  */
 const DEFAULT_TIMEOUT = 30_000;
 
-/**
- * Internal handler context for tracking workflow execution.
- */
-interface InternalHandlerContext {
+interface HandlerContext {
   info: HandlerInfo;
   context: WorkflowContext;
   sendEvent: WorkflowContext["sendEvent"];
@@ -82,7 +73,7 @@ interface InternalHandlerContext {
  */
 export class WorkflowServer {
   private workflows: Map<string, RegisteredWorkflow> = new Map();
-  private handlers: Map<string, InternalHandlerContext> = new Map();
+  private handlers: Map<string, HandlerContext> = new Map();
   private options: Required<WorkflowServerOptions>;
 
   constructor(options: WorkflowServerOptions = {}) {
@@ -111,30 +102,18 @@ export class WorkflowServer {
     });
   }
 
-  /**
-   * Get a registered workflow by name.
-   */
   getWorkflow(name: string): RegisteredWorkflow | undefined {
     return this.workflows.get(name);
   }
 
-  /**
-   * Get all registered workflow names.
-   */
   getWorkflowNames(): string[] {
     return Array.from(this.workflows.keys());
   }
 
-  /**
-   * Get handler information by ID.
-   */
   getHandler(handlerId: string): HandlerInfo | undefined {
     return this.handlers.get(handlerId)?.info;
   }
 
-  /**
-   * Get all handlers, optionally filtered by status or workflow name.
-   */
   getHandlers(filters?: {
     status?: HandlerStatus;
     workflowName?: string;
@@ -175,17 +154,14 @@ export class WorkflowServer {
 
     const { stream, sendEvent } = workflow.createContext();
 
-    // Create a promise that rejects on timeout
     const timeoutPromise = new Promise<never>((_, reject) => {
       setTimeout(() => {
         reject(new WorkflowTimeoutError(name, timeout));
       }, timeout);
     });
 
-    // Send the start event
     sendEvent(startEvent.with(data));
 
-    // Wait for the stop event or timeout
     const resultPromise = (async () => {
       for await (const event of stream) {
         if (stopEvent.include(event)) {
