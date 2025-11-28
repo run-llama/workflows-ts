@@ -1,9 +1,11 @@
 export {
   createWorkflowServer,
+  fastifyPlugin,
   HandlerNotFoundError,
   WorkflowNotFoundError,
   WorkflowServer,
   WorkflowTimeoutError,
+  type WorkflowsConfig,
 } from "./server";
 
 export type {

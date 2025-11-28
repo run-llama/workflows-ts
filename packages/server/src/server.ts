@@ -25,21 +25,46 @@ function generateHandlerId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
 }
 
+/**
+ * A map of workflow names to their configurations for initial registration.
+ */
+export type WorkflowsConfig = Record<string, WorkflowConfig>;
+
 export class WorkflowServer {
   private workflows: Map<string, RegisteredWorkflow> = new Map();
-  private handlerStore: HandlerStore = new HandlerStore();
-  private options: Required<WorkflowServerOptions>;
+  private _handlerStore: HandlerStore = new HandlerStore();
+  private _options: Required<WorkflowServerOptions>;
 
   constructor(options: WorkflowServerOptions = {}) {
-    this.options = {
+    this._options = {
       prefix: options.prefix ?? "",
     };
   }
 
-  registerWorkflow<TStartData = unknown, TStopData = unknown>(
+  /**
+   * Get the server options (read-only).
+   */
+  get options(): Readonly<Required<WorkflowServerOptions>> {
+    return this._options;
+  }
+
+  /**
+   * Get the handler store (for internal use).
+   * @internal
+   */
+  get handlerStore(): HandlerStore {
+    return this._handlerStore;
+  }
+
+  /**
+   * Register a workflow with the server.
+   * @param name - The unique name for this workflow
+   * @param config - The workflow configuration including workflow, startEvent, and stopEvent
+   */
+  register<TStartData = unknown, TStopData = unknown>(
     name: string,
     config: WorkflowConfig<TStartData, TStopData>,
-  ): void {
+  ): this {
     if (this.workflows.has(name)) {
       throw new Error(`Workflow "${name}" is already registered`);
     }
@@ -48,6 +73,8 @@ export class WorkflowServer {
       ...config,
       name,
     });
+
+    return this;
   }
 
   getWorkflow(name: string): RegisteredWorkflow | undefined {
@@ -59,11 +86,11 @@ export class WorkflowServer {
   }
 
   getHandler(handlerId: string) {
-    return this.handlerStore.getInfo(handlerId);
+    return this._handlerStore.getInfo(handlerId);
   }
 
   getHandlers(filters?: { status?: HandlerStatus; workflowName?: string }) {
-    return this.handlerStore.list(filters);
+    return this._handlerStore.list(filters);
   }
 
   async runWorkflow<TStartData, TStopData>(
@@ -111,7 +138,7 @@ export class WorkflowServer {
     const { workflow, startEvent, stopEvent } = registered;
     const { stream, sendEvent } = workflow.createContext();
 
-    this.handlerStore.create(handlerId, name, { stream } as never, sendEvent);
+    this._handlerStore.create(handlerId, name, { stream } as never, sendEvent);
 
     sendEvent(startEvent.with(data));
 
@@ -119,46 +146,89 @@ export class WorkflowServer {
       try {
         for await (const event of stream) {
           if (stopEvent.include(event)) {
-            this.handlerStore.updateStatus(handlerId, "completed", {
+            this._handlerStore.updateStatus(handlerId, "completed", {
               result: event.data,
             });
             return;
           }
         }
-        this.handlerStore.updateStatus(handlerId, "error", {
+        this._handlerStore.updateStatus(handlerId, "error", {
           error: "Workflow completed without stop event",
         });
       } catch (error) {
         const message =
           error instanceof Error ? error.message : "Unknown error";
-        this.handlerStore.updateStatus(handlerId, "error", { error: message });
+        this._handlerStore.updateStatus(handlerId, "error", { error: message });
       }
     })();
 
     return { handlerId, status: "running" };
   }
-
-  plugin(): FastifyPluginAsync {
-    return async (fastify: FastifyInstance) => {
-      registerHealthRoutes(fastify, this.options.prefix);
-      registerWorkflowRoutes(fastify, {
-        prefix: this.options.prefix,
-        getWorkflow: (name) => this.getWorkflow(name),
-        getWorkflowNames: () => this.getWorkflowNames(),
-        runWorkflow: (name, data, timeout) =>
-          this.runWorkflow(name, data, timeout),
-        runWorkflowAsync: (name, data) => this.runWorkflowAsync(name, data),
-      });
-      registerHandlerRoutes(fastify, {
-        prefix: this.options.prefix,
-        handlerStore: this.handlerStore,
-      });
-    };
-  }
 }
 
+/**
+ * Creates a Fastify plugin from a WorkflowServer instance.
+ *
+ * @example
+ * ```ts
+ * const workflowServer = createWorkflowServer({ ... });
+ * await app.register(fastifyPlugin(workflowServer));
+ * ```
+ */
+export function fastifyPlugin(server: WorkflowServer): FastifyPluginAsync {
+  return async (fastify: FastifyInstance) => {
+    const { prefix } = server.options;
+    registerHealthRoutes(fastify, prefix);
+    registerWorkflowRoutes(fastify, {
+      prefix,
+      getWorkflow: (name) => server.getWorkflow(name),
+      getWorkflowNames: () => server.getWorkflowNames(),
+      runWorkflow: (name, data, timeout) =>
+        server.runWorkflow(name, data, timeout),
+      runWorkflowAsync: (name, data) => server.runWorkflowAsync(name, data),
+    });
+    registerHandlerRoutes(fastify, {
+      prefix,
+      handlerStore: server.handlerStore,
+    });
+  };
+}
+
+/**
+ * Creates a new WorkflowServer with optional initial workflow registrations.
+ *
+ * @example
+ * ```ts
+ * // Create with initial workflows
+ * const server = createWorkflowServer({
+ *   greeting: {
+ *     workflow: greetingWorkflow,
+ *     startEvent: greetStartEvent,
+ *     stopEvent: greetStopEvent,
+ *   },
+ *   calculator: {
+ *     workflow: calculatorWorkflow,
+ *     startEvent: calcInputEvent,
+ *     stopEvent: calcOutputEvent,
+ *   },
+ * });
+ *
+ * // Or create empty and register later
+ * const server = createWorkflowServer();
+ * server.register("greeting", { ... });
+ * ```
+ */
 export function createWorkflowServer(
+  workflows?: WorkflowsConfig,
   options?: WorkflowServerOptions,
 ): WorkflowServer {
-  return new WorkflowServer(options);
+  const server = new WorkflowServer(options);
+
+  if (workflows) {
+    for (const [name, config] of Object.entries(workflows)) {
+      server.register(name, config);
+    }
+  }
+
+  return server;
 }

@@ -3,6 +3,7 @@ import Fastify from "fastify";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   createWorkflowServer,
+  fastifyPlugin,
   WorkflowNotFoundError,
   WorkflowServer,
   WorkflowTimeoutError,
@@ -54,12 +55,43 @@ describe("WorkflowServer", () => {
       const server = createWorkflowServer();
       expect(server).toBeInstanceOf(WorkflowServer);
     });
+
+    it("should create a server with initial workflows using factory function", () => {
+      const server = createWorkflowServer({
+        echo: {
+          workflow: createEchoWorkflow(),
+          startEvent,
+          stopEvent,
+        },
+        double: {
+          workflow: createDoubleWorkflow(),
+          startEvent: inputEvent,
+          stopEvent: outputEvent,
+        },
+      });
+      expect(server.getWorkflowNames()).toEqual(["echo", "double"]);
+    });
+
+    it("should create a server with initial workflows and options", () => {
+      const server = createWorkflowServer(
+        {
+          echo: {
+            workflow: createEchoWorkflow(),
+            startEvent,
+            stopEvent,
+          },
+        },
+        { prefix: "/api/v1" },
+      );
+      expect(server.getWorkflowNames()).toEqual(["echo"]);
+      expect(server.options.prefix).toBe("/api/v1");
+    });
   });
 
   describe("workflow registration", () => {
-    it("should register a workflow", () => {
+    it("should register a workflow using register method", () => {
       const server = new WorkflowServer();
-      server.registerWorkflow("echo", {
+      server.register("echo", {
         workflow: createEchoWorkflow(),
         startEvent,
         stopEvent,
@@ -67,34 +99,35 @@ describe("WorkflowServer", () => {
       expect(server.getWorkflowNames()).toEqual(["echo"]);
     });
 
-    it("should register multiple workflows", () => {
+    it("should support chaining with register method", () => {
       const server = new WorkflowServer();
-      server.registerWorkflow("echo", {
-        workflow: createEchoWorkflow(),
-        startEvent,
-        stopEvent,
-      });
-      server.registerWorkflow("double", {
-        workflow: createDoubleWorkflow(),
-        startEvent: inputEvent,
-        stopEvent: outputEvent,
-      });
+      server
+        .register("echo", {
+          workflow: createEchoWorkflow(),
+          startEvent,
+          stopEvent,
+        })
+        .register("double", {
+          workflow: createDoubleWorkflow(),
+          startEvent: inputEvent,
+          stopEvent: outputEvent,
+        });
       expect(server.getWorkflowNames()).toEqual(["echo", "double"]);
     });
 
     it("should throw error when registering duplicate workflow", () => {
       const server = new WorkflowServer();
       const workflow = createEchoWorkflow();
-      server.registerWorkflow("echo", { workflow, startEvent, stopEvent });
+      server.register("echo", { workflow, startEvent, stopEvent });
       expect(() => {
-        server.registerWorkflow("echo", { workflow, startEvent, stopEvent });
+        server.register("echo", { workflow, startEvent, stopEvent });
       }).toThrow('Workflow "echo" is already registered');
     });
 
     it("should get workflow by name", () => {
       const server = new WorkflowServer();
       const workflow = createEchoWorkflow();
-      server.registerWorkflow("echo", { workflow, startEvent, stopEvent });
+      server.register("echo", { workflow, startEvent, stopEvent });
       const registered = server.getWorkflow("echo");
       expect(registered).toBeDefined();
       expect(registered?.name).toBe("echo");
@@ -110,7 +143,7 @@ describe("WorkflowServer", () => {
   describe("runWorkflow", () => {
     it("should run a workflow and return result", async () => {
       const server = new WorkflowServer();
-      server.registerWorkflow("echo", {
+      server.register("echo", {
         workflow: createEchoWorkflow(),
         startEvent,
         stopEvent,
@@ -121,7 +154,7 @@ describe("WorkflowServer", () => {
 
     it("should run a workflow with object data", async () => {
       const server = new WorkflowServer();
-      server.registerWorkflow("double", {
+      server.register("double", {
         workflow: createDoubleWorkflow(),
         startEvent: inputEvent,
         stopEvent: outputEvent,
@@ -142,7 +175,7 @@ describe("WorkflowServer", () => {
 
     it("should timeout slow workflows", async () => {
       const server = new WorkflowServer();
-      server.registerWorkflow("slow", {
+      server.register("slow", {
         workflow: createSlowWorkflow(500),
         startEvent,
         stopEvent,
@@ -156,7 +189,7 @@ describe("WorkflowServer", () => {
   describe("runWorkflowAsync", () => {
     it("should start workflow and return handler info", () => {
       const server = new WorkflowServer();
-      server.registerWorkflow("echo", {
+      server.register("echo", {
         workflow: createEchoWorkflow(),
         startEvent,
         stopEvent,
@@ -168,7 +201,7 @@ describe("WorkflowServer", () => {
 
     it("should track handler status", async () => {
       const server = new WorkflowServer();
-      server.registerWorkflow("echo", {
+      server.register("echo", {
         workflow: createEchoWorkflow(),
         startEvent,
         stopEvent,
@@ -194,7 +227,7 @@ describe("WorkflowServer", () => {
   describe("getHandlers", () => {
     it("should list all handlers", async () => {
       const server = new WorkflowServer();
-      server.registerWorkflow("echo", {
+      server.register("echo", {
         workflow: createEchoWorkflow(),
         startEvent,
         stopEvent,
@@ -208,12 +241,12 @@ describe("WorkflowServer", () => {
 
     it("should filter handlers by status", async () => {
       const server = new WorkflowServer();
-      server.registerWorkflow("echo", {
+      server.register("echo", {
         workflow: createEchoWorkflow(),
         startEvent,
         stopEvent,
       });
-      server.registerWorkflow("slow", {
+      server.register("slow", {
         workflow: createSlowWorkflow(200),
         startEvent,
         stopEvent,
@@ -233,12 +266,12 @@ describe("WorkflowServer", () => {
 
     it("should filter handlers by workflow name", async () => {
       const server = new WorkflowServer();
-      server.registerWorkflow("echo", {
+      server.register("echo", {
         workflow: createEchoWorkflow(),
         startEvent,
         stopEvent,
       });
-      server.registerWorkflow("double", {
+      server.register("double", {
         workflow: createDoubleWorkflow(),
         startEvent: inputEvent,
         stopEvent: outputEvent,
@@ -249,7 +282,7 @@ describe("WorkflowServer", () => {
 
       const echoHandlers = server.getHandlers({ workflowName: "echo" });
       expect(echoHandlers).toHaveLength(1);
-      expect(echoHandlers[0].workflowName).toBe("echo");
+      expect(echoHandlers[0]?.workflowName).toBe("echo");
     });
   });
 });
@@ -262,18 +295,18 @@ describe("WorkflowServer HTTP endpoints", () => {
     server = new WorkflowServer();
     app = Fastify();
 
-    server.registerWorkflow("echo", {
+    server.register("echo", {
       workflow: createEchoWorkflow(),
       startEvent,
       stopEvent,
     });
-    server.registerWorkflow("double", {
+    server.register("double", {
       workflow: createDoubleWorkflow(),
       startEvent: inputEvent,
       stopEvent: outputEvent,
     });
 
-    await app.register(server.plugin());
+    await app.register(fastifyPlugin(server));
   });
 
   afterEach(async () => {
@@ -304,7 +337,7 @@ describe("WorkflowServer HTTP endpoints", () => {
     it("should return empty array when no workflows registered", async () => {
       const emptyServer = new WorkflowServer();
       const emptyApp = Fastify();
-      await emptyApp.register(emptyServer.plugin());
+      await emptyApp.register(fastifyPlugin(emptyServer));
 
       const response = await emptyApp.inject({
         method: "GET",
@@ -350,7 +383,7 @@ describe("WorkflowServer HTTP endpoints", () => {
     });
 
     it("should respect custom timeout", async () => {
-      server.registerWorkflow("slow", {
+      server.register("slow", {
         workflow: createSlowWorkflow(500),
         startEvent,
         stopEvent,
@@ -419,7 +452,7 @@ describe("WorkflowServer HTTP endpoints", () => {
     });
 
     it("should filter by status", async () => {
-      server.registerWorkflow("slow", {
+      server.register("slow", {
         workflow: createSlowWorkflow(200),
         startEvent,
         stopEvent,
@@ -482,7 +515,7 @@ describe("WorkflowServer HTTP endpoints", () => {
     });
 
     it("should return 202 for running handler", async () => {
-      server.registerWorkflow("slow", {
+      server.register("slow", {
         workflow: createSlowWorkflow(200),
         startEvent,
         stopEvent,
@@ -526,14 +559,14 @@ describe("WorkflowServer HTTP endpoints", () => {
   describe("with prefix", () => {
     it("should handle routes with prefix", async () => {
       const prefixedServer = new WorkflowServer({ prefix: "/api/v1" });
-      prefixedServer.registerWorkflow("echo", {
+      prefixedServer.register("echo", {
         workflow: createEchoWorkflow(),
         startEvent,
         stopEvent,
       });
 
       const prefixedApp = Fastify();
-      await prefixedApp.register(prefixedServer.plugin());
+      await prefixedApp.register(fastifyPlugin(prefixedServer));
 
       const healthResponse = await prefixedApp.inject({
         method: "GET",
@@ -555,6 +588,55 @@ describe("WorkflowServer HTTP endpoints", () => {
       expect(handlersResponse.statusCode).toBe(200);
 
       await prefixedApp.close();
+    });
+  });
+
+  describe("fastifyPlugin function", () => {
+    it("should work as standalone plugin function", async () => {
+      const workflowServer = createWorkflowServer({
+        echo: {
+          workflow: createEchoWorkflow(),
+          startEvent,
+          stopEvent,
+        },
+      });
+
+      const testApp = Fastify();
+      await testApp.register(fastifyPlugin(workflowServer));
+
+      const response = await testApp.inject({
+        method: "POST",
+        url: "/workflows/echo/run",
+        payload: { data: "Test" },
+      });
+      expect(response.statusCode).toBe(200);
+      expect(response.json()).toEqual({ result: "Echo: Test" });
+
+      await testApp.close();
+    });
+
+    it("should handle prefix with fastifyPlugin", async () => {
+      const workflowServer = createWorkflowServer(
+        {
+          echo: {
+            workflow: createEchoWorkflow(),
+            startEvent,
+            stopEvent,
+          },
+        },
+        { prefix: "/api" },
+      );
+
+      const testApp = Fastify();
+      await testApp.register(fastifyPlugin(workflowServer));
+
+      const response = await testApp.inject({
+        method: "GET",
+        url: "/api/health",
+      });
+      expect(response.statusCode).toBe(200);
+
+      await testApp.close();
     });
   });
 });

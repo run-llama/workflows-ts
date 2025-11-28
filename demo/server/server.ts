@@ -10,118 +10,43 @@
 
 import swagger from "@fastify/swagger";
 import swaggerUi from "@fastify/swagger-ui";
-import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";
-import { WorkflowServer } from "@llamaindex/workflow-server";
+import {
+  createWorkflowServer,
+  fastifyPlugin,
+} from "@llamaindex/workflow-server";
 import Fastify from "fastify";
-
-// ============================================
-// Define Events
-// ============================================
-
-// Greeting workflow events
-const greetStartEvent = workflowEvent<string>({
-  debugLabel: "greetStart",
-});
-const greetStopEvent = workflowEvent<string>({
-  debugLabel: "greetStop",
-});
-
-// Calculator workflow events
-const calcInputEvent = workflowEvent<{ a: number; b: number; op: string }>({
-  debugLabel: "calcInput",
-});
-const calcOutputEvent = workflowEvent<{ result: number }>({
-  debugLabel: "calcOutput",
-});
-
-// Echo workflow events (for testing)
-const echoStartEvent = workflowEvent<unknown>({
-  debugLabel: "echoStart",
-});
-const echoStopEvent = workflowEvent<unknown>({
-  debugLabel: "echoStop",
-});
-
-// ============================================
-// Create Workflows
-// ============================================
-
-/**
- * Simple greeting workflow
- * Input: string (name)
- * Output: string (greeting message)
- */
-const greetingWorkflow = createWorkflow();
-greetingWorkflow.handle([greetStartEvent], (_context, event) => {
-  const name = event.data || "World";
-  return greetStopEvent.with(`Hello, ${name}! Welcome to the Workflow Server.`);
-});
-
-/**
- * Calculator workflow
- * Input: { a: number, b: number, op: string }
- * Output: { result: number }
- */
-const calculatorWorkflow = createWorkflow();
-calculatorWorkflow.handle([calcInputEvent], (_context, event) => {
-  const { a, b, op } = event.data;
-  let result: number;
-
-  switch (op) {
-    case "add":
-      result = a + b;
-      break;
-    case "subtract":
-      result = a - b;
-      break;
-    case "multiply":
-      result = a * b;
-      break;
-    case "divide":
-      if (b === 0) {
-        throw new Error("Division by zero");
-      }
-      result = a / b;
-      break;
-    default:
-      throw new Error(`Unknown operation: ${op}`);
-  }
-
-  return calcOutputEvent.with({ result });
-});
-
-/**
- * Echo workflow - returns whatever input it receives
- * Useful for testing and debugging
- */
-const echoWorkflow = createWorkflow();
-echoWorkflow.handle([echoStartEvent], (_context, event) => {
-  return echoStopEvent.with(event.data);
-});
+import {
+  calculatorWorkflow,
+  calcInputEvent,
+  calcOutputEvent,
+  echoWorkflow,
+  echoStartEvent,
+  echoStopEvent,
+  greetingWorkflow,
+  greetStartEvent,
+  greetStopEvent,
+} from "./workflows";
 
 // ============================================
 // Create and Configure Server
 // ============================================
 
-const server = new WorkflowServer();
-
-// Register workflows
-server.registerWorkflow("greeting", {
-  workflow: greetingWorkflow,
-  startEvent: greetStartEvent,
-  stopEvent: greetStopEvent,
-});
-
-server.registerWorkflow("calculator", {
-  workflow: calculatorWorkflow,
-  startEvent: calcInputEvent,
-  stopEvent: calcOutputEvent,
-});
-
-server.registerWorkflow("echo", {
-  workflow: echoWorkflow,
-  startEvent: echoStartEvent,
-  stopEvent: echoStopEvent,
+const workflowServer = createWorkflowServer({
+  greeting: {
+    workflow: greetingWorkflow,
+    startEvent: greetStartEvent,
+    stopEvent: greetStopEvent,
+  },
+  calculator: {
+    workflow: calculatorWorkflow,
+    startEvent: calcInputEvent,
+    stopEvent: calcOutputEvent,
+  },
+  echo: {
+    workflow: echoWorkflow,
+    startEvent: echoStartEvent,
+    stopEvent: echoStopEvent,
+  },
 });
 
 // ============================================
@@ -149,7 +74,7 @@ await app.register(swaggerUi, {
 });
 
 // Register the workflow server plugin
-await app.register(server.plugin());
+await app.register(fastifyPlugin(workflowServer));
 
 // Add a custom root route
 app.get("/", async () => {
@@ -161,7 +86,7 @@ app.get("/", async () => {
       listWorkflows: "GET /workflows",
       runWorkflow: "POST /workflows/:name/run",
     },
-    registeredWorkflows: server.getWorkflowNames(),
+    registeredWorkflows: workflowServer.getWorkflowNames(),
   };
 });
 

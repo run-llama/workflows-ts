@@ -7,5 +7,5 @@
     "moduleResolution": "bundler",
     "target": "ES2022"
   },
-  "include": ["./*.ts"]
+  "include": ["./*.ts", "./workflows/**/*.ts"]
 }

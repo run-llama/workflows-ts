@@ -23,7 +23,7 @@ pnpm add @llamaindex/workflow-server fastify
 
 ```typescript
 import Fastify from "fastify";
-import { WorkflowServer } from "@llamaindex/workflow-server";
+import { createWorkflowServer, fastifyPlugin } from "@llamaindex/workflow-server";
 import { createWorkflow, workflowEvent } from "@llamaindex/workflow-core";
 
 // Define events
@@ -36,17 +36,18 @@ greetingWorkflow.handle([startEvent], (_context, event) => {
     return stopEvent.with(`Hello, ${event.data}!`);
 });
 
-// Create server and register workflow
-const server = new WorkflowServer();
-server.registerWorkflow("greeting", {
-    workflow: greetingWorkflow,
-    startEvent,
-    stopEvent,
+// Create server with initial workflows
+const workflowServer = createWorkflowServer({
+    greeting: {
+        workflow: greetingWorkflow,
+        startEvent,
+        stopEvent,
+    },
 });
 
 // Start Fastify
 const app = Fastify({ logger: true });
-await app.register(server.plugin());
+await app.register(fastifyPlugin(workflowServer));
 await app.listen({ port: 3000 });
 ```
 
@@ -62,10 +63,11 @@ npm install @fastify/swagger @fastify/swagger-ui
 import Fastify from "fastify";
 import swagger from "@fastify/swagger";
 import swaggerUi from "@fastify/swagger-ui";
-import { WorkflowServer } from "@llamaindex/workflow-server";
+import { createWorkflowServer, fastifyPlugin } from "@llamaindex/workflow-server";
 
-const server = new WorkflowServer();
-// ... register workflows ...
+const workflowServer = createWorkflowServer({
+    // ... workflows
+});
 
 const app = Fastify({ logger: true });
 
@@ -83,112 +85,49 @@ await app.register(swaggerUi, {
 });
 
 // Then register the workflow server
-await app.register(server.plugin());
+await app.register(fastifyPlugin(workflowServer));
 await app.listen({ port: 3000 });
 ```
 
 Swagger UI will be available at `http://localhost:3000/documentation`.
 
-## API Endpoints
-
-### Health Check
-
-```http
-GET /health
-```
-
-Returns server health status.
-
-**Response:**
-```json
-{
-    "status": "ok"
-}
-```
-
-### List Workflows
-
-```http
-GET /workflows
-```
-
-Returns a list of all registered workflow names.
-
-**Response:**
-```json
-["greeting", "data-processor", "agent"]
-```
-
-### Run Workflow (Synchronous)
-
-```http
-POST /workflows/:name/run
-```
-
-Executes a workflow synchronously and waits for completion.
-
-**Request Body:**
-```json
-{
-    "data": "World",
-    "timeout": 30000
-}
-```
-
-**Response:**
-```json
-{
-    "result": "Hello, World!"
-}
-```
-
-## Configuration
-
-### WorkflowServerOptions
-
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `prefix` | `string` | `""` | Base path prefix for all routes |
-
-### Example with Prefix
-
-```typescript
-const server = new WorkflowServer({
-    prefix: "/api/v1",
-});
-```
-
-With this configuration, endpoints will be available at:
-- `GET /api/v1/health`
-- `GET /api/v1/workflows`
-- `POST /api/v1/workflows/:name/run`
-
 ## Registering Workflows
 
-Use `registerWorkflow` to add workflows to the server:
+### Using createWorkflowServer Factory (Recommended)
 
 ```typescript
-server.registerWorkflow("my-workflow", {
-    workflow: myWorkflow,      // The Workflow instance
-    startEvent: startEvent,    // Event that triggers the workflow
-    stopEvent: stopEvent,      // Event that signals completion
+const workflowServer = createWorkflowServer({
+    greeting: {
+        workflow: greetingWorkflow,
+        startEvent: greetStartEvent,
+        stopEvent: greetStopEvent,
+    },
+    calculator: {
+        workflow: calculatorWorkflow,
+        startEvent: calcStartEvent,
+        stopEvent: calcStopEvent,
+    },
 });
 ```
 
-### Multiple Workflows
+### Using register Method
+
+You can also use `register` to add workflows after creation:
 
 ```typescript
-server.registerWorkflow("greeting", {
-    workflow: greetingWorkflow,
-    startEvent: greetStartEvent,
-    stopEvent: greetStopEvent,
-});
+const workflowServer = createWorkflowServer();
 
-server.registerWorkflow("calculator", {
-    workflow: calculatorWorkflow,
-    startEvent: calcStartEvent,
-    stopEvent: calcStopEvent,
-});
+workflowServer
+    .register("greeting", {
+        workflow: greetingWorkflow,
+        startEvent: greetStartEvent,
+        stopEvent: greetStopEvent,
+    })
+    .register("calculator", {
+        workflow: calculatorWorkflow,
+        startEvent: calcStartEvent,
+        stopEvent: calcStopEvent,
+    });
 ```
 
 ## Error Handling
@@ -208,45 +147,3 @@ POST /workflows/unknown/run
 POST /workflows/slow/run { "data": "test", "timeout": 100 }
 // Response: 408 { "error": "Workflow \"slow\" timed out after 100ms" }
 ```
-
-## Programmatic Usage
-
-You can also run workflows programmatically:
-
-```typescript
-const server = new WorkflowServer();
-
-// Register workflows...
-
-// Run a workflow directly
-const result = await server.runWorkflow("greeting", "World");
-console.log(result); // "Hello, World!"
-
-// With timeout
-const result = await server.runWorkflow("slow-workflow", data, 5000);
-```
-
-## OpenAPI Documentation
-
-When `enableSwaggerUI` is `true` (default), Swagger UI is available at:
-
-```
-http://localhost:3000/documentation
-```
-
-This provides interactive API documentation with:
-- Endpoint descriptions
-- Request/response schemas
-- Try-it-out functionality
-
-## Dependencies
-
-- **fastify** - Fast and low overhead web framework
-- **@fastify/swagger** - OpenAPI specification generator
-- **@fastify/swagger-ui** - Swagger UI integration
-- **@llamaindex/workflow-core** - Core workflow engine
-
-## License
-
-MIT
-
