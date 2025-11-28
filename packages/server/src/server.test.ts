@@ -523,56 +523,6 @@ describe("WorkflowServer HTTP endpoints", () => {
     });
   });
 
-  describe("GET /results/:handlerId (deprecated)", () => {
-    it("should return 404 for unknown handler", async () => {
-      const response = await app.inject({
-        method: "GET",
-        url: "/results/unknown-id",
-      });
-      expect(response.statusCode).toBe(404);
-    });
-
-    it("should return 202 for running handler", async () => {
-      server.registerWorkflow("slow", {
-        workflow: createSlowWorkflow(200),
-        startEvent,
-        stopEvent,
-      });
-
-      const startResponse = await app.inject({
-        method: "POST",
-        url: "/workflows/slow/run-nowait",
-        payload: { data: "test" },
-      });
-      const { handlerId } = startResponse.json();
-
-      const response = await app.inject({
-        method: "GET",
-        url: `/results/${handlerId}`,
-      });
-      expect(response.statusCode).toBe(202);
-      expect(response.json().status).toBe("running");
-    });
-
-    it("should return result for completed handler", async () => {
-      const startResponse = await app.inject({
-        method: "POST",
-        url: "/workflows/echo/run-nowait",
-        payload: { data: "Hello" },
-      });
-      const { handlerId } = startResponse.json();
-
-      await new Promise((resolve) => setTimeout(resolve, 50));
-
-      const response = await app.inject({
-        method: "GET",
-        url: `/results/${handlerId}`,
-      });
-      expect(response.statusCode).toBe(200);
-      expect(response.json().result).toBe("Echo: Hello");
-    });
-  });
-
   describe("with prefix", () => {
     it("should handle routes with prefix", async () => {
       const prefixedServer = new WorkflowServer({ prefix: "/api/v1" });

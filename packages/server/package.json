@@ -33,7 +33,9 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "nanoid": "^5.1.5"
+    "nanoid": "^5.1.5",
+    "zod": "^3.25.76",
+    "zod-to-json-schema": "^3.25.0"
   },
   "devDependencies": {
     "@llamaindex/workflow-core": "workspace:*",

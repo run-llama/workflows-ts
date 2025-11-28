@@ -1,5 +1,5 @@
 import type { WorkflowContext } from "@llamaindex/workflow-core";
-import type { HandlerInfo, HandlerStatus } from "./types";
+import type { HandlerInfo, HandlerStatus } from "./schemas";
 
 export interface HandlerContext {
   info: HandlerInfo;

@@ -6,10 +6,10 @@ import {
   registerHealthRoutes,
   registerWorkflowRoutes,
 } from "./routes";
+import type { HandlerStatus, WorkflowRunAsyncResponse } from "./schemas";
 import type {
   RegisteredWorkflow,
   WorkflowConfig,
-  WorkflowRunAsyncResponse,
   WorkflowServerOptions,
 } from "./types";
 
@@ -62,10 +62,7 @@ export class WorkflowServer {
     return this.handlerStore.getInfo(handlerId);
   }
 
-  getHandlers(filters?: {
-    status?: "running" | "completed" | "error" | "cancelled";
-    workflowName?: string;
-  }) {
+  getHandlers(filters?: { status?: HandlerStatus; workflowName?: string }) {
     return this.handlerStore.list(filters);
   }
 

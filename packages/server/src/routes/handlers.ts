@@ -1,6 +1,13 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import { z } from "zod";
 import type { HandlerStore } from "../handler-store";
-import type { HandlerInfo, HandlerStatus } from "../types";
+import {
+  ErrorResponseSchema,
+  HandlerIdParamsSchema,
+  HandlerInfoSchema,
+  HandlersQuerySchema,
+  toJsonSchema,
+} from "../schemas";
 
 interface HandlerRoutesContext {
   prefix: string;
@@ -13,113 +20,40 @@ export function registerHandlerRoutes(
 ): void {
   const { prefix, handlerStore } = ctx;
 
-  // GET /handlers
-  fastify.get<{
-    Querystring: { status?: HandlerStatus; workflow_name?: string };
-    Reply: HandlerInfo[];
-  }>(
-    `${prefix}/handlers`,
-    {
-      schema: {
-        description: "List all handlers with optional filters",
-        tags: ["Handlers"],
-        querystring: {
-          type: "object",
-          properties: {
-            status: {
-              type: "string",
-              enum: ["running", "completed", "error", "cancelled"],
-            },
-            workflow_name: { type: "string" },
-          },
-        },
-        response: {
-          200: {
-            type: "array",
-            items: {
-              type: "object",
-              properties: {
-                handlerId: { type: "string" },
-                workflowName: { type: "string" },
-                status: {
-                  type: "string",
-                  enum: ["running", "completed", "error", "cancelled"],
-                },
-                startedAt: { type: "string", format: "date-time" },
-                completedAt: { type: "string", format: "date-time" },
-                result: {},
-                error: { type: "string" },
-              },
-              required: ["handlerId", "workflowName", "status", "startedAt"],
-            },
-          },
-        },
-      } as Record<string, unknown>,
+  fastify.get(`${prefix}/handlers`, {
+    schema: {
+      description: "List all handlers with optional filters",
+      tags: ["Handlers"],
+      querystring: toJsonSchema(HandlersQuerySchema),
+      response: {
+        200: toJsonSchema(z.array(HandlerInfoSchema)),
+      },
     },
-    async (
+    handler: async (
       request: FastifyRequest<{
-        Querystring: { status?: HandlerStatus; workflow_name?: string };
+        Querystring: z.infer<typeof HandlersQuerySchema>;
       }>,
     ) => {
       const { status, workflow_name } = request.query;
-      return handlerStore.list({
-        status,
-        workflowName: workflow_name,
-      });
+      return handlerStore.list({ status, workflowName: workflow_name });
     },
-  );
+  });
 
-  // GET /handlers/:handlerId
-  fastify.get<{
-    Params: { handlerId: string };
-    Reply: HandlerInfo | { error: string };
-  }>(
-    `${prefix}/handlers/:handlerId`,
-    {
-      schema: {
-        description: "Get handler status and result",
-        tags: ["Handlers"],
-        params: {
-          type: "object",
-          properties: {
-            handlerId: { type: "string" },
-          },
-          required: ["handlerId"],
-        },
-        response: {
-          200: {
-            type: "object",
-            properties: {
-              handlerId: { type: "string" },
-              workflowName: { type: "string" },
-              status: { type: "string" },
-              startedAt: { type: "string", format: "date-time" },
-              completedAt: { type: "string", format: "date-time" },
-              result: {},
-              error: { type: "string" },
-            },
-            required: ["handlerId", "workflowName", "status", "startedAt"],
-          },
-          202: {
-            type: "object",
-            properties: {
-              handlerId: { type: "string" },
-              workflowName: { type: "string" },
-              status: { type: "string", enum: ["running"] },
-              startedAt: { type: "string", format: "date-time" },
-            },
-            required: ["handlerId", "workflowName", "status", "startedAt"],
-          },
-          404: {
-            type: "object",
-            properties: { error: { type: "string" } },
-            required: ["error"],
-          },
-        },
-      } as Record<string, unknown>,
+  fastify.get(`${prefix}/handlers/:handlerId`, {
+    schema: {
+      description: "Get handler status and result",
+      tags: ["Handlers"],
+      params: toJsonSchema(HandlerIdParamsSchema),
+      response: {
+        200: toJsonSchema(HandlerInfoSchema),
+        202: toJsonSchema(HandlerInfoSchema),
+        404: toJsonSchema(ErrorResponseSchema),
+      },
     },
-    async (
-      request: FastifyRequest<{ Params: { handlerId: string } }>,
+    handler: async (
+      request: FastifyRequest<{
+        Params: z.infer<typeof HandlerIdParamsSchema>;
+      }>,
       reply: FastifyReply,
     ) => {
       const { handlerId } = request.params;
@@ -134,5 +68,5 @@ export function registerHandlerRoutes(
       const statusCode = info.status === "running" ? 202 : 200;
       return reply.status(statusCode).send(info);
     },
-  );
+  });
 }

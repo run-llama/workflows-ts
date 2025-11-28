@@ -1,11 +1,15 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import { z } from "zod";
 import { WorkflowNotFoundError, WorkflowTimeoutError } from "../errors";
-import type {
-  RegisteredWorkflow,
-  WorkflowRunAsyncResponse,
-  WorkflowRunRequest,
-  WorkflowRunResponse,
-} from "../types";
+import {
+  ErrorResponseSchema,
+  toJsonSchema,
+  WorkflowNameParamsSchema,
+  WorkflowRunAsyncResponseSchema,
+  WorkflowRunRequestSchema,
+  WorkflowRunResponseSchema,
+} from "../schemas";
+import type { RegisteredWorkflow, WorkflowRunAsyncResponse } from "../types";
 
 const DEFAULT_TIMEOUT = 30_000;
 
@@ -27,86 +31,34 @@ export function registerWorkflowRoutes(
 ): void {
   const { prefix } = ctx;
 
-  // GET /workflows
-  fastify.get<{ Reply: string[] }>(
-    `${prefix}/workflows`,
-    {
-      schema: {
-        description: "List all registered workflow names",
-        tags: ["Workflows"],
-        response: {
-          200: {
-            type: "array",
-            items: { type: "string" },
-          },
-        },
-      } as Record<string, unknown>,
+  fastify.get(`${prefix}/workflows`, {
+    schema: {
+      description: "List all registered workflow names",
+      tags: ["Workflows"],
+      response: {
+        200: toJsonSchema(z.array(z.string())),
+      },
     },
-    async () => {
-      return ctx.getWorkflowNames();
-    },
-  );
+    handler: async () => ctx.getWorkflowNames(),
+  });
 
-  // POST /workflows/:name/run
-  fastify.post<{
-    Params: { name: string };
-    Body: WorkflowRunRequest;
-    Reply: WorkflowRunResponse | { error: string };
-  }>(
-    `${prefix}/workflows/:name/run`,
-    {
-      schema: {
-        description: "Run a workflow synchronously and wait for completion",
-        tags: ["Workflows"],
-        params: {
-          type: "object",
-          properties: {
-            name: { type: "string", description: "Workflow name" },
-          },
-          required: ["name"],
-        },
-        body: {
-          type: "object",
-          properties: {
-            data: { description: "Data to pass to the start event" },
-            timeout: {
-              type: "number",
-              description: "Timeout in milliseconds",
-              default: 30000,
-            },
-          },
-          required: ["data"],
-        },
-        response: {
-          200: {
-            type: "object",
-            properties: {
-              result: { description: "The result from the workflow" },
-            },
-            required: ["result"],
-          },
-          404: {
-            type: "object",
-            properties: { error: { type: "string" } },
-            required: ["error"],
-          },
-          408: {
-            type: "object",
-            properties: { error: { type: "string" } },
-            required: ["error"],
-          },
-          500: {
-            type: "object",
-            properties: { error: { type: "string" } },
-            required: ["error"],
-          },
-        },
-      } as Record<string, unknown>,
+  fastify.post(`${prefix}/workflows/:name/run`, {
+    schema: {
+      description: "Run a workflow synchronously and wait for completion",
+      tags: ["Workflows"],
+      params: toJsonSchema(WorkflowNameParamsSchema),
+      body: toJsonSchema(WorkflowRunRequestSchema),
+      response: {
+        200: toJsonSchema(WorkflowRunResponseSchema),
+        404: toJsonSchema(ErrorResponseSchema),
+        408: toJsonSchema(ErrorResponseSchema),
+        500: toJsonSchema(ErrorResponseSchema),
+      },
     },
-    async (
+    handler: async (
       request: FastifyRequest<{
-        Params: { name: string };
-        Body: WorkflowRunRequest;
+        Params: z.infer<typeof WorkflowNameParamsSchema>;
+        Body: z.infer<typeof WorkflowRunRequestSchema>;
       }>,
       reply: FastifyReply,
     ) => {
@@ -134,54 +86,23 @@ export function registerWorkflowRoutes(
         return reply.status(500).send({ error: message });
       }
     },
-  );
+  });
 
-  // POST /workflows/:name/run-nowait
-  fastify.post<{
-    Params: { name: string };
-    Body: WorkflowRunRequest;
-    Reply: WorkflowRunAsyncResponse | { error: string };
-  }>(
-    `${prefix}/workflows/:name/run-nowait`,
-    {
-      schema: {
-        description: "Start a workflow asynchronously and return immediately",
-        tags: ["Workflows"],
-        params: {
-          type: "object",
-          properties: {
-            name: { type: "string", description: "Workflow name" },
-          },
-          required: ["name"],
-        },
-        body: {
-          type: "object",
-          properties: {
-            data: { description: "Data to pass to the start event" },
-          },
-          required: ["data"],
-        },
-        response: {
-          202: {
-            type: "object",
-            properties: {
-              handlerId: { type: "string" },
-              status: { type: "string", enum: ["running"] },
-            },
-            required: ["handlerId", "status"],
-          },
-          404: {
-            type: "object",
-            properties: { error: { type: "string" } },
-            required: ["error"],
-          },
-        },
-      } as Record<string, unknown>,
+  fastify.post(`${prefix}/workflows/:name/run-nowait`, {
+    schema: {
+      description: "Start a workflow asynchronously and return immediately",
+      tags: ["Workflows"],
+      params: toJsonSchema(WorkflowNameParamsSchema),
+      body: toJsonSchema(WorkflowRunRequestSchema.omit({ timeout: true })),
+      response: {
+        202: toJsonSchema(WorkflowRunAsyncResponseSchema),
+        404: toJsonSchema(ErrorResponseSchema),
+      },
     },
-    async (
+    handler: async (
       request: FastifyRequest<{
-        Params: { name: string };
-        Body: WorkflowRunRequest;
+        Params: z.infer<typeof WorkflowNameParamsSchema>;
+        Body: { data: unknown };
       }>,
       reply: FastifyReply,
     ) => {
@@ -197,5 +118,5 @@ export function registerWorkflowRoutes(
       const response = ctx.runWorkflowAsync(name, data);
       return reply.status(202).send(response);
     },
-  );
+  });
 }
