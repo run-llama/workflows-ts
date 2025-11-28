@@ -2,22 +2,6 @@
 
 This demo shows how to use `@llamaindex/workflow-server` to expose LlamaIndex workflows as REST APIs with OpenAPI documentation.
 
-## Overview
-
-The demo creates a Fastify server with three example workflows:
-
-1. **greeting** - A simple workflow that returns a greeting message
-2. **calculator** - Performs basic math operations (add, subtract, multiply, divide)
-3. **echo** - Returns whatever data you send to it
-
-## Features Demonstrated
-
-- Workflow registration with `WorkflowServer`
-- RESTful API endpoints for workflow execution
-- OpenAPI/Swagger documentation
-- Custom Fastify configuration
-- Multiple workflows on a single server
-
 ## Quick Start
 
 1. Install dependencies:
@@ -44,63 +28,6 @@ The demo creates a Fastify server with three example workflows:
 
 ```bash
 curl http://localhost:3000/
-```
-
-Returns server information and available endpoints.
-
-### Health Check
-
-```bash
-curl http://localhost:3000/health
-```
-
-### List Workflows
-
-```bash
-curl http://localhost:3000/workflows
-```
-
-**Response:**
-```json
-["greeting", "calculator", "echo"]
-```
-
-### Run Greeting Workflow
-
-```bash
-curl -X POST http://localhost:3000/workflows/greeting/run \
-  -H "Content-Type: application/json" \
-  -d '{"data": "Alice"}'
-```
-
-**Response:**
-```json
-{
-  "result": "Hello, Alice! Welcome to the Workflow Server."
-}
-```
-
-### Run Calculator Workflow
-
-```bash
-# Addition
-curl -X POST http://localhost:3000/workflows/calculator/run \
-  -H "Content-Type: application/json" \
-  -d '{"data": {"a": 10, "b": 5, "op": "add"}}'
-
-# Multiplication
-curl -X POST http://localhost:3000/workflows/calculator/run \
-  -H "Content-Type: application/json" \
-  -d '{"data": {"a": 10, "b": 5, "op": "multiply"}}'
-```
-
-**Supported operations:** `add`, `subtract`, `multiply`, `divide`
-
-**Response:**
-```json
-{
-  "result": { "result": 50 }
-}
 ```
 
 ### Run Echo Workflow
@@ -137,24 +64,6 @@ const server = new WorkflowServer({
 |----------|---------|-------------|
 | `PORT` | `3000` | Server port |
 
-## Development
-
-Run with auto-reload:
-
-```bash
-pnpm dev
-```
-
-## Project Structure
-
-```
-demo/server/
-├── package.json    # Dependencies and scripts
-├── server.ts       # Main server with workflow definitions
-├── tsconfig.json   # TypeScript configuration
-└── README.md       # This file
-```
-
 ## Key Concepts
 
 ### Defining Events
@@ -183,11 +92,3 @@ server.registerWorkflow("name", {
     stopEvent,
 });
 ```
-
-## Dependencies
-
-- **@llamaindex/workflow-core** - Core workflow engine
-- **@llamaindex/workflow-server** - HTTP server for workflows
-- **fastify** - Fast and low overhead web framework
-- **tsx** - TypeScript execution
-
