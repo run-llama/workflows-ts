@@ -16,7 +16,7 @@ const DEFAULT_TIMEOUT = 30_000;
 interface WorkflowRoutesContext {
   prefix: string;
   getWorkflow: (name: string) => RegisteredWorkflow | undefined;
-  getWorkflowNames: () => string[];
+  names: () => string[];
   runWorkflow: <TStartData, TStopData>(
     name: string,
     data: TStartData,
@@ -39,7 +39,7 @@ export function registerWorkflowRoutes(
         200: toJsonSchema(z.array(z.string())),
       },
     },
-    handler: async () => ctx.getWorkflowNames(),
+    handler: async () => ctx.names(),
   });
 
   fastify.post(`${prefix}/workflows/:name/run`, {

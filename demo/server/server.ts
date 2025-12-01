@@ -16,12 +16,12 @@ import {
 } from "@llamaindex/workflow-server";
 import Fastify from "fastify";
 import {
-  calculatorWorkflow,
   calcInputEvent,
   calcOutputEvent,
-  echoWorkflow,
+  calculatorWorkflow,
   echoStartEvent,
   echoStopEvent,
+  echoWorkflow,
   greetingWorkflow,
   greetStartEvent,
   greetStopEvent,
@@ -86,7 +86,7 @@ app.get("/", async () => {
       listWorkflows: "GET /workflows",
       runWorkflow: "POST /workflows/:name/run",
     },
-    registeredWorkflows: workflowServer.getWorkflowNames(),
+    registeredWorkflows: workflowServer.names(),
   };
 });
 

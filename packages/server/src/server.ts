@@ -83,7 +83,7 @@ export class WorkflowServer {
     return this.workflows.get(name);
   }
 
-  getWorkflowNames(): string[] {
+  names(): string[] {
     return Array.from(this.workflows.keys());
   }
 
@@ -192,7 +192,7 @@ export function fastifyPlugin(server: WorkflowServer): FastifyPluginAsync {
     registerWorkflowRoutes(fastify, {
       prefix,
       getWorkflow: (name) => server.getWorkflow(name),
-      getWorkflowNames: () => server.getWorkflowNames(),
+      names: () => server.names(),
       runWorkflow: (name, data, timeout) =>
         server.runWorkflow(name, data, timeout),
       runWorkflowAsync: (name, data) => server.runWorkflowAsync(name, data),

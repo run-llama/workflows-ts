@@ -69,7 +69,7 @@ describe("WorkflowServer", () => {
           stopEvent: outputEvent,
         },
       });
-      expect(server.getWorkflowNames()).toEqual(["echo", "double"]);
+      expect(server.names()).toEqual(["echo", "double"]);
     });
 
     it("should create a server with initial workflows and options", () => {
@@ -83,7 +83,7 @@ describe("WorkflowServer", () => {
         },
         { prefix: "/api/v1" },
       );
-      expect(server.getWorkflowNames()).toEqual(["echo"]);
+      expect(server.names()).toEqual(["echo"]);
       expect(server.options.prefix).toBe("/api/v1");
     });
   });
@@ -96,7 +96,7 @@ describe("WorkflowServer", () => {
         startEvent,
         stopEvent,
       });
-      expect(server.getWorkflowNames()).toEqual(["echo"]);
+      expect(server.names()).toEqual(["echo"]);
     });
 
     it("should support chaining with register method", () => {
@@ -112,7 +112,7 @@ describe("WorkflowServer", () => {
           startEvent: inputEvent,
           stopEvent: outputEvent,
         });
-      expect(server.getWorkflowNames()).toEqual(["echo", "double"]);
+      expect(server.names()).toEqual(["echo", "double"]);
     });
 
     it("should throw error when registering duplicate workflow", () => {
