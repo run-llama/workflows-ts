@@ -30,20 +30,30 @@ This demo shows how to use `@llamaindex/workflow-server` to expose LlamaIndex wo
 curl http://localhost:3000/
 ```
 
-### Run Echo Workflow
+### Run Workflow and Stream Events
+
+Run example Echo workflow that print out a message multiple times with streaming events:
 
 ```bash
-curl -X POST http://localhost:3000/workflows/echo/run \
-  -H "Content-Type: application/json" \
-  -d '{"data": {"hello": "world", "nested": {"value": 42}}}'
+HANDLER_ID=$(curl -s -X POST http://localhost:3000/workflows/echo/run-nowait -H "Content-Type: application/json" -d '{"data":{"message":"Hello World","times":3,"delay":1000}}' | grep -o '"handlerId":"[^"]*"' | cut -d'"' -f4) && curl -N http://localhost:3000/events/$HANDLER_ID/stream?sse=true
 ```
 
-**Response:**
-```json
-{
-  "result": { "hello": "world", "nested": { "value": 42 } }
-}
+**Expected Output:**
 ```
+data: {"type":"echoStart","data":{"message":"Hello World","times":3,"delay":1000},"qualified_name":"echoStart"}
+
+data: {"type":"echo","data":"Hello World","qualified_name":"echo"}
+
+data: {"type":"echo","data":"Hello World","qualified_name":"echo"}
+
+data: {"type":"echo","data":"Hello World","qualified_name":"echo"}
+
+data: {"type":"echoStop","data":"Echoed \"Hello World\" 3 time(s)","qualified_name":"echoStop"}
+
+data: {"status":"completed","result":"Echoed \"Hello World\" 3 time(s)"}
+```
+
+**Note:** The `times` parameter defaults to 1, and `delay` defaults to 1000ms (1 second) between each echo.
 
 ## Configuration
 

@@ -5,7 +5,13 @@ export {
   calcOutputEvent,
   calculatorWorkflow,
 } from "./calculator";
-export { echoStartEvent, echoStopEvent, echoWorkflow } from "./echo";
+export {
+  type EchoInput,
+  echoEvent,
+  echoStartEvent,
+  echoStopEvent,
+  echoWorkflow,
+} from "./echo";
 export {
   greetingWorkflow,
   greetStartEvent,
