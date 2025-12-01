@@ -1,10 +1,9 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { z } from "zod";
-import { HandlerNotFoundError } from "../errors";
+import type { z } from "zod";
+import { zodToJsonSchema } from "zod-to-json-schema";
 import type { HandlerStore } from "../handler-store";
 import {
   ErrorResponseSchema,
-  EventSchemaSchema,
   HandlerIdParamsSchema,
   SendEventRequestSchema,
   SendEventResponseSchema,
@@ -27,8 +26,6 @@ interface EventRoutesContext {
 
 /**
  * Extract JSON schema from a WorkflowEvent.
- * If the event was created with zodEvent(), it will have a `schema` property
- * that can be converted to JSON schema.
  */
 function extractEventSchema(
   event: WorkflowEventWithSchema<unknown>,
@@ -42,22 +39,18 @@ function extractEventSchema(
   if ("schema" in event && event.schema != null) {
     try {
       // Try to use zod-to-json-schema for Zod schemas
-      // The schema could be Zod 3 or Zod 4
       const zodSchema = event.schema;
-      // Check if it's a Zod schema by looking for typical Zod properties
       if (
         typeof zodSchema === "object" &&
         zodSchema !== null &&
         ("_def" in zodSchema || "_zod" in zodSchema)
       ) {
-        // Use zodToJsonSchema dynamically if available
         try {
-          // eslint-disable-next-line @typescript-eslint/no-require-imports
-          const { zodToJsonSchema } = require("zod-to-json-schema");
-          schema.schema = zodToJsonSchema(zodSchema, { $refStrategy: "none" });
+          schema.schema = zodToJsonSchema(zodSchema as z.ZodType, {
+            $refStrategy: "none",
+          });
         } catch {
-          // If zod-to-json-schema is not available, store raw schema description
-          schema.schema = { type: "unknown", description: "Zod schema" };
+          schema.schema = { type: "unknown", description: "Unknown schema" };
         }
       }
     } catch {
@@ -69,7 +62,7 @@ function extractEventSchema(
 }
 
 /**
- * Get all events for a workflow (start, stop, and additional events).
+ * Get all events for a workflow
  */
 function getWorkflowEvents(workflow: RegisteredWorkflow): EventSchema[] {
   const events: EventSchema[] = [];
@@ -86,9 +79,6 @@ function getWorkflowEvents(workflow: RegisteredWorkflow): EventSchema[] {
   return events;
 }
 
-/**
- * Find an event by its uniqueId from a workflow's events.
- */
 function findEventByType(
   workflow: RegisteredWorkflow,
   eventType: string,
@@ -223,7 +213,6 @@ export function registerEventRoutes(
         });
       }
 
-      // Find the event by type
       const event = findEventByType(workflow, eventType);
       if (!event) {
         return reply.status(400).send({

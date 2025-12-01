@@ -773,13 +773,11 @@ describe("WorkflowServer HTTP endpoints", () => {
       // Create a workflow that waits for an additional event
       const waitEvent = workflowEvent<string>({ debugLabel: "waitEvent" });
       const continueWorkflow = createWorkflow();
-      let receivedWaitEvent = false;
 
       continueWorkflow.handle([startEvent], async (context, event) => {
         // Wait for the additional event before completing
         for await (const e of context.stream) {
           if (waitEvent.include(e)) {
-            receivedWaitEvent = true;
             return stopEvent.with(`Completed with: ${e.data}`);
           }
         }
@@ -816,6 +814,165 @@ describe("WorkflowServer HTTP endpoints", () => {
       });
       expect(sendResponse.statusCode).toBe(200);
       expect(sendResponse.json().success).toBe(true);
+    });
+  });
+
+  describe("GET /events/:handlerId/stream", () => {
+    it("should return 404 for unknown handler", async () => {
+      const response = await app.inject({
+        method: "GET",
+        url: "/events/unknown-handler/stream",
+      });
+      expect(response.statusCode).toBe(404);
+    });
+
+    it("should stream events in SSE format by default", async () => {
+      // Start a workflow
+      const startResponse = await app.inject({
+        method: "POST",
+        url: "/workflows/echo/run-nowait",
+        payload: { data: "Hello" },
+      });
+      const { handlerId } = startResponse.json();
+
+      // Wait a bit for the workflow to complete
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      // Stream the events
+      const response = await app.inject({
+        method: "GET",
+        url: `/events/${handlerId}/stream`,
+      });
+
+      expect(response.statusCode).toBe(200);
+      expect(response.headers["content-type"]).toContain("text/event-stream");
+    });
+
+    it("should stream events in NDJSON format when sse=false", async () => {
+      const startResponse = await app.inject({
+        method: "POST",
+        url: "/workflows/echo/run-nowait",
+        payload: { data: "Hello" },
+      });
+      const { handlerId } = startResponse.json();
+
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      const response = await app.inject({
+        method: "GET",
+        url: `/events/${handlerId}/stream?sse=false`,
+      });
+
+      expect(response.statusCode).toBe(200);
+      expect(response.headers["content-type"]).toContain(
+        "application/x-ndjson",
+      );
+    });
+  });
+
+  describe("POST /handlers/:handlerId/cancel", () => {
+    it("should return 404 for unknown handler", async () => {
+      const response = await app.inject({
+        method: "POST",
+        url: "/handlers/unknown-handler/cancel",
+      });
+      expect(response.statusCode).toBe(404);
+    });
+
+    it("should return 400 for already completed handler", async () => {
+      // Start and wait for completion
+      const startResponse = await app.inject({
+        method: "POST",
+        url: "/workflows/echo/run-nowait",
+        payload: { data: "Hello" },
+      });
+      const { handlerId } = startResponse.json();
+
+      // Wait for completion
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      // Try to cancel
+      const response = await app.inject({
+        method: "POST",
+        url: `/handlers/${handlerId}/cancel`,
+      });
+      expect(response.statusCode).toBe(400);
+      expect(response.json().error).toContain("not running");
+    });
+
+    it("should cancel a running handler", async () => {
+      const workflowName = `cancelTestWorkflow_${Date.now()}`;
+      server.register(workflowName, {
+        workflow: createSlowWorkflow(5000),
+        startEvent,
+        stopEvent,
+      });
+
+      const startResponse = await app.inject({
+        method: "POST",
+        url: `/workflows/${workflowName}/run-nowait`,
+        payload: { data: "test" },
+      });
+      const { handlerId } = startResponse.json();
+      expect(handlerId).toBeDefined();
+
+      // Verify it's running
+      const statusResponse = await app.inject({
+        method: "GET",
+        url: `/handlers/${handlerId}`,
+      });
+      expect(statusResponse.statusCode).toBe(202);
+      expect(statusResponse.json().status).toBe("running");
+
+      // Cancel it
+      const cancelResponse = await app.inject({
+        method: "POST",
+        url: `/handlers/${handlerId}/cancel`,
+      });
+      expect(cancelResponse.statusCode).toBe(200);
+      expect(cancelResponse.json().success).toBe(true);
+
+      // Check handler list to see if handler still exists
+      const handlersResponse = await app.inject({
+        method: "GET",
+        url: `/handlers`,
+      });
+      const handlers = handlersResponse.json();
+      const ourHandler = handlers.find(
+        (h: { handlerId: string }) => h.handlerId === handlerId,
+      );
+      expect(ourHandler).toBeDefined();
+      expect(ourHandler.status).toBe("cancelled");
+    });
+
+    it("should cancel and purge a handler when purge=true", async () => {
+      server.register("anotherSlowWorkflow", {
+        workflow: createSlowWorkflow(5000),
+        startEvent,
+        stopEvent,
+      });
+
+      const startResponse = await app.inject({
+        method: "POST",
+        url: "/workflows/anotherSlowWorkflow/run-nowait",
+        payload: { data: "test" },
+      });
+      const { handlerId } = startResponse.json();
+
+      // Cancel with purge
+      const cancelResponse = await app.inject({
+        method: "POST",
+        url: `/handlers/${handlerId}/cancel?purge=true`,
+      });
+      expect(cancelResponse.statusCode).toBe(200);
+      expect(cancelResponse.json().message).toContain("purged");
+
+      // Handler should be gone
+      const statusResponse = await app.inject({
+        method: "GET",
+        url: `/handlers/${handlerId}`,
+      });
+      expect(statusResponse.statusCode).toBe(404);
     });
   });
 });

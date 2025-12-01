@@ -106,3 +106,46 @@ export const SendEventResponseSchema = z.object({
   message: z.string().optional(),
 });
 export type SendEventResponse = z.infer<typeof SendEventResponseSchema>;
+
+export const StreamQuerySchema = z.object({
+  sse: z
+    .string()
+    .optional()
+    .default("true")
+    .transform((v) => v !== "false"),
+  include_internal: z
+    .string()
+    .optional()
+    .default("false")
+    .transform((v) => v === "true"),
+  acquire_timeout: z.coerce.number().optional().default(1),
+  include_qualified_name: z
+    .string()
+    .optional()
+    .default("true")
+    .transform((v) => v !== "false"),
+});
+export type StreamQuery = z.infer<typeof StreamQuerySchema>;
+
+export const StreamEventSchema = z.object({
+  type: z.string(),
+  data: z.unknown(),
+  qualified_name: z.string().optional(),
+});
+export type StreamEvent = z.infer<typeof StreamEventSchema>;
+
+export const CancelQuerySchema = z.object({
+  purge: z
+    .string()
+    .transform((v) => v === "true")
+    .optional()
+    .default("false"),
+});
+export type CancelQuery = z.infer<typeof CancelQuerySchema>;
+
+export const CancelResponseSchema = z.object({
+  success: z.boolean(),
+  message: z.string(),
+  handler_id: z.string(),
+});
+export type CancelResponse = z.infer<typeof CancelResponseSchema>;

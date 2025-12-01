@@ -5,6 +5,8 @@ import type {
 } from "@llamaindex/workflow-core";
 
 export type {
+  CancelQuery,
+  CancelResponse,
   ErrorResponse,
   EventSchema,
   HandlerInfo,
@@ -12,6 +14,8 @@ export type {
   HealthResponse,
   SendEventRequest,
   SendEventResponse,
+  StreamEvent,
+  StreamQuery,
   WorkflowEventsResponse,
   WorkflowRunAsyncResponse,
   WorkflowRunRequest,

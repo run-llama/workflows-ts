@@ -1,10 +1,11 @@
 import type { FastifyInstance, FastifyPluginAsync } from "fastify";
 import { WorkflowNotFoundError, WorkflowTimeoutError } from "./errors";
-import { HandlerStore } from "./handler-store";
+import { createHandlerStore, type HandlerStore } from "./handler-store";
 import {
   registerEventRoutes,
   registerHandlerRoutes,
   registerHealthRoutes,
+  registerStreamRoutes,
   registerWorkflowRoutes,
 } from "./routes";
 import type { HandlerStatus, WorkflowRunAsyncResponse } from "./schemas";
@@ -33,7 +34,7 @@ export type WorkflowsConfig = Record<string, WorkflowConfig>;
 
 export class WorkflowServer {
   private workflows: Map<string, RegisteredWorkflow> = new Map();
-  private _handlerStore: HandlerStore = new HandlerStore();
+  private _handlerStore: HandlerStore = createHandlerStore();
   private _options: Required<WorkflowServerOptions>;
 
   constructor(options: WorkflowServerOptions = {}) {
@@ -137,15 +138,23 @@ export class WorkflowServer {
 
     const handlerId = generateHandlerId();
     const { workflow, startEvent, stopEvent } = registered;
-    const { stream, sendEvent } = workflow.createContext();
+    const context = workflow.createContext();
+    const { stream, sendEvent } = context;
 
-    this._handlerStore.create(handlerId, name, { stream } as never, sendEvent);
+    this._handlerStore.create(handlerId, name, context, sendEvent);
 
     sendEvent(startEvent.with(data));
 
     (async () => {
       try {
         for await (const event of stream) {
+          // Push event to queue for streaming
+          this._handlerStore.pushEvent(handlerId, {
+            type: event.toString(),
+            data: event.data,
+            qualified_name: event.toString(),
+          });
+
           if (stopEvent.include(event)) {
             this._handlerStore.updateStatus(handlerId, "completed", {
               result: event.data,
@@ -195,6 +204,10 @@ export function fastifyPlugin(server: WorkflowServer): FastifyPluginAsync {
     registerEventRoutes(fastify, {
       prefix,
       getWorkflow: (name) => server.getWorkflow(name),
+      handlerStore: server.handlerStore,
+    });
+    registerStreamRoutes(fastify, {
+      prefix,
       handlerStore: server.handlerStore,
     });
   };
