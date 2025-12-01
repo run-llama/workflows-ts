@@ -99,9 +99,8 @@ try {
 ╔════════════════════════════════════════════════════════════╗
 ║              Workflow Server Demo Started                  ║
 ╠════════════════════════════════════════════════════════════╣
-║  Server:        http://localhost:${PORT}                   ║
-║  Swagger UI:    http://localhost:${PORT}/documentation     ║
-║  Health:        http://localhost:${PORT}/health            ║
+║  Server:        http://localhost:${PORT}                      ║
+║  API UI:    http://localhost:${PORT}/documentation            ║
 ╠════════════════════════════════════════════════════════════╣
 ║  Registered Workflows:                                     ║
 ║    - greeting    : Simple greeting workflow                ║
@@ -109,25 +108,7 @@ try {
 ║    - echo        : Echo back input data                    ║
 ╚════════════════════════════════════════════════════════════╝
 
-Try these commands:
-
-  # List all workflows
-  curl http://localhost:${PORT}/workflows
-
-  # Run greeting workflow
-  curl -X POST http://localhost:${PORT}/workflows/greeting/run \\
-    -H "Content-Type: application/json" \\
-    -d '{"data": "Alice"}'
-
-  # Run calculator workflow
-  curl -X POST http://localhost:${PORT}/workflows/calculator/run \\
-    -H "Content-Type: application/json" \\
-    -d '{"data": {"a": 10, "b": 5, "op": "multiply"}}'
-
-  # Run echo workflow
-  curl -X POST http://localhost:${PORT}/workflows/echo/run \\
-    -H "Content-Type: application/json" \\
-    -d '{"data": {"hello": "world", "nested": {"value": 42}}}'
+Try accessing the Swagger UI at http://localhost:${PORT}/documentation to explore the API endpoints.
 `);
 } catch (err) {
   app.log.error(err);
