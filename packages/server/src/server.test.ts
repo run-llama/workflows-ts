@@ -639,4 +639,183 @@ describe("WorkflowServer HTTP endpoints", () => {
       await testApp.close();
     });
   });
+
+  describe("GET /workflows/:name/schema", () => {
+    it("should return schema for start and stop events", async () => {
+      const response = await app.inject({
+        method: "GET",
+        url: "/workflows/echo/schema",
+      });
+      expect(response.statusCode).toBe(200);
+      const body = response.json();
+      expect(body.startEvent).toBeDefined();
+      expect(body.startEvent.uniqueId).toBeDefined();
+      expect(body.stopEvent).toBeDefined();
+      expect(body.stopEvent.uniqueId).toBeDefined();
+    });
+
+    it("should return 404 for unknown workflow", async () => {
+      const response = await app.inject({
+        method: "GET",
+        url: "/workflows/unknown/schema",
+      });
+      expect(response.statusCode).toBe(404);
+      expect(response.json()).toEqual({
+        error: 'Workflow "unknown" not found',
+      });
+    });
+  });
+
+  describe("GET /workflows/:name/events", () => {
+    it("should return all events for a workflow", async () => {
+      const response = await app.inject({
+        method: "GET",
+        url: "/workflows/echo/events",
+      });
+      expect(response.statusCode).toBe(200);
+      const body = response.json();
+      expect(body).toHaveLength(2); // start and stop events
+      expect(body[0].uniqueId).toBeDefined();
+      expect(body[1].uniqueId).toBeDefined();
+    });
+
+    it("should return 404 for unknown workflow", async () => {
+      const response = await app.inject({
+        method: "GET",
+        url: "/workflows/unknown/events",
+      });
+      expect(response.statusCode).toBe(404);
+    });
+
+    it("should include additional events when registered", async () => {
+      const additionalEvent = workflowEvent<{ message: string }>({
+        debugLabel: "additionalEvent",
+      });
+      const additionalWorkflow = createWorkflow();
+      additionalWorkflow.handle([startEvent], (_context, event) => {
+        return stopEvent.with(`Echo: ${event.data}`);
+      });
+
+      server.register("withAdditional", {
+        workflow: additionalWorkflow,
+        startEvent,
+        stopEvent,
+        additionalEvents: [additionalEvent],
+      });
+
+      const response = await app.inject({
+        method: "GET",
+        url: "/workflows/withAdditional/events",
+      });
+      expect(response.statusCode).toBe(200);
+      const body = response.json();
+      expect(body).toHaveLength(3); // start, stop, and additional
+    });
+  });
+
+  describe("POST /events/:handlerId", () => {
+    it("should return 404 for unknown handler", async () => {
+      const response = await app.inject({
+        method: "POST",
+        url: "/events/unknown-handler",
+        payload: { eventType: "test", data: {} },
+      });
+      expect(response.statusCode).toBe(404);
+      expect(response.json().error).toContain("not found");
+    });
+
+    it("should return 400 for non-running handler", async () => {
+      // Start a fast workflow
+      const startResponse = await app.inject({
+        method: "POST",
+        url: "/workflows/echo/run-nowait",
+        payload: { data: "Hello" },
+      });
+      const { handlerId } = startResponse.json();
+
+      // Wait for it to complete
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
+      // Try to send event to completed handler
+      const response = await app.inject({
+        method: "POST",
+        url: `/events/${handlerId}`,
+        payload: { eventType: startEvent.uniqueId, data: "test" },
+      });
+      expect(response.statusCode).toBe(400);
+      expect(response.json().error).toContain("not running");
+    });
+
+    it("should return 400 for unknown event type", async () => {
+      server.register("slow", {
+        workflow: createSlowWorkflow(500),
+        startEvent,
+        stopEvent,
+      });
+
+      const startResponse = await app.inject({
+        method: "POST",
+        url: "/workflows/slow/run-nowait",
+        payload: { data: "test" },
+      });
+      const { handlerId } = startResponse.json();
+
+      const response = await app.inject({
+        method: "POST",
+        url: `/events/${handlerId}`,
+        payload: { eventType: "unknown-event", data: {} },
+      });
+      expect(response.statusCode).toBe(400);
+      expect(response.json().error).toContain("Event type");
+    });
+
+    it("should successfully send event to running handler", async () => {
+      // Create a workflow that waits for an additional event
+      const waitEvent = workflowEvent<string>({ debugLabel: "waitEvent" });
+      const continueWorkflow = createWorkflow();
+      let receivedWaitEvent = false;
+
+      continueWorkflow.handle([startEvent], async (context, event) => {
+        // Wait for the additional event before completing
+        for await (const e of context.stream) {
+          if (waitEvent.include(e)) {
+            receivedWaitEvent = true;
+            return stopEvent.with(`Completed with: ${e.data}`);
+          }
+        }
+        return stopEvent.with(`No wait event: ${event.data}`);
+      });
+
+      server.register("continue", {
+        workflow: continueWorkflow,
+        startEvent,
+        stopEvent,
+        additionalEvents: [waitEvent],
+      });
+
+      // Start the workflow
+      const startResponse = await app.inject({
+        method: "POST",
+        url: "/workflows/continue/run-nowait",
+        payload: { data: "initial" },
+      });
+      const { handlerId } = startResponse.json();
+
+      // Verify handler is running
+      const statusResponse = await app.inject({
+        method: "GET",
+        url: `/handlers/${handlerId}`,
+      });
+      expect(statusResponse.statusCode).toBe(202);
+
+      // Send the wait event
+      const sendResponse = await app.inject({
+        method: "POST",
+        url: `/events/${handlerId}`,
+        payload: { eventType: waitEvent.uniqueId, data: "continue data" },
+      });
+      expect(sendResponse.statusCode).toBe(200);
+      expect(sendResponse.json().success).toBe(true);
+    });
+  });
 });

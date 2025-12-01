@@ -2,6 +2,7 @@ import type { FastifyInstance, FastifyPluginAsync } from "fastify";
 import { WorkflowNotFoundError, WorkflowTimeoutError } from "./errors";
 import { HandlerStore } from "./handler-store";
 import {
+  registerEventRoutes,
   registerHandlerRoutes,
   registerHealthRoutes,
   registerWorkflowRoutes,
@@ -189,6 +190,11 @@ export function fastifyPlugin(server: WorkflowServer): FastifyPluginAsync {
     });
     registerHandlerRoutes(fastify, {
       prefix,
+      handlerStore: server.handlerStore,
+    });
+    registerEventRoutes(fastify, {
+      prefix,
+      getWorkflow: (name) => server.getWorkflow(name),
       handlerStore: server.handlerStore,
     });
   };

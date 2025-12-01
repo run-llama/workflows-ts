@@ -1,4 +1,4 @@
-import { Workflow, workflowEvent } from "@llamaindex/workflow-core";
+import { type Workflow, workflowEvent } from "@llamaindex/workflow-core";
 
 //#region define workflow events
 const startEvent = workflowEvent<string>({

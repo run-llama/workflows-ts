@@ -73,3 +73,36 @@ export const HandlersQuerySchema = z.object({
   status: HandlerStatusSchema.optional(),
   workflow_name: z.string().optional(),
 });
+
+// Event schemas
+export const EventSchemaSchema = z.object({
+  uniqueId: z.string(),
+  debugLabel: z.string().optional(),
+  schema: z.record(z.unknown()).optional(),
+});
+export type EventSchema = z.infer<typeof EventSchemaSchema>;
+
+export const WorkflowSchemaResponseSchema = z.object({
+  startEvent: EventSchemaSchema,
+  stopEvent: EventSchemaSchema,
+});
+export type WorkflowSchemaResponse = z.infer<
+  typeof WorkflowSchemaResponseSchema
+>;
+
+export const WorkflowEventsResponseSchema = z.array(EventSchemaSchema);
+export type WorkflowEventsResponse = z.infer<
+  typeof WorkflowEventsResponseSchema
+>;
+
+export const SendEventRequestSchema = z.object({
+  eventType: z.string(),
+  data: z.unknown(),
+});
+export type SendEventRequest = z.infer<typeof SendEventRequestSchema>;
+
+export const SendEventResponseSchema = z.object({
+  success: z.boolean(),
+  message: z.string().optional(),
+});
+export type SendEventResponse = z.infer<typeof SendEventResponseSchema>;

@@ -6,18 +6,32 @@ import type {
 
 export type {
   ErrorResponse,
+  EventSchema,
   HandlerInfo,
   HandlerStatus,
   HealthResponse,
+  SendEventRequest,
+  SendEventResponse,
+  WorkflowEventsResponse,
   WorkflowRunAsyncResponse,
   WorkflowRunRequest,
   WorkflowRunResponse,
+  WorkflowSchemaResponse,
 } from "./schemas";
+
+export type WorkflowEventWithSchema<T = unknown> = WorkflowEvent<T> & {
+  readonly schema?: unknown;
+};
 
 export interface WorkflowConfig<TStartData = unknown, TStopData = unknown> {
   workflow: Workflow;
   startEvent: WorkflowEvent<TStartData>;
   stopEvent: WorkflowEvent<TStopData>;
+  /**
+   * Additional events that can be sent to this workflow.
+   * These are used for event schema generation and sending events to running workflows.
+   */
+  additionalEvents?: WorkflowEvent<unknown>[];
 }
 
 export interface WorkflowServerOptions {
