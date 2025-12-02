@@ -1,6 +1,6 @@
 {
   "name": "@llamaindex/workflow-server",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Fastify-based workflow server with OpenAPI support",
   "type": "module",
   "main": "dist/index.cjs",
