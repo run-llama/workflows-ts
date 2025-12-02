@@ -15,7 +15,7 @@ export interface EchoInput {
   delay?: number;
 }
 
-export const echoStartEvent = workflowEvent<EchoInput | string>({
+export const echoStartEvent = workflowEvent<EchoInput>({
   debugLabel: "echoStart",
 });
 
@@ -29,20 +29,7 @@ export const echoStopEvent = workflowEvent<string>({
 
 export const echoWorkflow = createWorkflow();
 echoWorkflow.handle([echoStartEvent], async (context, event) => {
-  // Support both old format (string) and new format (object)
-  let message: string;
-  let times: number;
-  let delay: number;
-
-  if (typeof event.data === "string") {
-    message = event.data;
-    times = 1;
-    delay = 0;
-  } else {
-    message = event.data.message;
-    times = event.data.times ?? 1;
-    delay = event.data.delay ?? 1000;
-  }
+  const { message, times = 1, delay = 1000 } = event.data;
 
   // Echo the message multiple times
   for (let i = 0; i < times; i++) {
