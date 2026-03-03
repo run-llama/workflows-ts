@@ -2,6 +2,7 @@
   "name": "@llamaindex/workflow-server",
   "version": "0.0.2",
   "description": "Fastify-based workflow server with OpenAPI support",
+  "deprecated": "This package is deprecated. Please use LlamaAgents (Python Workflows) instead: https://developers.llamaindex.ai/python/llamaagents/overview/",
   "type": "module",
   "main": "dist/index.cjs",
   "types": "dist/index.d.ts",

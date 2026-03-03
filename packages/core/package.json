@@ -2,6 +2,7 @@
   "name": "@llamaindex/workflow-core",
   "version": "1.3.3",
   "description": "event-based workflow engine",
+  "deprecated": "This package is deprecated. Please use LlamaAgents (Python Workflows) instead: https://developers.llamaindex.ai/python/llamaagents/overview/",
   "type": "module",
   "main": "dist/index.cjs",
   "types": "dist/index.d.ts",

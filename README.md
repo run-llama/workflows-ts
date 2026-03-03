@@ -1,5 +1,7 @@
 # LlamaIndex Workflows TS
 
+> **⚠️ DEPRECATED**: This package is no longer maintained. Please use [LlamaAgents (Python Workflows)](https://developers.llamaindex.ai/python/llamaagents/overview/) instead.
+
 🌊 is a simple, lightweight workflow engine, in TypeScript.
 
 [![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz_small.svg)](https://stackblitz.com/github/run-llama/workflows-ts/tree/main/demo/browser?file=src%2FApp.tsx)

@@ -3,6 +3,7 @@
   "version": "4.0.3",
   "type": "module",
   "description": "HTTP protocol for Llama Flow",
+  "deprecated": "This package is deprecated. Please use LlamaAgents (Python Workflows) instead: https://developers.llamaindex.ai/python/llamaagents/overview/",
   "exports": {
     "./server": {
       "types": "./dist/server.d.ts",
