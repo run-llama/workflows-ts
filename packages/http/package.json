@@ -1,6 +1,6 @@
 {
   "name": "@llamaindex/workflow-http",
-  "version": "4.0.3",
+  "version": "4.0.4",
   "type": "module",
   "description": "HTTP protocol for Llama Flow",
   "deprecated": "This package is deprecated. Please use LlamaAgents (Python Workflows) instead: https://developers.llamaindex.ai/python/llamaagents/overview/",

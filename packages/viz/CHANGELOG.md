@@ -1,5 +1,14 @@
 # @llamaindex/workflow-viz
 
+## 1.0.6
+
+### Patch Changes
+
+- 2e04206: Add deprecation message
+- Updated dependencies [2e04206]
+  - @llamaindex/workflow-graph@1.0.1
+  - @llamaindex/workflow-core@1.3.4
+
 ## 1.0.5
 
 ### Patch Changes

@@ -1,5 +1,11 @@
 # @llamaindex/workflow-core
 
+## 1.3.4
+
+### Patch Changes
+
+- 2e04206: Add deprecation message
+
 ## 1.3.3
 
 ### Patch Changes

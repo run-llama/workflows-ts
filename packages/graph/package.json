@@ -1,6 +1,6 @@
 {
   "name": "@llamaindex/workflow-graph",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "description": "Shared graph utilities",
   "deprecated": "This package is deprecated. Please use LlamaAgents (Python Workflows) instead: https://developers.llamaindex.ai/python/llamaagents/overview/",
