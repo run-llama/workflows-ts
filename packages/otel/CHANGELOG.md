@@ -1,5 +1,13 @@
 # @llamaindex/workflow-otel
 
+## 1.0.5
+
+### Patch Changes
+
+- 2e04206: Add deprecation message
+- Updated dependencies [2e04206]
+  - @llamaindex/workflow-core@1.3.4
+
 ## 1.0.4
 
 ### Patch Changes

@@ -1,6 +1,6 @@
 {
   "name": "@llamaindex/workflow-otel",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "OpenTelemetry plugin for LlamaFlow",
   "deprecated": "This package is deprecated. Please use LlamaAgents (Python Workflows) instead: https://developers.llamaindex.ai/python/llamaagents/overview/",
   "type": "module",
